@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../../shared/i18n";
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { QualifiedThemeContribution } from "../../plugins/types";
@@ -24,23 +25,23 @@ export class SettingsThemePanel extends LitElement {
   override render(): TemplateResult {
     const selectedAvailable = this.themes.some((theme) => theme.id === this.draft.themeId);
     const busy = this.loading || this.saving;
-    return html`
+    return localizedTemplate("SettingsThemePanel.theme_choose_a_theme_on_this_device.d6cd1f89", html)`
       <section class="theme-card" aria-labelledby="theme-heading">
         <header>
           <h3 id="theme-heading">Theme</h3>
           <p>Choose a theme on this device, or save a default for browsers that use the default.</p>
         </header>
         <div class="current-theme" role="status">
-          <strong>${this.hasLocalOverride ? "Using a theme saved on this device" : "Using the default theme"}</strong>
+          <strong>${this.hasLocalOverride ? t("SettingsThemePanel.using_a_theme_saved_on_this_device.408c8ab7") : t("SettingsThemePanel.using_the_default_theme.7f64b2d6")}</strong>
           <span>Current: ${this.themeName(this.activeThemeId || this.preference.themeId)}</span>
-          <span>Default: ${this.themeName(this.defaultPreference.themeId)}${this.defaultPreference.auto ? " · Auto" : ""}</span>
+          <span>Default: ${this.themeName(this.defaultPreference.themeId)}${this.defaultPreference.auto ? t("SettingsThemePanel.auto.4a08014a") : ""}</span>
         </div>
         <label class="field">
           <span>Theme</span>
           <select aria-label="Theme" .value=${this.draft.themeId} ?disabled=${busy} @change=${(event: Event) => {
             if (event.target instanceof HTMLSelectElement) this.draft = { ...this.draft, themeId: event.target.value };
           }}>
-            ${!selectedAvailable ? html`<option value=${this.draft.themeId}>${this.draft.themeId} (unavailable)</option>` : null}
+            ${!selectedAvailable ? localizedTemplate("SettingsThemePanel.unavailable.58a76ce3", html)`<option value=${this.draft.themeId}>${this.draft.themeId} (unavailable)</option>` : null}
             ${this.themes.map((theme) => html`<option value=${theme.id}>${theme.name}</option>`)}
           </select>
         </label>
@@ -61,7 +62,7 @@ export class SettingsThemePanel extends LitElement {
   }
 
   private themeName(id: string): string {
-    return this.themes.find((theme) => theme.id === id)?.name ?? `${id} (unavailable)`;
+    return this.themes.find((theme) => theme.id === id)?.name ?? localizedText("SettingsThemePanel.unavailable.98a0d016")`${id} (unavailable)`;
   }
 
   static override styles = css`

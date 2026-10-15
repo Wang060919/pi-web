@@ -1,3 +1,4 @@
+import { t } from "../../../shared/i18n";
 import { LitElement, html } from "lit";
 import type { ChatContentRendering } from "../formatting/contentRendering";
 import { customElement, property } from "lit/decorators.js";
@@ -81,7 +82,7 @@ export class FormattedText extends LitElement {
   private setCopyButtonState(button: HTMLButtonElement, state: "idle" | "copied" | "failed"): void {
     const icon = button.querySelector("span");
     if (icon !== null) icon.textContent = state === "copied" ? "✓" : "⧉";
-    const label = state === "copied" ? "Copied code block" : state === "failed" ? "Failed to copy code block" : "Copy code block";
+    const label = state === "copied" ? t("FormattedText.copied_code_block.1b9e03c5") : state === "failed" ? t("FormattedText.failed_to_copy_code_block.bf5a1ad5") : t("FormattedText.copy_code_block.d31aaa3e");
     button.title = label;
     button.setAttribute("aria-label", label);
   }

@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import type { SessionStatus } from "../api";
@@ -11,10 +12,10 @@ export interface StatusBarWarningControlContent {
 
 export function statusBarWarningControlContent(count: number, expanded: boolean): StatusBarWarningControlContent | undefined {
   if (!Number.isInteger(count) || count <= 0) return undefined;
-  const warningText = `${String(count)} ${count === 1 ? "warning" : "warnings"}`;
+  const warningText = localizedText("StatusBar.template.123f7e9d")`${String(count)} ${count === 1 ? "warning" : "warnings"}`;
   return {
     countText: String(count),
-    accessibleLabel: expanded ? `Minimise ${warningText}` : `Show ${warningText} in the warning area`,
+    accessibleLabel: expanded ? localizedText("StatusBar.minimise.98e2a11d")`Minimise ${warningText}` : localizedText("StatusBar.show_in_the_warning_area.71d1978a")`Show ${warningText} in the warning area`,
   };
 }
 
@@ -31,13 +32,13 @@ export class StatusBar extends LitElement {
 
   override render() {
     const status = this.status;
-    if (status === undefined) return html`<div class="bar muted">No session status yet</div>`;
+    if (status === undefined) return localizedTemplate("StatusBar.no_session_status_yet.dc472689", html)`<div class="bar muted">No session status yet</div>`;
     const context = status.contextUsage;
     const contextText = context
       ? context.percent == null
-        ? `context ${formatTokenCount(context.contextWindow)}`
+        ? localizedText("StatusBar.context.a2728c17")`context ${formatTokenCount(context.contextWindow)}`
         : `${context.percent.toFixed(1)}%/${formatTokenCount(context.contextWindow)}`
-      : "context unknown";
+      : t("StatusBar.context_unknown.34527476");
     const tokens = status.tokens;
     const warningControl = statusBarWarningControlContent(this.warningCount, this.warningsExpanded);
     return html`
@@ -59,7 +60,7 @@ export class StatusBar extends LitElement {
         <span>↓${formatTokenCount(tokens.output)}</span>
         <span class="context">${contextText}</span>
         <span>${formatCost(status.cost)}</span>
-        ${status.pendingMessageCount > 0 ? html`<span>${String(status.pendingMessageCount)} queued</span>` : null}
+        ${status.pendingMessageCount > 0 ? localizedTemplate("StatusBar.queued.aa0b8a9a", html)`<span>${String(status.pendingMessageCount)} queued</span>` : null}
       </div>
     `;
   }

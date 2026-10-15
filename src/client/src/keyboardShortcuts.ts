@@ -1,3 +1,4 @@
+import { localizedText, t } from "../../shared/i18n";
 import type { AppAction } from "./actions";
 
 export const shortcutSequenceTimeoutMs = 1200;
@@ -262,7 +263,7 @@ function compareStrings(left: string, right: string): number {
 
 function parseShortcut(shortcut: string): ShortcutParseResult {
   const cleaned = shortcut.trim().toLowerCase().replace(/\s*\+\s*/gu, "+");
-  if (cleaned === "") return { ok: false, message: "Enter a shortcut, choose None, or reset to the default." };
+  if (cleaned === "") return { ok: false, message: t("keyboardShortcuts.enter_a_shortcut_choose_none_or_reset.5fd01f31") };
 
   const tokens: string[] = [];
   const chordInputs = cleaned.split(/\s+/u).filter((token) => token !== "");
@@ -281,25 +282,25 @@ type ShortcutChordParseResult =
 
 function parseShortcutChord(chord: string): ShortcutChordParseResult {
   const parts = chord.split("+").filter((part) => part !== "");
-  if (parts.length === 0) return { ok: false, message: "Shortcut chords must include a key." };
+  if (parts.length === 0) return { ok: false, message: t("keyboardShortcuts.shortcut_chords_must_include_a_key.96ba3ebf") };
 
   const modifiers = new Set<ShortcutModifier>();
   let key: string | undefined;
   for (const part of parts) {
     const modifier = modifierAlias(part);
     if (modifier !== undefined) {
-      if (modifiers.has(modifier)) return { ok: false, message: `Shortcut has duplicate ${formatShortcutPart(modifier)} modifiers.` };
+      if (modifiers.has(modifier)) return { ok: false, message: localizedText("keyboardShortcuts.shortcut_has_duplicate_modifiers.860fe898")`Shortcut has duplicate ${formatShortcutPart(modifier)} modifiers.` };
       modifiers.add(modifier);
       continue;
     }
 
     const normalizedKey = normalizeShortcutKeyName(part);
-    if (normalizedKey === undefined) return { ok: false, message: `Unsupported shortcut key: ${part}` };
-    if (key !== undefined) return { ok: false, message: "Each shortcut chord can include only one non-modifier key." };
+    if (normalizedKey === undefined) return { ok: false, message: localizedText("keyboardShortcuts.unsupported_shortcut_key.2b3e2a99")`Unsupported shortcut key: ${part}` };
+    if (key !== undefined) return { ok: false, message: t("keyboardShortcuts.each_shortcut_chord_can_include_only_one.2647de8c") };
     key = normalizedKey;
   }
 
-  if (key === undefined) return { ok: false, message: "Shortcut chords must include a key." };
+  if (key === undefined) return { ok: false, message: t("keyboardShortcuts.shortcut_chords_must_include_a_key.b9b58318") };
 
   const orderedModifiers = modifierOrder.filter((modifier) => modifiers.has(modifier));
   return { ok: true, token: [...orderedModifiers, key].join("+") };

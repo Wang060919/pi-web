@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import type { PiWebDockerMode, PiWebInstallationInfo, PiWebStatusMessage, PiWebStatusResponse, PluginRuntimeState } from "@jmfederico/pi-web/plugin-api";
 
 export interface CommandEntry {
@@ -14,22 +15,22 @@ export interface UpdatesRuntimeHint {
 export function recommendedCommand(status: PiWebStatusResponse): CommandEntry | undefined {
   const { commands, release, components } = status;
   if (release.updateAvailable && typeof commands.update === "string" && commands.update !== "") {
-    return { label: "Update PI WEB", command: commands.update };
+    return { label: t("updatesLogic.update_pi_web.2cbdf77a"), command: commands.update };
   }
   const restartNeeded = components.web.stale || components.sessiond.stale || !components.sessiond.available;
   if (restartNeeded && typeof commands.restart === "string" && commands.restart !== "") {
-    return { label: "Restart everything", command: commands.restart };
+    return { label: t("updatesLogic.restart_everything.55320f26"), command: commands.restart };
   }
   return undefined;
 }
 
 export function additionalCommands(status: PiWebStatusResponse, recommended: CommandEntry | undefined): CommandEntry[] {
   return [
-    ["Update", status.commands.update],
-    ["Restart all", status.commands.restart],
-    ["Restart Web/UI", status.commands.restartWeb],
-    ["Restart session daemon", status.commands.restartSessiond],
-    ["Status", status.commands.status],
+    [t("updatesLogic.update.66abfc01"), status.commands.update],
+    [t("updatesLogic.restart_all.04d4b249"), status.commands.restart],
+    [t("updatesLogic.restart_web_ui.267dce69"), status.commands.restartWeb],
+    [t("updatesLogic.restart_session_daemon.995e3f30"), status.commands.restartSessiond],
+    [t("updatesLogic.status.3c933ee5"), status.commands.status],
   ]
     .filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1] !== "")
     .filter(([, command]) => command !== recommended?.command)
@@ -61,7 +62,7 @@ export function shouldShowUpdatesPanel(state: PluginRuntimeState | undefined, hi
     || isSelfManagedInstallation(status.components.sessiond.installation);
 }
 
-export function fallbackDockerStatus(hint: UpdatesRuntimeHint, generatedAt = "federated status unavailable"): PiWebStatusResponse | undefined {
+export function fallbackDockerStatus(hint: UpdatesRuntimeHint, generatedAt = t("updatesLogic.federated_status_unavailable.87d84f86")): PiWebStatusResponse | undefined {
   if (hint.dockerMode === undefined) return undefined;
   const commandPrefix = hint.dockerMode === "dev" ? "pi-web-docker --dev" : "pi-web-docker";
   const installation: PiWebInstallationInfo = { kind: "docker", dockerMode: hint.dockerMode };
@@ -69,8 +70,8 @@ export function fallbackDockerStatus(hint: UpdatesRuntimeHint, generatedAt = "fe
     packageName: "@jmfederico/pi-web",
     generatedAt,
     components: {
-      web: { component: "web", label: "Web/UI", stale: false, available: true, installation },
-      sessiond: { component: "sessiond", label: "Session daemon", stale: false, available: true, installation },
+      web: { component: "web", label: t("updatesLogic.web_ui.2cd4616e"), stale: false, available: true, installation },
+      sessiond: { component: "sessiond", label: t("updatesLogic.session_daemon.9e3fe90d"), stale: false, available: true, installation },
     },
     release: { packageName: "@jmfederico/pi-web", updateAvailable: false, skipped: true },
     commands: {
@@ -85,25 +86,25 @@ export function fallbackDockerStatus(hint: UpdatesRuntimeHint, generatedAt = "fe
     messages: [{
       id: "docker-status-compatibility",
       severity: "info",
-      title: "Docker update commands available",
-      body: "This Updates plugin was loaded from a Docker PI WEB runtime, but the gateway has not provided Docker-aware status details yet. The Docker maintenance commands below are still available.",
+      title: t("updatesLogic.docker_update_commands_available.780127fe"),
+      body: t("updatesLogic.this_updates_plugin_was_loaded_from_a.86f7b142"),
     }],
   };
 }
 
 export function formatVersion(version: string | undefined): string {
-  return version === undefined || version === "" ? "unknown" : version;
+  return version === undefined || version === "" ? t("updatesLogic.unknown.172e52ad") : version;
 }
 
 export function installationLabel(installation: PiWebInstallationInfo | undefined): string {
-  if (installation === undefined) return "installation unknown";
+  if (installation === undefined) return t("updatesLogic.installation_unknown.18c85529");
   if (installation.kind === "pi-package") {
     const scope = installation.scope === undefined ? "" : ` · ${installation.scope}`;
-    const source = installation.source ?? "Pi package";
+    const source = installation.source ?? t("updatesLogic.pi_package.716145a9");
     return `${source}${scope}`;
   }
-  if (installation.kind === "npm-global") return "global npm package";
-  if (installation.kind === "local") return "local checkout";
-  if (installation.kind === "docker") return installation.dockerMode === "dev" ? "Docker development runtime" : "Docker runtime";
-  return "installation unknown";
+  if (installation.kind === "npm-global") return t("updatesLogic.global_npm_package.d87a26a9");
+  if (installation.kind === "local") return t("updatesLogic.local_checkout.e5505e31");
+  if (installation.kind === "docker") return installation.dockerMode === "dev" ? t("updatesLogic.docker_development_runtime.ff5d1b2d") : t("updatesLogic.docker_runtime.4726dda4");
+  return t("updatesLogic.installation_unknown.27bc9914");
 }

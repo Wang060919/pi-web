@@ -1,3 +1,4 @@
+import { localizedText, t } from "../../../shared/i18n";
 import { piWebApi, type PiWebStatusResponse } from "../api";
 import { selectedMachineId, type GetState, type SetState } from "./types";
 
@@ -63,6 +64,6 @@ export class PiWebStatusController {
 }
 
 function throwForUnsuccessfulReleaseCheck(status: PiWebStatusResponse): void {
-  if (status.release.error !== undefined) throw new Error(`PI WEB update check failed: ${status.release.error}`);
-  if (status.release.skipped === true) throw new Error("PI WEB update check was skipped because remote version checks are disabled by offline/version-check settings");
+  if (status.release.error !== undefined) throw new Error(localizedText("piWebStatusController.pi_web_update_check_failed.4e7ee2fd")`PI WEB update check failed: ${status.release.error}`);
+  if (status.release.skipped === true) throw new Error(t("piWebStatusController.pi_web_update_check_was_skipped_because.1a0a4fc1"));
 }

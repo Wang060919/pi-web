@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import type { ContentRenderingCapability, PluginCapability, PiWebPlugin, PluginActivationContext, PluginActivationResult } from "@jmfederico/pi-web/plugin-api";
 import { FilesCodeViewer } from "./FilesCodeViewer";
 import { WorkspaceFilesPanel } from "./FilesPanel";
@@ -54,7 +55,7 @@ export function activateFilesPlugin(context: PluginActivationContext, filesRunti
     contributions: {
       workspacePanels: [{
         id: "workspace.files",
-        title: "Files",
+        title: t("pi-web-plugin.files.0f7e84cd"),
         icon,
         order: 10,
         invalidationResources: ["workspace.files"],
@@ -65,19 +66,19 @@ export function activateFilesPlugin(context: PluginActivationContext, filesRunti
       actions: [
         {
           id: "view.files",
-          title: "Go to Files",
+          title: t("pi-web-plugin.go_to_files.45406161"),
           shortcut: "mod+2",
           shortcutAliases: ["core:view.files"],
-          group: "Navigation",
+          group: t("pi-web-plugin.navigation.b81a6fb1"),
           enabled: (runtimeContext) => runtimeContext.state.selectedWorkspace !== undefined,
           run: (runtimeContext) => { runtimeContext.selectWorkspaceTool(panelId); },
         },
         {
           id: "workspace.refresh-files",
-          title: "Refresh Files",
+          title: t("pi-web-plugin.refresh_files.5f09df38"),
           shortcut: "mod+shift+f",
           shortcutAliases: ["core:workspace.refresh-files"],
-          group: "Workspace",
+          group: t("pi-web-plugin.workspace.70fd2ad5"),
           enabled: (runtimeContext) => runtimeContext.state.selectedWorkspace !== undefined,
           run: (runtimeContext) => runtimeContext.refreshWorkspacePanels(panelId),
         },

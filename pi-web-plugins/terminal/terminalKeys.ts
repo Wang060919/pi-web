@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 export type TerminalSoftKeyId =
   | "escape"
   | "tab"
@@ -33,27 +34,27 @@ export interface TerminalSoftKeyDefinition {
 }
 
 export const TERMINAL_SOFT_KEYS: readonly TerminalSoftKeyDefinition[] = [
-  { id: "escape", label: "Esc", ariaLabel: "Escape", title: "Send Escape" },
-  { id: "tab", label: "Tab", ariaLabel: "Tab", title: "Send Tab" },
-  { id: "ctrl-c", label: "Ctrl+C", ariaLabel: "Control C", title: "Interrupt the foreground process" },
-  { id: "ctrl-d", label: "Ctrl+D", ariaLabel: "Control D", title: "Send EOF / close input" },
-  { id: "ctrl-z", label: "Ctrl+Z", ariaLabel: "Control Z", title: "Suspend the foreground process" },
-  { id: "ctrl-l", label: "Ctrl+L", ariaLabel: "Control L", title: "Clear / redraw the terminal" },
-  { id: "ctrl-r", label: "Ctrl+R", ariaLabel: "Control R", title: "Reverse search history" },
-  { id: "ctrl-u", label: "Ctrl+U", ariaLabel: "Control U", title: "Delete to the start of the line" },
-  { id: "ctrl-w", label: "Ctrl+W", ariaLabel: "Control W", title: "Delete the previous word" },
-  { id: "arrow-left", label: "←", ariaLabel: "Left arrow", title: "Move left" },
-  { id: "arrow-up", label: "↑", ariaLabel: "Up arrow", title: "Move up / previous command" },
-  { id: "arrow-down", label: "↓", ariaLabel: "Down arrow", title: "Move down / next command" },
-  { id: "arrow-right", label: "→", ariaLabel: "Right arrow", title: "Move right" },
-  { id: "home", label: "Home", ariaLabel: "Home", title: "Move to the start" },
-  { id: "end", label: "End", ariaLabel: "End", title: "Move to the end" },
-  { id: "page-up", label: "PgUp", ariaLabel: "Page up", title: "Page up" },
-  { id: "page-down", label: "PgDn", ariaLabel: "Page down", title: "Page down" },
-  { id: "delete", label: "Del", ariaLabel: "Delete", title: "Delete forward" },
-  { id: "backspace", label: "⌫", ariaLabel: "Backspace", title: "Backspace" },
-  { id: "meta-backward-word", label: "M-B", ariaLabel: "Meta B", title: "Move backward one word" },
-  { id: "meta-forward-word", label: "M-F", ariaLabel: "Meta F", title: "Move forward one word" },
+  { id: "escape", label: "Esc", ariaLabel: "Escape", title: t("terminalKeys.send_escape.b637b731") },
+  { id: "tab", label: "Tab", ariaLabel: "Tab", title: t("terminalKeys.send_tab.efc35787") },
+  { id: "ctrl-c", label: "Ctrl+C", ariaLabel: "Control C", title: t("terminalKeys.interrupt_the_foreground_process.67d92232") },
+  { id: "ctrl-d", label: "Ctrl+D", ariaLabel: "Control D", title: t("terminalKeys.send_eof_close_input.1d24c924") },
+  { id: "ctrl-z", label: "Ctrl+Z", ariaLabel: "Control Z", title: t("terminalKeys.suspend_the_foreground_process.c041aebe") },
+  { id: "ctrl-l", label: "Ctrl+L", ariaLabel: "Control L", title: t("terminalKeys.clear_redraw_the_terminal.f961b6d2") },
+  { id: "ctrl-r", label: "Ctrl+R", ariaLabel: "Control R", title: t("terminalKeys.reverse_search_history.064d1bdf") },
+  { id: "ctrl-u", label: "Ctrl+U", ariaLabel: "Control U", title: t("terminalKeys.delete_to_the_start_of_the_line.ac52f80f") },
+  { id: "ctrl-w", label: "Ctrl+W", ariaLabel: "Control W", title: t("terminalKeys.delete_the_previous_word.37bc1a1e") },
+  { id: "arrow-left", label: "←", ariaLabel: t("terminalKeys.left_arrow.90a989bb"), title: t("terminalKeys.move_left.cfcdde98") },
+  { id: "arrow-up", label: "↑", ariaLabel: t("terminalKeys.up_arrow.8c7741bb"), title: t("terminalKeys.move_up_previous_command.43d1b134") },
+  { id: "arrow-down", label: "↓", ariaLabel: t("terminalKeys.down_arrow.1f34a5c1"), title: t("terminalKeys.move_down_next_command.b441d674") },
+  { id: "arrow-right", label: "→", ariaLabel: t("terminalKeys.right_arrow.bf49499d"), title: t("terminalKeys.move_right.711b6efe") },
+  { id: "home", label: "Home", ariaLabel: "Home", title: t("terminalKeys.move_to_the_start.da060867") },
+  { id: "end", label: "End", ariaLabel: "End", title: t("terminalKeys.move_to_the_end.62c6d9fa") },
+  { id: "page-up", label: "PgUp", ariaLabel: t("terminalKeys.page_up.d23d8249"), title: t("terminalKeys.page_up.1c62b44a") },
+  { id: "page-down", label: "PgDn", ariaLabel: t("terminalKeys.page_down.a9f0a608"), title: t("terminalKeys.page_down.d5c3a494") },
+  { id: "delete", label: "Del", ariaLabel: t("terminalKeys.delete.9755d175"), title: t("terminalKeys.delete_forward.62e6e4f4") },
+  { id: "backspace", label: "⌫", ariaLabel: t("terminalKeys.backspace.6edf6eef"), title: t("terminalKeys.backspace.4863bc7f") },
+  { id: "meta-backward-word", label: "M-B", ariaLabel: "Meta B", title: t("terminalKeys.move_backward_one_word.86571e3e") },
+  { id: "meta-forward-word", label: "M-F", ariaLabel: "Meta F", title: t("terminalKeys.move_forward_one_word.7be9e6f7") },
 ];
 
 const ESC = "\x1b";

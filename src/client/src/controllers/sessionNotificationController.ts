@@ -1,3 +1,4 @@
+import { localizedText } from "../../../shared/i18n";
 import { api as defaultApi, type SessionInfo } from "../api";
 import type { AppState } from "../appState";
 import {
@@ -172,7 +173,7 @@ export class SessionNotificationController {
           ...current,
           optimisticDismissedIds: current.optimisticDismissedIds.filter((id) => id !== notificationId),
         }));
-        this.setState({ error: `Failed to dismiss notification: ${errorMessage(error)}` });
+        this.setState({ error: localizedText("sessionNotificationController.failed_to_dismiss_notification.3a180852")`Failed to dismiss notification: ${errorMessage(error)}` });
         await this.refreshSelectedSession({ id: target.sessionId, cwd: target.cwd }, target.machineId);
       }
     } finally {
@@ -203,7 +204,7 @@ export class SessionNotificationController {
           delete next.optimisticDismissAllThrough;
           return next;
         });
-        this.setState({ error: `Failed to dismiss session notifications: ${errorMessage(error)}` });
+        this.setState({ error: localizedText("sessionNotificationController.failed_to_dismiss_session_notifications.82046265")`Failed to dismiss session notifications: ${errorMessage(error)}` });
         await this.refreshSelectedSession({ id: target.sessionId, cwd: target.cwd }, target.machineId);
       }
     } finally {

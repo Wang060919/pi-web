@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, css, html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -110,7 +111,7 @@ interface ModelPickerRow {
  */
 @customElement("model-picker")
 export class ModelPicker extends LitElement {
-  @property() override title = "Select Model";
+  @property() override title = t("ModelPicker.select_model.aba5a42c");
   /** Enabled-mode rows: the session's pickable models, pre-labeled by the host. */
   @property({ attribute: false }) options: CommandOption[] = [];
   /** All-mode rows, including enabled state and (on current servers) each model's natural catalog index. Workspace overrides mark rows `editable: false`. */
@@ -144,7 +145,7 @@ export class ModelPicker extends LitElement {
 
   override render() {
     const rows = this.visibleRows();
-    return html`
+    return localizedTemplate("ModelPicker.template.3fc1af0e", html)`
       <modal-surface
         .onClose=${() => this.onCancel?.()}
         .initialFocus=${"input.search"}
@@ -156,10 +157,10 @@ export class ModelPicker extends LitElement {
           <button aria-label="Close" @click=${() => this.onCancel?.()}>×</button>
         </header>
         <div class="scope-toggle" role="group" aria-label="Model scope">
-          ${this.renderScopeToggleButton("enabled", "Enabled")}
-          ${this.renderScopeToggleButton("all", "All models")}
+          ${this.renderScopeToggleButton("enabled", t("ModelPicker.enabled.2f79f806"))}
+          ${this.renderScopeToggleButton("all", t("ModelPicker.all_models.38ebb146"))}
         </div>
-        ${!this.modelScopeEditable ? html`
+        ${!this.modelScopeEditable ? localizedTemplate("ModelPicker.project_override_showing_models_from_this_workspace.4a934e19", html)`
           <div class="scope-notice" role="status">
             <strong>Project override</strong>
             <span>Showing models from this workspace’s <code>.pi/settings.json</code>. Model availability selection is disabled.</span>
@@ -173,12 +174,12 @@ export class ModelPicker extends LitElement {
         <div
           class="options"
           role="region"
-          aria-label=${this.mode === "all" ? "All models in catalog order" : "Enabled models"}
+          aria-label=${this.mode === "all" ? t("ModelPicker.all_models_in_catalog_order.7e24a30c") : t("ModelPicker.enabled_models.978d2308")}
           tabindex="0"
           aria-busy=${this.membershipChangePending ? "true" : "false"}
         >
           ${this.mode === "all" ? this.renderCatalogList() : this.renderEnabledList()}
-          ${rows.length === 0 ? html`<div class="empty">No matching options</div>` : null}
+          ${rows.length === 0 ? localizedTemplate("ModelPicker.no_matching_options.0f4a8c1b", html)`<div class="empty">No matching options</div>` : null}
         </div>
       </modal-surface>
     `;
@@ -229,16 +230,16 @@ export class ModelPicker extends LitElement {
 
   private renderToggleAllButton(): TemplateResult {
     const plan = modelCatalogToggleAllPlan(this.catalog, this.selectedValue);
-    const label = plan.mode === "all" ? "Select all" : "Deselect all";
+    const label = plan.mode === "all" ? t("ModelPicker.select_all.2e61fd82") : t("ModelPicker.deselect_all.7a0a40b3");
     return html`
       <button
         class="toggle-all"
         ?disabled=${!this.modelScopeEditable || !plan.canApply || !plan.hasChanges || this.toggleAllPending || this.pendingToggles.size > 0}
         aria-describedby="model-scope-status"
-        title=${!this.modelScopeEditable ? "Workspace settings control model availability" : !plan.canApply ? "The current model is unavailable" : nothing}
+        title=${!this.modelScopeEditable ? t("ModelPicker.workspace_settings_control_model_availability.b9e1bbe6") : !plan.canApply ? t("ModelPicker.the_current_model_is_unavailable.752f9de6") : nothing}
         @click=${() => { this.requestToggleAll(); }}
       >${label}</button>
-      <span id="model-scope-status" class="scope-status" aria-live="polite">${this.membershipChangePending ? "Updating model availability" : !this.modelScopeEditable ? "Workspace settings control model availability" : !plan.canApply ? "The current model is unavailable" : nothing}</span>
+      <span id="model-scope-status" class="scope-status" aria-live="polite">${this.membershipChangePending ? t("ModelPicker.updating_model_availability.bd9c2a77") : !this.modelScopeEditable ? t("ModelPicker.workspace_settings_control_model_availability.1ead34c7") : !plan.canApply ? t("ModelPicker.the_current_model_is_unavailable.5349ac19") : nothing}</span>
     `;
   }
 
@@ -283,7 +284,7 @@ export class ModelPicker extends LitElement {
       await this.onSetDefault(value);
     } catch (error: unknown) {
       // Hosts own user-facing errors; keep unexpected callback rejections observable.
-      console.warn("Failed to set default model", error);
+      console.warn(t("ModelPicker.failed_to_set_default_model.3d3541ef"), error);
     } finally {
       this.defaultPending = false;
     }
@@ -300,8 +301,8 @@ export class ModelPicker extends LitElement {
     const protectsCurrentModel = value === this.selectedValue && entry.enabled;
     const membershipDisabled = !this.modelScopeEditable || this.membershipChangePending || protectsCurrentModel;
     const membershipLabel = !this.modelScopeEditable
-      ? `Model availability for ${value} is controlled by workspace settings`
-      : protectsCurrentModel ? `Current model ${value} cannot be deselected` : `${entry.enabled ? "Disable" : "Enable"} ${value}`;
+      ? localizedText("ModelPicker.model_availability_for_is_controlled_by_workspace.c68b85eb")`Model availability for ${value} is controlled by workspace settings`
+      : protectsCurrentModel ? localizedText("ModelPicker.current_model_cannot_be_deselected.788077d4")`Current model ${value} cannot be deselected` : `${entry.enabled ? t("ModelPicker.disable.5229f1ce") : t("ModelPicker.enable.75c229fa")} ${value}`;
     return html`
       <div class="catalog-row ${selected ? "selected" : ""}" data-model-value=${value} ${scrollWhenSelected(selected, value)}>
         <input
@@ -309,7 +310,7 @@ export class ModelPicker extends LitElement {
           .checked=${entry.enabled}
           ?disabled=${membershipDisabled}
           aria-label=${membershipLabel}
-          title=${!this.modelScopeEditable ? "Workspace settings control model availability" : protectsCurrentModel ? "The current model must remain enabled" : nothing}
+          title=${!this.modelScopeEditable ? t("ModelPicker.workspace_settings_control_model_availability.dcd92cd6") : protectsCurrentModel ? t("ModelPicker.the_current_model_must_remain_enabled.0364beee") : nothing}
           @focus=${() => { this.selectedIndex = index; }}
           @click=${(event: MouseEvent) => { this.handleEnableToggleClick(entry, event); }}
         />
@@ -321,7 +322,7 @@ export class ModelPicker extends LitElement {
           @focus=${() => { this.selectedIndex = index; }}
           @click=${(event: MouseEvent) => { this.requestEnabledToggle(entry, event.currentTarget instanceof HTMLElement ? event.currentTarget : undefined); }}
         >
-          <span>${entry.id}${value === this.selectedValue ? " ✓ current" : ""}</span>
+          <span>${entry.id}${value === this.selectedValue ? t("ModelPicker.current.3bba53fd") : ""}</span>
           <small>${entry.provider}</small>
         </button>
         ${this.renderDefaultPin(value, entry.name ?? entry.id, entry.enabled)}
@@ -433,7 +434,7 @@ export class ModelPicker extends LitElement {
     try {
       await this.onSetScope?.(mode);
     } catch (error: unknown) {
-      console.warn(`Failed to ${mode === "all" ? "enable all models" : "keep only the current model"}`, error);
+      console.warn(`Failed to ${mode === "all" ? t("ModelPicker.enable_all_models.eefd67ea") : t("ModelPicker.keep_only_the_current_model.9b8c5580")}`, error);
     } finally {
       this.toggleAllPending = false;
     }
@@ -445,7 +446,7 @@ export class ModelPicker extends LitElement {
     } catch (error: unknown) {
       // Hosts report toggle failures through the app error state; a throwing
       // callback is a wiring bug, so it stays observable here too.
-      console.warn(`Failed to toggle model ${value}`, error);
+      console.warn(localizedText("ModelPicker.failed_to_toggle_model.f22cdfcb")`Failed to toggle model ${value}`, error);
     } finally {
       const settled = new Set(this.pendingToggles);
       settled.delete(value);

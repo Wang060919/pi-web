@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../../shared/i18n";
 import { css, html, LitElement, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import type { PiWebConfigResponse, PiWebConfigValues } from "../../api";
@@ -12,7 +13,7 @@ export class SettingsSessiondPanel extends LitElement {
   @property({ type: Boolean }) saving = false;
   @property() error = "";
   @property() savedMessage = "";
-  @property() targetLabel = "local (local gateway)";
+  @property() targetLabel = t("SettingsSessiondPanel.local_local_gateway.27222439");
   @property({ attribute: false }) onReload?: () => void | Promise<void>;
   @property({ attribute: false }) onSave?: (config: PiWebConfigValues) => void | Promise<void>;
 
@@ -27,7 +28,7 @@ export class SettingsSessiondPanel extends LitElement {
     const effectiveSubsessions = config?.effectiveConfig.subsessions === true && effectiveSpawn;
     const askUserOverridden = config?.envOverrides.askUser === true;
     const effectiveAskUser = config?.effectiveConfig.askUser === true;
-    return html`
+    return localizedTemplate("SettingsSessiondPanel.template.26f9a698", html)`
       <settings-panel-frame
         heading="Session daemon"
         .description=${sessiondDescription(this.targetLabel)}
@@ -36,7 +37,7 @@ export class SettingsSessiondPanel extends LitElement {
         .notices=${this.panelNotices()}
         .onAction=${this.onReload}
       >
-        ${config === undefined ? this.renderUnavailableConfigState() : html`
+        ${config === undefined ? this.renderUnavailableConfigState() : localizedTemplate("SettingsSessiondPanel.config_file_allow_agents_to_start_sessions.534620de", html)`
           <div class="config-path-card">
             <span>Config file</span>
             <code>${config.path}</code>
@@ -44,7 +45,7 @@ export class SettingsSessiondPanel extends LitElement {
           <div class="field">
             <span class="field-heading">
               <span>Allow agents to start sessions</span>
-              ${spawnOverridden ? html`<span class="override-badge">environment override</span>` : null}
+              ${spawnOverridden ? localizedTemplate("SettingsSessiondPanel.environment_override.d2ca5df0", html)`<span class="override-badge">environment override</span>` : null}
             </span>
             <label class="toggle">
               <input
@@ -60,7 +61,7 @@ export class SettingsSessiondPanel extends LitElement {
           <div class="field">
             <span class="field-heading">
               <span>Allow agents to start tracked subsessions</span>
-              ${subsessionsOverridden ? html`<span class="override-badge">environment override</span>` : null}
+              ${subsessionsOverridden ? localizedTemplate("SettingsSessiondPanel.environment_override.e3b11162", html)`<span class="override-badge">environment override</span>` : null}
             </span>
             <label class="toggle">
               <input
@@ -76,7 +77,7 @@ export class SettingsSessiondPanel extends LitElement {
           <div class="field">
             <span class="field-heading">
               <span>Allow agents to ask questions</span>
-              ${askUserOverridden ? html`<span class="override-badge">environment override</span>` : null}
+              ${askUserOverridden ? localizedTemplate("SettingsSessiondPanel.environment_override.dc37fc31", html)`<span class="override-badge">environment override</span>` : null}
             </span>
             <label class="toggle">
               <input
@@ -93,9 +94,9 @@ export class SettingsSessiondPanel extends LitElement {
           <section class="effective-card" aria-label="Desired session daemon configuration summary">
             <h3>Desired after environment overrides</h3>
             <dl>
-              <div><dt>Spawn sessions</dt><dd>${effectiveSpawn ? "Enabled" : html`<span class="muted">Disabled</span>`}</dd></div>
-              <div><dt>Subsessions</dt><dd>${effectiveSubsessions ? "Enabled" : html`<span class="muted">Disabled</span>`}</dd></div>
-              <div><dt>Ask questions</dt><dd>${effectiveAskUser ? "Enabled" : html`<span class="muted">Disabled</span>`}</dd></div>
+              <div><dt>Spawn sessions</dt><dd>${effectiveSpawn ? t("SettingsSessiondPanel.enabled.68bcbbec") : localizedTemplate("SettingsSessiondPanel.disabled.ef648582", html)`<span class="muted">Disabled</span>`}</dd></div>
+              <div><dt>Subsessions</dt><dd>${effectiveSubsessions ? t("SettingsSessiondPanel.enabled.8c68f207") : localizedTemplate("SettingsSessiondPanel.disabled.2f767cdd", html)`<span class="muted">Disabled</span>`}</dd></div>
+              <div><dt>Ask questions</dt><dd>${effectiveAskUser ? t("SettingsSessiondPanel.enabled.61d53259") : localizedTemplate("SettingsSessiondPanel.disabled.2854ff8e", html)`<span class="muted">Disabled</span>`}</dd></div>
             </dl>
           </section>
         `}
@@ -111,7 +112,7 @@ export class SettingsSessiondPanel extends LitElement {
   }
 
   private renderUnavailableConfigState(): TemplateResult {
-    return html`<div class="loading-card">${this.loading ? "Loading configuration…" : "Configuration is unavailable. Reload to try again."}</div>`;
+    return html`<div class="loading-card">${this.loading ? t("SettingsSessiondPanel.loading_configuration.8f0bd4b6") : t("SettingsSessiondPanel.configuration_is_unavailable_reload_to_try_again.f9b662a8")}</div>`;
   }
 
   private async toggleSpawnSessions(event: Event): Promise<void> {
@@ -157,7 +158,7 @@ export class SettingsSessiondPanel extends LitElement {
 }
 
 export function sessiondDescription(targetLabel: string): string {
-  return `Agent tool capabilities for sessions on ${targetLabel}. Changes are saved immediately but only take effect after the session daemon on that machine restarts.`;
+  return localizedText("SettingsSessiondPanel.agent_tool_capabilities_for_sessions_on_changes.b540a794")`Agent tool capabilities for sessions on ${targetLabel}. Changes are saved immediately but only take effect after the session daemon on that machine restarts.`;
 }
 
 export interface SessiondPanelNoticeContext {

@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "./i18n.js";
 import type { PiWebPlugin } from "@jmfederico/pi-web/plugin-api";
 import { RELAYS_ROOT } from "./relayDiscovery.js";
 import { relayIdentityFromMetadata } from "./relayIdentity.js";
@@ -14,9 +15,9 @@ const plugin = {
         actions: [
           {
             id: "workspace.open-relays",
-            title: "Open Workspace Relays",
-            description: `Open the workspace Relays tab. Relays live in ${RELAYS_ROOT}.`,
-            group: "Workspace",
+            title: t("pi-web-plugin.open_workspace_relays.2c9391ea"),
+            description: localizedText("pi-web-plugin.open_the_workspace_relays_tab_relays_live.46197c57")`Open the workspace Relays tab. Relays live in ${RELAYS_ROOT}.`,
+            group: t("pi-web-plugin.workspace.cbb6ea13"),
             enabled: (context) => context.state.selectedWorkspace !== undefined,
             run: (context) => {
               if (context.state.selectedWorkspace === undefined) return;
@@ -32,12 +33,12 @@ const plugin = {
               if (identity === undefined) return [];
               return [{
                 type: "render",
-                render: () => html`
+                render: () => localizedTemplate("pi-web-plugin.relay.53f89c7a", html)`
                   <button
                     type="button"
                     style="border:0; padding:0; background:transparent; color:var(--pi-accent); font:inherit; text-align:start; overflow-wrap:anywhere; cursor:pointer"
                     title=${identity.packetPath}
-                    aria-label=${`Open Relay ${identity.relayName}, leg ${identity.leg}`}
+                    aria-label=${localizedText("pi-web-plugin.open_relay_leg.649d4da0")`Open Relay ${identity.relayName}, leg ${identity.leg}`}
                     @click=${() => context.navigate({
                       machineId: context.machine.id,
                       projectId: context.workspace.projectId,
@@ -55,7 +56,7 @@ const plugin = {
         workspacePanels: [
           {
             id: "workspace.relays",
-            title: "Relays",
+            title: t("pi-web-plugin.relays.45cf24d0"),
             icon: svg`
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 17H7A5 5 0 0 1 7 7h2"></path>

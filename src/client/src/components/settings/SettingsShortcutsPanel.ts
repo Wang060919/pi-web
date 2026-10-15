@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../../shared/i18n";
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { AppAction } from "../../actions";
@@ -10,7 +11,7 @@ import type { SettingsNotice } from "./SettingsPanelFrame";
 const RECORD_SHORTCUT_LISTENER_OPTIONS = { capture: true } as const;
 
 function renderShortcutsDescription(): TemplateResult {
-  return html`Edit app shortcuts by action. Type a shortcut such as <code>mod+k</code> or <code>g p</code>, record one from the keyboard, disable it with None, or reset it to the default. Unmodified app shortcuts work outside editable fields. Composer send bindings accept one key combination and take priority inside the editor; unassigned Enter and Shift+Enter insert newlines. Touch or narrow screen applies when the browser reports a coarse primary pointer (typically touch) or a viewport at most 760px wide; otherwise, desktop applies. When app shortcuts conflict, custom shortcuts win before defaults; ties are resolved by action id, and shorter shortcuts shadow longer sequences with the same prefix.`;
+  return localizedTemplate("SettingsShortcutsPanel.edit_app_shortcuts_by_action_type_a.62a52306", html)`Edit app shortcuts by action. Type a shortcut such as <code>mod+k</code> or <code>g p</code>, record one from the keyboard, disable it with None, or reset it to the default. Unmodified app shortcuts work outside editable fields. Composer send bindings accept one key combination and take priority inside the editor; unassigned Enter and Shift+Enter insert newlines. Touch or narrow screen applies when the browser reports a coarse primary pointer (typically touch) or a viewport at most 760px wide; otherwise, desktop applies. When app shortcuts conflict, custom shortcuts win before defaults; ties are resolved by action id, and shorter shortcuts shadow longer sequences with the same prefix.`;
 }
 
 @customElement("settings-shortcuts-panel")
@@ -42,7 +43,7 @@ export class SettingsShortcutsPanel extends LitElement {
 
     const token = shortcutTokenFromEvent(event);
     if (token === undefined) {
-      this.localError = "Press a letter, number, punctuation, function, or navigation key. Press Esc to cancel recording.";
+      this.localError = t("SettingsShortcutsPanel.press_a_letter_number_punctuation_function_or.e40953a3");
       return;
     }
     const tokens = [...recording.tokens, token];
@@ -69,7 +70,7 @@ export class SettingsShortcutsPanel extends LitElement {
   override render(): TemplateResult {
     const groups = shortcutGroups([...composerShortcutActions(), ...this.actions]);
     const shortcutResolutions = this.shortcutResolutions();
-    return html`
+    return localizedTemplate("SettingsShortcutsPanel.template.ea509ce7", html)`
       <settings-panel-frame
         heading="Keyboard shortcuts"
         .description=${renderShortcutsDescription()}
@@ -78,10 +79,10 @@ export class SettingsShortcutsPanel extends LitElement {
         .notices=${this.panelNotices()}
         .onAction=${this.onReload}
       >
-        ${this.configResponse === undefined && this.loading ? html`<div class="loading-card">Loading shortcuts…</div>` : html`
+        ${this.configResponse === undefined && this.loading ? localizedTemplate("SettingsShortcutsPanel.loading_shortcuts.7e2bb2b0", html)`<div class="loading-card">Loading shortcuts…</div>` : localizedTemplate("SettingsShortcutsPanel.config_file_shortcut_overrides_are_saved_under.ee0e1670", html)`
           <div class="config-path-card">
             <span>Config file</span>
-            <code>${this.configResponse?.path ?? "Unknown"}</code>
+            <code>${this.configResponse?.path ?? t("SettingsShortcutsPanel.unknown.86cdea82")}</code>
             <small>Shortcut overrides are saved under <code>shortcuts</code>. A value of <code>null</code> disables the action shortcut.</small>
           </div>
           <section class="shortcut-group">
@@ -95,7 +96,7 @@ export class SettingsShortcutsPanel extends LitElement {
             </label>
             <p>Keyboard shortcut only. Steer sends before the next model call; follow-up waits for the response to finish.</p>
           </section>
-          ${groups.length === 0 ? html`<div class="loading-card">No actions registered.</div>` : groups.map((group) => html`
+          ${groups.length === 0 ? localizedTemplate("SettingsShortcutsPanel.no_actions_registered.091cc85f", html)`<div class="loading-card">No actions registered.</div>` : groups.map((group) => html`
             <section class="shortcut-group">
               <h3>${group.name}</h3>
               <div class="shortcut-list">
@@ -134,18 +135,18 @@ export class SettingsShortcutsPanel extends LitElement {
     const displayState = hasDraft && inputText.trim() !== "" ? "custom" : state;
     const recordingHint = this.recordingHint(action.id);
     const conflictLabel = shortcutConflictLabel(resolution);
-    return html`
+    return localizedTemplate("SettingsShortcutsPanel.shortcut_save_none_reset.b33ef031", html)`
       <article class=${shortcutRowClass(resolution)}>
         <div class="shortcut-main">
           <strong>${action.title}</strong>
           ${action.description !== undefined && action.description !== "" ? html`<small>${action.description}</small>` : null}
           <small class="shortcut-id">${action.id}</small>
-          <small>${action.shortcut !== undefined && action.shortcut !== "" ? html`Default: <kbd>${formatShortcut(action.shortcut)}</kbd>` : "No default shortcut"}</small>
+          <small>${action.shortcut !== undefined && action.shortcut !== "" ? localizedTemplate("SettingsShortcutsPanel.default.a883721c", html)`Default: <kbd>${formatShortcut(action.shortcut)}</kbd>` : t("SettingsShortcutsPanel.no_default_shortcut.bc668391")}</small>
         </div>
         <div class="shortcut-editor">
           <div class="shortcut-status">
-            ${previewShortcut !== undefined && previewShortcut !== "" ? html`<kbd>${formatShortcut(previewShortcut)}</kbd>` : html`<span class="unassigned">${state === "disabled" ? "Disabled" : "Unassigned"}</span>`}
-            <small class=${displayState}>${shortcutStateLabel(displayState)}${hasDraft ? " · Unsaved" : ""}</small>
+            ${previewShortcut !== undefined && previewShortcut !== "" ? html`<kbd>${formatShortcut(previewShortcut)}</kbd>` : html`<span class="unassigned">${state === "disabled" ? t("SettingsShortcutsPanel.disabled.c07f9edd") : t("SettingsShortcutsPanel.unassigned.bfffde77")}</span>`}
+            <small class=${displayState}>${shortcutStateLabel(displayState)}${hasDraft ? t("SettingsShortcutsPanel.unsaved.0edb4129") : ""}</small>
             ${conflictLabel === undefined ? null : html`<small class=${shortcutConflictClass(resolution)}>${conflictLabel}</small>`}
           </div>
           <label class="shortcut-input-label">
@@ -165,7 +166,7 @@ export class SettingsShortcutsPanel extends LitElement {
           ${recordingHint !== "" ? html`<small class="recording-hint">${recordingHint}</small>` : null}
           <div class="shortcut-actions">
             <button class="primary" ?disabled=${this.loading || this.saving || !hasDraft || inputText.trim() === ""} @click=${() => { void this.saveShortcut(action); }}>Save</button>
-            <button ?disabled=${this.loading || this.saving} @click=${() => { void this.toggleRecording(action.id); }}>${this.recording?.actionId === action.id ? "Cancel recording" : "Record"}</button>
+            <button ?disabled=${this.loading || this.saving} @click=${() => { void this.toggleRecording(action.id); }}>${this.recording?.actionId === action.id ? t("SettingsShortcutsPanel.cancel_recording.3f58f867") : t("SettingsShortcutsPanel.record.0391b747")}</button>
             <button ?disabled=${this.loading || this.saving || configured === null} @click=${() => { void this.setShortcutNone(action); }}>None</button>
             <button ?disabled=${this.loading || this.saving || !hasConfiguredShortcut} @click=${() => { void this.resetShortcut(action); }}>Reset</button>
           </div>
@@ -185,8 +186,8 @@ export class SettingsShortcutsPanel extends LitElement {
   private recordingHint(actionId: string): string {
     const recording = this.recording;
     if (recording?.actionId !== actionId) return "";
-    if (recording.tokens.length === 0) return "Recording: press Ctrl/⌘ or Alt with a key. Press Esc to cancel.";
-    return `Recording: ${formatShortcut(recording.tokens.join(" "))}. Press another key to add a sequence, or wait to finish.`;
+    if (recording.tokens.length === 0) return t("SettingsShortcutsPanel.recording_press_ctrl_or_alt_with_a.e894d7d3");
+    return localizedText("SettingsShortcutsPanel.recording_press_another_key_to_add_a.8c83475a")`Recording: ${formatShortcut(recording.tokens.join(" "))}. Press another key to add a sequence, or wait to finish.`;
   }
 
   private updateDraft(actionId: string, value: string): void {
@@ -203,7 +204,7 @@ export class SettingsShortcutsPanel extends LitElement {
       return;
     }
     if (isComposerShortcut(action.id) && parsed.tokens.length !== 1) {
-      this.localError = "Composer send shortcuts must be a single key combination, not a sequence.";
+      this.localError = t("SettingsShortcutsPanel.composer_send_shortcuts_must_be_a_single.d10b8e4c");
       return;
     }
     this.localError = "";
@@ -381,25 +382,25 @@ function shortcutConflictClass(resolution: ShortcutBindingResolution | undefined
 
 function shortcutConflictLabel(resolution: ShortcutBindingResolution | undefined): string | undefined {
   if (resolution === undefined) return undefined;
-  if (!resolution.active) return `Shadowed by ${resolution.shadowedBy?.action.title ?? "another action"}`;
+  if (!resolution.active) return localizedText("SettingsShortcutsPanel.shadowed_by.64fcd231")`Shadowed by ${resolution.shadowedBy?.action.title ?? t("SettingsShortcutsPanel.another_action.fc68979c")}`;
   const shadowedCount = resolution.shadows.length;
   if (shadowedCount === 0) return undefined;
   const shadowedNames = resolution.shadows.slice(0, 2).map((binding) => binding.action.title).join(", ");
-  const suffix = shadowedCount > 2 ? `, +${String(shadowedCount - 2)} more` : "";
-  return `Shadows ${String(shadowedCount)} ${shadowedCount === 1 ? "action" : "actions"}: ${shadowedNames}${suffix}`;
+  const suffix = shadowedCount > 2 ? localizedText("SettingsShortcutsPanel.more.5c2687c3")`, +${String(shadowedCount - 2)} more` : "";
+  return localizedText("SettingsShortcutsPanel.shadows.9daaca06")`Shadows ${String(shadowedCount)} ${shadowedCount === 1 ? "action" : "actions"}: ${shadowedNames}${suffix}`;
 }
 
 function shortcutGroups(actions: AppAction[]): { name: string; actions: AppAction[] }[] {
   const grouped = new Map<string, AppAction[]>();
   for (const action of [...actions].sort(compareActions)) {
-    const group = action.group ?? "Other";
+    const group = action.group ?? t("SettingsShortcutsPanel.other.46cc7693");
     grouped.set(group, [...(grouped.get(group) ?? []), action]);
   }
   return [...grouped.entries()].map(([name, groupActions]) => ({ name, actions: groupActions }));
 }
 
 function compareActions(left: AppAction, right: AppAction): number {
-  return (left.group ?? "Other").localeCompare(right.group ?? "Other") || left.title.localeCompare(right.title);
+  return (left.group ?? t("SettingsShortcutsPanel.other.5dc8a71f")).localeCompare(right.group ?? t("SettingsShortcutsPanel.other.5e3fbdb1")) || left.title.localeCompare(right.title);
 }
 
 function withoutShortcutPreferences(shortcuts: PiWebShortcutConfig, actionIds: readonly string[]): PiWebShortcutConfig {
@@ -422,10 +423,10 @@ function shortcutState(action: AppAction, shortcuts: PiWebShortcutConfig | undef
 
 function shortcutStateLabel(state: ShortcutState): string {
   switch (state) {
-    case "default": return "Default";
-    case "custom": return "Custom";
-    case "disabled": return "Disabled";
-    case "unassigned": return "No default";
+    case "default": return t("SettingsShortcutsPanel.default.369362c4");
+    case "custom": return t("SettingsShortcutsPanel.custom.cf1f602b");
+    case "disabled": return t("SettingsShortcutsPanel.disabled.6b02229a");
+    case "unassigned": return t("SettingsShortcutsPanel.no_default.54b2a71e");
   }
 }
 

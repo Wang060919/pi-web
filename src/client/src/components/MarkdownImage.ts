@@ -1,3 +1,4 @@
+import { t } from "../../../shared/i18n";
 import { LitElement, css, html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { ImageDimensions } from "../../../shared/sessionMedia";
@@ -47,7 +48,7 @@ export class MarkdownImage extends LitElement {
       .source=${!this.loadingDisabled && this.previewUrl !== "" && (!this.outside || this.approved) ? this.previewUrl : undefined}
       .dimensions=${this.dimensions} .onIntrinsicDimensions=${this.rememberDimensions}
       .requestDisabled=${this.loadingDisabled || !this.outside || this.previewUrl === ""}
-      .pendingLabel=${this.loadingDisabled ? "Image loading disabled" : "Show image"}
+      .pendingLabel=${this.loadingDisabled ? t("MarkdownImage.image_loading_disabled.fcd8b3ac") : t("MarkdownImage.show_image.d38863a7")}
       .description=${this.description} .label=${this.path}
       @image-request=${() => { this.showImage(); }}
     ></pi-web-image-presentation>`;

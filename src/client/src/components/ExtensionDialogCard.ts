@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -18,11 +19,11 @@ const COUNTDOWN_TICK_MS = 1_000;
 /** Header status label for a closed extension dialog. */
 export function extensionDialogCloseLabel(reason: ExtensionDialogCloseReason): string {
   switch (reason) {
-    case "answered": return "Answered";
-    case "cancelled": return "Cancelled";
-    case "timeout": return "Timed out";
-    case "aborted": return "Aborted";
-    case "session-ended": return "Session ended";
+    case "answered": return t("ExtensionDialogCard.answered.9dcbf01a");
+    case "cancelled": return t("ExtensionDialogCard.cancelled.4c11d896");
+    case "timeout": return t("ExtensionDialogCard.timed_out.db6c2ca3");
+    case "aborted": return t("ExtensionDialogCard.aborted.64e1cad1");
+    case "session-ended": return t("ExtensionDialogCard.session_ended.d1650384");
   }
 }
 
@@ -33,14 +34,14 @@ export function extensionDialogCloseSummary(closed: ClosedExtensionDialog): stri
       const answer = closed.answer;
       // An answered close without an answer value breaks the wire contract;
       // the card still renders rather than crashing the transcript.
-      if (answer === undefined) return "Closed without an answer.";
-      if (typeof answer === "boolean") return `Answered: ${answer ? "Yes" : "No"}`;
-      return answer === "" ? "Answered with an empty response." : `Answered: ${answer}`;
+      if (answer === undefined) return t("ExtensionDialogCard.closed_without_an_answer.ae5451b6");
+      if (typeof answer === "boolean") return localizedText("ExtensionDialogCard.answered.be968566")`Answered: ${answer ? t("ExtensionDialogCard.yes.9f70286c") : t("ExtensionDialogCard.no.18fe4d07")}`;
+      return answer === "" ? t("ExtensionDialogCard.answered_with_an_empty_response.c2f28c9a") : localizedText("ExtensionDialogCard.answered.d6bca1f1")`Answered: ${answer}`;
     }
-    case "cancelled": return "Dismissed without an answer.";
-    case "timeout": return "No answer was given before the dialog timed out.";
-    case "aborted": return "The run ended before this dialog was answered.";
-    case "session-ended": return "The session ended before this dialog was answered.";
+    case "cancelled": return t("ExtensionDialogCard.dismissed_without_an_answer.27f8c8e5");
+    case "timeout": return t("ExtensionDialogCard.no_answer_was_given_before_the_dialog.c7d92685");
+    case "aborted": return t("ExtensionDialogCard.the_run_ended_before_this_dialog_was.d29f671c");
+    case "session-ended": return t("ExtensionDialogCard.the_session_ended_before_this_dialog_was.b8aa184b");
   }
 }
 
@@ -54,19 +55,19 @@ export function extensionDialogCountdownText(timeoutAt: string | undefined, nowM
   const deadline = Date.parse(timeoutAt);
   if (!Number.isFinite(deadline)) return undefined;
   const remainingMs = deadline - nowMs;
-  if (remainingMs <= 0) return "Auto-cancel imminent";
+  if (remainingMs <= 0) return t("ExtensionDialogCard.auto_cancel_imminent.d92a9e17");
   const seconds = Math.ceil(remainingMs / 1000);
   if (seconds >= 3600) {
     const hours = Math.floor(seconds / 3600);
     // Floor, not round: rounding yields "1h 60m" in the last half-minute of an hour.
     const minutes = Math.floor((seconds % 3600) / 60);
-    return `Auto-cancels in ${String(hours)}h ${String(minutes)}m`;
+    return localizedText("ExtensionDialogCard.auto_cancels_in_h_m.f0c36706")`Auto-cancels in ${String(hours)}h ${String(minutes)}m`;
   }
   if (seconds >= 60) {
     const minutes = Math.floor(seconds / 60);
-    return `Auto-cancels in ${String(minutes)}m ${String(seconds % 60)}s`;
+    return localizedText("ExtensionDialogCard.auto_cancels_in_m_s.9cef84e5")`Auto-cancels in ${String(minutes)}m ${String(seconds % 60)}s`;
   }
-  return `Auto-cancels in ${String(seconds)}s`;
+  return localizedText("ExtensionDialogCard.auto_cancels_in_s.999a7ae0")`Auto-cancels in ${String(seconds)}s`;
 }
 
 /**
@@ -148,7 +149,7 @@ export class ExtensionDialogCard extends LitElement {
   }
 
   private renderConfirmBody(dialog: PendingExtensionDialog): TemplateResult {
-    return html`
+    return localizedTemplate("ExtensionDialogCard.cancel_no_yes.a6d8971a", html)`
       ${dialog.message === undefined ? null : html`<p class="dialog-message">${dialog.message}</p>`}
       <footer class="dialog-footer">
         <button class="secondary-action" type="button" ?disabled=${this.closing} @click=${() => { this.cancelDialog(dialog); }}>Cancel</button>
@@ -159,7 +160,7 @@ export class ExtensionDialogCard extends LitElement {
   }
 
   private renderSelectBody(dialog: PendingExtensionDialog): TemplateResult {
-    return html`
+    return localizedTemplate("ExtensionDialogCard.cancel.37322fb4", html)`
       <div class="dialog-options" role="group" aria-label="Choices">
         ${(dialog.options ?? []).map((option) => html`
           <button class="option-button" type="button" ?disabled=${this.closing} @click=${() => { this.answerDialog(dialog, option); }}>${option}</button>
@@ -172,7 +173,7 @@ export class ExtensionDialogCard extends LitElement {
   }
 
   private renderInputBody(dialog: PendingExtensionDialog): TemplateResult {
-    return html`
+    return localizedTemplate("ExtensionDialogCard.cancel.936a1f9b", html)`
       <form class="dialog-input-form" @submit=${(event: SubmitEvent) => { this.submitInput(event, dialog); }}>
         <input
           class="dialog-input"
@@ -187,14 +188,14 @@ export class ExtensionDialogCard extends LitElement {
         />
         <footer class="dialog-footer">
           <button class="secondary-action" type="button" ?disabled=${this.closing} @click=${() => { this.cancelDialog(dialog); }}>Cancel</button>
-          <button class="primary-action" type="submit" ?disabled=${this.closing}>${this.closing ? "Sending…" : "Send"}</button>
+          <button class="primary-action" type="submit" ?disabled=${this.closing}>${this.closing ? t("ExtensionDialogCard.sending.a3ebadaa") : t("ExtensionDialogCard.send.8e1da356")}</button>
         </footer>
       </form>
     `;
   }
 
   private renderClosed(closed: ClosedExtensionDialog): TemplateResult {
-    return html`
+    return localizedTemplate("ExtensionDialogCard.dismiss.3525aa13", html)`
       <article class="card closed-card" aria-labelledby="extension-dialog-closed-heading">
         <header class="card-header">
           <h2 id="extension-dialog-closed-heading">${closed.dialog.title}</h2>

@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { defaultKeymap, history, historyKeymap, indentWithTab, insertNewlineAndIndent } from "@codemirror/commands";
 import { markdown, deleteMarkupBackward, insertNewlineContinueMarkup } from "@codemirror/lang-markdown";
 import { EditorSelection, EditorState, Compartment } from "@codemirror/state";
@@ -24,7 +25,7 @@ import { renderAttachIcon, renderSendIcon, renderQueueIcon, renderSteerIcon, ren
 import { thinkingGauge, thinkingLevelLabel } from "../../../shared/thinkingLevels";
 import "./AutocompleteMenu";
 
-const promptPlaceholder = "Message pi... Use / for commands, @ for tracked files, @ space for all files, # for models";
+const promptPlaceholder = t("PromptEditor.message_pi_use_for_commands_for_tracked.a1b5c004");
 
 // Text nodes inside contenteditable can become iOS keyboard context, even in
 // non-editable placeholder widgets. Render the hint with CSS-generated content.
@@ -144,23 +145,23 @@ export class PromptEditor extends LitElement {
     const queuesInput = this.canSteer || this.isCompacting;
     const keyboardSteers = this.defaultSendBehavior() === "steer";
     const busy = this.disabled || this.sending || this.chipSendingKey === this.composerKey();
-    return html`
+    return localizedTemplate("PromptEditor.template.be441e6c", html)`
       <footer class=${shellMode ? "shell-mode" : ""} @paste=${(event: ClipboardEvent) => { void this.handlePaste(event); }} @dragover=${(event: DragEvent) => { this.handleDragOver(event); }} @drop=${(event: DragEvent) => { void this.handleDrop(event); }}>
         <div class="editor-wrap">
           <div class=${`markdown-editor${this.disabled ? " markdown-editor-disabled" : ""}`} aria-label="Message pi" aria-disabled=${this.disabled ? "true" : "false"}></div>
           <input class="attachment-input" type="file" multiple hidden @change=${(event: Event) => { void this.handleFileInput(event); }} />
           <button class="editor-attach icon-button" ?disabled=${busy} title="Attach files" aria-label="Attach files" @click=${() => { this.attachmentInput?.click(); }}>${renderAttachIcon()}</button>
-          ${shellMode ? html`<div class="mode-hint">Shell command${shellInputMode.excludeFromContext ? " · excluded from context" : ""}</div>` : null}
-          ${this.isCompacting && !shellMode ? html`<div class="mode-hint">Compacting history · message will be queued</div>` : null}
+          ${shellMode ? localizedTemplate("PromptEditor.shell_command.f0a1fde8", html)`<div class="mode-hint">Shell command${shellInputMode.excludeFromContext ? t("PromptEditor.excluded_from_context.77ba9e69") : ""}</div>` : null}
+          ${this.isCompacting && !shellMode ? localizedTemplate("PromptEditor.compacting_history_message_will_be_queued.a54a4ada", html)`<div class="mode-hint">Compacting history · message will be queued</div>` : null}
           ${this.renderPromptChips()}
           ${this.renderAttachments()}
           <autocomplete-menu .items=${this.completions} .selectedIndex=${this.selectedIndex} .onPick=${(item: CompletionItem) => { this.pick(item); }}></autocomplete-menu>
         </div>
         <div class="actions">
           ${this.renderCompactStatus()}
-          <button class="icon-button send-button ${keyboardSteers ? "" : "default-send-action"}" ?disabled=${busy} title=${queuesInput ? "Queue until the current activity finishes" : "Send message"} aria-label=${queuesInput ? "Queue message" : "Send message"} @click=${() => { this.send("followUp"); }}>${queuesInput ? renderQueueIcon() : renderSendIcon()}</button>
-          ${this.canSteer && !this.isCompacting ? html`<button class="icon-button steer-button ${keyboardSteers ? "default-send-action" : ""}" ?disabled=${busy} title="Steer the current response before the next model call" aria-label="Steer current response" @click=${() => { this.send("steer"); }}>${renderSteerIcon()}</button>` : null}
-          <button class="icon-button stop-button" ?disabled=${this.disabled || !this.canStop} title=${this.canStop ? "Stop current work and clear queued messages" : "Nothing running"} aria-label="Stop current work" @click=${() => this.onStop?.()}>${renderStopIcon()}</button>
+          <button class="icon-button send-button ${keyboardSteers ? "" : "default-send-action"}" ?disabled=${busy} title=${queuesInput ? t("PromptEditor.queue_until_the_current_activity_finishes.2420ce17") : t("PromptEditor.send_message.0a862bc3")} aria-label=${queuesInput ? t("PromptEditor.queue_message.85941fe3") : t("PromptEditor.send_message.0f5782d0")} @click=${() => { this.send("followUp"); }}>${queuesInput ? renderQueueIcon() : renderSendIcon()}</button>
+          ${this.canSteer && !this.isCompacting ? localizedTemplate("PromptEditor.template.937eff61", html)`<button class="icon-button steer-button ${keyboardSteers ? "default-send-action" : ""}" ?disabled=${busy} title="Steer the current response before the next model call" aria-label="Steer current response" @click=${() => { this.send("steer"); }}>${renderSteerIcon()}</button>` : null}
+          <button class="icon-button stop-button" ?disabled=${this.disabled || !this.canStop} title=${this.canStop ? t("PromptEditor.stop_current_work_and_clear_queued_messages.6018d1cd") : t("PromptEditor.nothing_running.c930593d")} aria-label="Stop current work" @click=${() => this.onStop?.()}>${renderStopIcon()}</button>
         </div>
       </footer>
     `;
@@ -200,24 +201,24 @@ export class PromptEditor extends LitElement {
   private renderCompactStatus() {
     const status = this.status;
     if (status === undefined) return null;
-    const model = status.model?.id ?? "no model";
+    const model = status.model?.id ?? t("PromptEditor.no_model.0a560ca1");
     const provider = status.model?.provider !== undefined && status.model.provider !== "" ? `${status.model.provider}/` : "";
-    return html`
+    return localizedTemplate("PromptEditor.template.ac92dd24", html)`
       <div class="compact-status" aria-label="Session status">
         <button class="select-model" title="Select model" @click=${() => this.onSelectModel?.()}>${provider}${model}</button>
-        <button class="select-thinking icon-button" title=${`Thinking level: ${thinkingLevelLabel(status.thinkingLevel)}`} aria-label=${`Thinking level: ${thinkingLevelLabel(status.thinkingLevel)}`} @click=${() => this.onSelectThinking?.()}>${renderThinkingGauge(thinkingGauge(status.thinkingLevel, this.availableThinkingLevels))}</button>
+        <button class="select-thinking icon-button" title=${localizedText("PromptEditor.thinking_level.b2571526")`Thinking level: ${thinkingLevelLabel(status.thinkingLevel)}`} aria-label=${localizedText("PromptEditor.thinking_level.aa8606ef")`Thinking level: ${thinkingLevelLabel(status.thinkingLevel)}`} @click=${() => this.onSelectThinking?.()}>${renderThinkingGauge(thinkingGauge(status.thinkingLevel, this.availableThinkingLevels))}</button>
       </div>
     `;
   }
 
   private renderPromptChips() {
     if (this.promptChips.length === 0 && this.chipError === undefined) return null;
-    return html`
+    return localizedTemplate("PromptEditor.template.d78f42ad", html)`
       <div class="prompt-chips" aria-label="Pending plugin context">
         ${this.promptChips.map((chip) => html`
           <div class="prompt-chip" title=${chip.text}>
             <span>${chip.label}</span>
-            <button type="button" aria-label=${`Remove ${chip.label}`} ?disabled=${this.disabled} @click=${() => this.onRemoveChip?.(chip)}>×</button>
+            <button type="button" aria-label=${localizedText("PromptEditor.remove.2ff51610")`Remove ${chip.label}`} ?disabled=${this.disabled} @click=${() => this.onRemoveChip?.(chip)}>×</button>
           </div>
         `)}
         ${this.chipError === undefined ? null : html`<div class="chip-error" role="alert">${this.chipError}</div>`}
@@ -229,18 +230,18 @@ export class PromptEditor extends LitElement {
     if (this.attachments.length === 0 && this.attachmentError === undefined) return null;
     const canUseInlineDelivery = promptAttachmentsCanUseInlineDelivery(this.attachments);
     const delivery = this.effectiveAttachmentDelivery();
-    return html`
+    return localizedTemplate("PromptEditor.template.f006a493", html)`
       <div class="attachments" aria-label="Pending attachments">
-        ${this.attachments.map((attachment) => html`
+        ${this.attachments.map((attachment) => localizedTemplate("PromptEditor.template.f6a5aa80", html)`
           <div class=${`attachment-chip ${isInlinePromptAttachment(attachment) ? "attachment-chip-image" : "attachment-chip-file"}`} title=${attachment.name}>
             ${this.renderAttachmentPreview(attachment)}
-            <button type="button" class="attachment-remove" title="Remove attachment" aria-label=${`Remove ${attachment.name}`} @click=${() => { this.removeAttachment(attachment.id); }}>×</button>
+            <button type="button" class="attachment-remove" title="Remove attachment" aria-label=${localizedText("PromptEditor.remove.ee640944")`Remove ${attachment.name}`} @click=${() => { this.removeAttachment(attachment.id); }}>×</button>
           </div>
         `)}
-        ${this.attachments.length > 0 ? html`
-          <label class="attachment-delivery" title=${canUseInlineDelivery ? "How attachments are delivered to the agent" : "General files are saved and mentioned from the workspace"}>
+        ${this.attachments.length > 0 ? localizedTemplate("PromptEditor.attach_to_message.47fbc200", html)`
+          <label class="attachment-delivery" title=${canUseInlineDelivery ? t("PromptEditor.how_attachments_are_delivered_to_the_agent.41e0a0ea") : t("PromptEditor.general_files_are_saved_and_mentioned_from.559b9fea")}>
             <select .value=${delivery} @change=${(event: Event) => { this.changeDelivery(event); }}>
-              <option value="inline" ?disabled=${!canUseInlineDelivery}>Attach to message${canUseInlineDelivery ? "" : " (images only)"}</option>
+              <option value="inline" ?disabled=${!canUseInlineDelivery}>Attach to message${canUseInlineDelivery ? "" : t("PromptEditor.images_only.76d1724e")}</option>
               <option value="folder">${attachmentFolderDeliveryLabel(this.attachmentsFolder)}</option>
             </select>
           </label>
@@ -582,10 +583,10 @@ export class PromptEditor extends LitElement {
         // Do not erase edits made during delivery, or the next conversation.
         if (draft === this.draft && pending === this.attachments) this.resetComposer();
       } else {
-        this.chipError = "Message not submitted. Context kept for retry.";
+        this.chipError = t("PromptEditor.message_not_submitted_context_kept_for_retry.9e178614");
       }
     } catch (error) {
-      if (key === this.composerKey()) this.chipError = `Message not submitted: ${String(error)}`;
+      if (key === this.composerKey()) this.chipError = localizedText("PromptEditor.message_not_submitted.85a8ed36")`Message not submitted: ${String(error)}`;
     } finally {
       if (this.chipSendingKey === key) this.chipSendingKey = undefined;
     }
@@ -660,7 +661,7 @@ function pendingToPromptAttachment(attachment: PendingAttachment): PromptAttachm
 }
 
 export function attachmentFolderDeliveryLabel(folder: string): string {
-  return `Save to ${folder}`;
+  return localizedText("PromptEditor.save_to.8caeb8d9")`Save to ${folder}`;
 }
 
 function fileExtensionLabel(name: string): string {
@@ -673,10 +674,10 @@ function fileExtensionLabel(name: string): string {
 function readFileAsBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => { reject(reader.error ?? new Error("Failed to read file")); };
+    reader.onerror = () => { reject(reader.error ?? new Error(t("PromptEditor.failed_to_read_file.76c972dd"))); };
     reader.onload = () => {
       const result = reader.result;
-      if (typeof result !== "string") { reject(new Error("Unexpected file reader result")); return; }
+      if (typeof result !== "string") { reject(new Error(t("PromptEditor.unexpected_file_reader_result.4f05cda8"))); return; }
       const commaIndex = result.indexOf(",");
       resolve(commaIndex === -1 ? result : result.slice(commaIndex + 1));
     };

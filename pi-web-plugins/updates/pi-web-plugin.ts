@@ -1,3 +1,4 @@
+import { getLocale, localizedTemplate, t } from "./i18n.js";
 import type { TemplateResult } from "lit";
 import type { HtmlTemplateTag, PiWebComponentStatus, PiWebPlugin, PiWebStatusMessage, PluginRuntimeState, WorkspacePanelTerminal } from "@jmfederico/pi-web/plugin-api";
 import { additionalCommands, fallbackDockerStatus, formatVersion, installationLabel, messageCount, recommendedCommand, shouldShowUpdatesPanel, statusFor, type CommandEntry, type UpdatesRuntimeHint } from "./updatesLogic.js";
@@ -15,13 +16,13 @@ function runCommandInTerminal(terminal: WorkspacePanelTerminal, label: string, c
 
 function renderComponent(html: HtmlTemplateTag, component: PiWebComponentStatus): TemplateResult {
   const status = !component.available
-    ? "unavailable"
+    ? t("pi-web-plugin.unavailable.18c46b0c")
     : component.stale
-      ? "restart needed"
-      : "current";
-  return html`
+      ? t("pi-web-plugin.restart_needed.c2ca8efe")
+      : t("pi-web-plugin.current.4dc8aa30");
+  return localizedTemplate("pi-web-plugin.running_installed.bc30c0e4", html)`
     <div class="updates-version-row">
-      <strong>${component.label}</strong>
+      <strong>${getLocale() === "zh-CN" ? component.component === "web" ? t("ui.component.web") : t("ui.component.sessiond") : component.label}</strong>
       <span>${status}</span>
       <small>running ${formatVersion(component.runtimeVersion)} · installed ${formatVersion(component.installedVersion)}</small>
       <small>${installationLabel(component.installation)}${component.installation?.path === undefined ? "" : ` · ${component.installation.path}`}</small>
@@ -30,10 +31,10 @@ function renderComponent(html: HtmlTemplateTag, component: PiWebComponentStatus)
 }
 
 function renderCommandActions(html: HtmlTemplateTag, terminal: WorkspacePanelTerminal | undefined, label: string, command: string): TemplateResult {
-  return html`
+  return localizedTemplate("pi-web-plugin.copy.331a0f6e", html)`
     <span class="updates-command-actions">
       <button @click=${() => { void navigator.clipboard.writeText(command); }}>Copy</button>
-      ${terminal === undefined ? null : html`<button class="primary" @click=${() => { runCommandInTerminal(terminal, label, command); }}>Run</button>`}
+      ${terminal === undefined ? null : localizedTemplate("pi-web-plugin.run.7ae8c817", html)`<button class="primary" @click=${() => { runCommandInTerminal(terminal, label, command); }}>Run</button>`}
     </span>
   `;
 }
@@ -66,7 +67,7 @@ const runtimeHint = updatesRuntimeHintFromModuleUrl(import.meta.url);
 function renderNotice(html: HtmlTemplateTag, message: PiWebStatusMessage): TemplateResult {
   return html`
     <article class=${`updates-message ${message.severity}`}>
-      <div class="updates-message-title"><strong>${message.title}</strong><span>${message.severity}</span></div>
+      <div class="updates-message-title"><strong>${message.title}</strong><span>${message.severity === "info" ? t("ui.severity.info") : message.severity === "warning" ? t("ui.severity.warning") : t("ui.severity.error")}</span></div>
       <p>${message.body}</p>
     </article>
   `;
@@ -75,17 +76,17 @@ function renderNotice(html: HtmlTemplateTag, message: PiWebStatusMessage): Templ
 function renderNotices(html: HtmlTemplateTag, messages: readonly PiWebStatusMessage[]): TemplateResult {
   return html`
     <section>
-      ${messages.length === 0 ? html`<p class="muted">No PI WEB update or restart messages.</p>` : messages.map((message) => renderNotice(html, message))}
+      ${messages.length === 0 ? localizedTemplate("pi-web-plugin.no_pi_web_update_or_restart_messages.d76088b8", html)`<p class="muted">No PI WEB update or restart messages.</p>` : messages.map((message) => renderNotice(html, message))}
     </section>
   `;
 }
 
 function renderRecommended(html: HtmlTemplateTag, terminal: WorkspacePanelTerminal | undefined, recommended: CommandEntry, messages: readonly PiWebStatusMessage[]): TemplateResult {
-  return html`
+  return localizedTemplate("pi-web-plugin.recommended.a9c2c7b1", html)`
     <section class="updates-recommended">
       <strong>Recommended</strong>
       ${messages.length === 0
-        ? html`<p class="muted">Run the recommended command. Updates require confirmation in the terminal and may interrupt active sessions; the CLI will provide instructions if this terminal cannot safely run the update.</p>`
+        ? localizedTemplate("pi-web-plugin.run_the_recommended_command_updates_require_confirmatio.479b700c", html)`<p class="muted">Run the recommended command. Updates require confirmation in the terminal and may interrupt active sessions; the CLI will provide instructions if this terminal cannot safely run the update.</p>`
         : messages.map((message) => renderNotice(html, message))}
       ${renderCommand(html, terminal, recommended.label, recommended.command)}
     </section>
@@ -96,8 +97,8 @@ function renderAdditionalCommands(html: HtmlTemplateTag, terminal: WorkspacePane
   if (additional.length === 0) return undefined;
   return html`
     <section>
-      <strong>${hasRecommended ? "Additional commands (optional)" : "Suggested commands"}</strong>
-      ${hasRecommended ? html`<p class="muted">Only needed for finer control, such as restarting a single service.</p>` : null}
+      <strong>${hasRecommended ? t("pi-web-plugin.additional_commands_optional.ba69f0f0") : t("pi-web-plugin.suggested_commands.c05fb39a")}</strong>
+      ${hasRecommended ? localizedTemplate("pi-web-plugin.only_needed_for_finer_control_such_as.311bfb03", html)`<p class="muted">Only needed for finer control, such as restarting a single service.</p>` : null}
       ${additional.map((entry) => renderCommand(html, terminal, entry.label, entry.command))}
     </section>
   `;
@@ -106,7 +107,7 @@ function renderAdditionalCommands(html: HtmlTemplateTag, terminal: WorkspacePane
 function renderUpdatesPanel(html: HtmlTemplateTag, terminal: WorkspacePanelTerminal | undefined, state: PluginRuntimeState | undefined): TemplateResult {
   const status = statusFor(state) ?? fallbackDockerStatus(runtimeHint);
   if (status === undefined) {
-    return html`
+    return localizedTemplate("pi-web-plugin.updates_checking_pi_web_update_status.cef9023a", html)`
       <section class="toolbar"><strong>Updates</strong></section>
       <section class="viewer"><p class="muted">Checking PI WEB update status…</p></section>
     `;
@@ -115,7 +116,7 @@ function renderUpdatesPanel(html: HtmlTemplateTag, terminal: WorkspacePanelTermi
   const messages = status.messages;
   const recommended = recommendedCommand(status);
   const additional = additionalCommands(status, recommended);
-  return html`
+  return localizedTemplate("pi-web-plugin.viewer_updates_status_flex_auto_min_height.4a083b3c", html)`
     <style>
       .viewer.updates-status { flex: 1 1 auto; min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; padding: 12px; overflow-y: auto; overflow-x: hidden; }
       .viewer.updates-status section { flex: 0 0 auto; min-width: 0; display: grid; gap: 8px; }
@@ -155,10 +156,10 @@ function renderUpdatesPanel(html: HtmlTemplateTag, terminal: WorkspacePanelTermi
 
       <section class="updates-meta">
         <span>Generated ${status.generatedAt}</span>
-        ${status.release.latestVersion === undefined ? null : html`<span>Latest npm release ${status.release.latestVersion}</span>`}
-        ${status.release.checkedAt === undefined || status.release.skipped === true ? null : html`<span>Release checked ${status.release.checkedAt}</span>`}
-        ${status.release.skipped === true ? html`<span>Remote version check skipped.</span>` : null}
-        ${status.release.error === undefined ? null : html`<span>Remote version check failed: ${status.release.error}</span>`}
+        ${status.release.latestVersion === undefined ? null : localizedTemplate("pi-web-plugin.latest_npm_release.243fa0ef", html)`<span>Latest npm release ${status.release.latestVersion}</span>`}
+        ${status.release.checkedAt === undefined || status.release.skipped === true ? null : localizedTemplate("pi-web-plugin.release_checked.aafc222b", html)`<span>Release checked ${status.release.checkedAt}</span>`}
+        ${status.release.skipped === true ? localizedTemplate("pi-web-plugin.remote_version_check_skipped.59f53a87", html)`<span>Remote version check skipped.</span>` : null}
+        ${status.release.error === undefined ? null : localizedTemplate("pi-web-plugin.remote_version_check_failed.a4ab28ab", html)`<span>Remote version check failed: ${status.release.error}</span>`}
       </section>
     </section>
   `;
@@ -172,18 +173,18 @@ const plugin = {
       actions: [
         {
           id: "check",
-          title: "Check for PI WEB Updates",
-          description: "Bypass cached release data and check the selected machine now",
-          group: "Updates",
+          title: t("pi-web-plugin.check_for_pi_web_updates.19deb5dc"),
+          description: t("pi-web-plugin.bypass_cached_release_data_and_check_the.b905ed4e"),
+          group: t("pi-web-plugin.updates.8b356b23"),
           enabled: (context) => context.checkForPiWebUpdates !== undefined,
-          disabledReason: () => "Update checks require a newer PI WEB gateway",
+          disabledReason: () => t("pi-web-plugin.update_checks_require_a_newer_pi_web.2a598b9f"),
           run: (context) => context.checkForPiWebUpdates?.(),
         },
       ],
       applicationPanels: [
         {
           id: "workspace.updates",
-          title: "Updates",
+          title: t("pi-web-plugin.updates.f1830542"),
           icon: svg`
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 6v5h-5"></path>

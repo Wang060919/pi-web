@@ -1,8 +1,9 @@
+import { localizedTemplate, localizedText } from "../../../shared/i18n";
 import { css, html } from "lit";
 
 /** Shared native control, rendered in the picker's DOM beside (never inside) its row button. */
 export function defaultPin(label: string, active: boolean, disabled: boolean, onClick: () => void) {
-  const help = `Use ${label} as default for new sessions`;
+  const help = localizedText("DefaultPin.use_as_default_for_new_sessions.023b0da7")`Use ${label} as default for new sessions`;
   return html`<button type="button" class="default-pin" aria-label=${help} title=${help}
     aria-pressed=${String(active)} ?disabled=${disabled} @click=${onClick}>
     <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill=${active ? "currentColor" : "none"} stroke="currentColor" stroke-width="1.8">
@@ -11,7 +12,7 @@ export function defaultPin(label: string, active: boolean, disabled: boolean, on
   </button>`;
 }
 
-export const defaultPinHelp = html`<div class="default-help"><strong>New session default</strong></div>`;
+export const defaultPinHelp = localizedTemplate("DefaultPin.new_session_default.806aea3c", html)`<div class="default-help"><strong>New session default</strong></div>`;
 
 export const defaultPinStyles = css`
   .default-help { display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; color: var(--pi-muted); }

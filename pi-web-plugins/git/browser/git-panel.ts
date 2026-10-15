@@ -1,3 +1,4 @@
+import { localizedTemplate, t } from "./i18n.js";
 import type {
   HtmlTemplateTag,
   JsonValue,
@@ -367,19 +368,19 @@ function createGitActions(panelId: string, controller: GitUiController): PluginA
   return [
     {
       id: "view.git",
-      title: "Go to Git",
+      title: t("git-panel.go_to_git.1aa66d38"),
       shortcut: "mod+3",
       shortcutAliases: ["core:view.git"],
-      group: "Navigation",
+      group: t("git-panel.navigation.d531b051"),
       enabled: hasGitWorkspace,
       run: (context) => { context.selectWorkspaceTool(panelId); },
     },
     {
       id: "workspace.refresh-git",
-      title: "Refresh Git",
+      title: t("git-panel.refresh_git.32dc02ee"),
       shortcut: "mod+shift+g",
       shortcutAliases: ["core:workspace.refresh-git"],
-      group: "Workspace",
+      group: t("git-panel.workspace.e1170fe3"),
       enabled: hasGitWorkspace,
       run: (context) => context.refreshWorkspacePanels(panelId),
     },
@@ -413,7 +414,7 @@ function createGitPanel(
 
 function requestGitBackend(context: WorkspacePanelContext, operation: string, input: JsonValue): Promise<JsonValue> {
   if (context.peer?.request === undefined) {
-    return Promise.reject(new Error("Git workspace backend is unavailable. Update and restart PI WEB on this machine, then reload the browser."));
+    return Promise.reject(new Error(t("git-panel.git_workspace_backend_is_unavailable_update_and.4b844c50")));
   }
   return context.peer.request(operation, input);
 }
@@ -421,13 +422,13 @@ function requestGitBackend(context: WorkspacePanelContext, operation: string, in
 function renderGitPanel(html: HtmlTemplateTag, controller: GitUiController, context: WorkspacePanelContext) {
   const state = controller.state(context);
   const viewState = controller.viewState(state);
-  return html`
+  return localizedTemplate("git-panel.git_refresh.8261b233", html)`
     <section class="git-panel">
       <style .textContent=${gitPanelStyles}></style>
       <pi-web-git-panel-activity .controller=${controller} .context=${context}></pi-web-git-panel-activity>
       <section class="git-toolbar">
         <strong>Git</strong>
-        ${state.stale ? html`<span class="git-stale">stale</span>` : null}
+        ${state.stale ? localizedTemplate("git-panel.stale.223f42f5", html)`<span class="git-stale">stale</span>` : null}
         <div class="git-toolbar-actions">
           ${viewState.expandablePaths.length === 0 ? null : renderExpandCollapseAll(html, controller, context, state, viewState.expandablePaths)}
           ${renderViewToggle(html, controller, context)}
@@ -444,10 +445,10 @@ function renderGitPanel(html: HtmlTemplateTag, controller: GitUiController, cont
 }
 
 function renderViewToggle(html: HtmlTemplateTag, controller: GitUiController, context: WorkspacePanelContext) {
-  return html`
+  return localizedTemplate("git-panel.template.3f19f4d9", html)`
     <div class="git-view-toggle" role="group" aria-label="Changed files view">
-      ${renderViewToggleButton(html, controller, context, "list", "List")}
-      ${renderViewToggleButton(html, controller, context, "tree", "Tree")}
+      ${renderViewToggleButton(html, controller, context, "list", t("git-panel.list.0c8ac4a7"))}
+      ${renderViewToggleButton(html, controller, context, "tree", t("git-panel.tree.2ff90d78"))}
     </div>
   `;
 }
@@ -465,7 +466,7 @@ function renderExpandCollapseAll(
   expandablePaths: readonly string[],
 ) {
   const allExpanded = expandablePaths.every((path) => state.expandedDirectories.has(path));
-  return html`<button type="button" @click=${() => { controller.toggleExpandAll(context, expandablePaths, allExpanded); }}>${allExpanded ? "Collapse all" : "Expand all"}</button>`;
+  return html`<button type="button" @click=${() => { controller.toggleExpandAll(context, expandablePaths, allExpanded); }}>${allExpanded ? t("git-panel.collapse_all.33257fda") : t("git-panel.expand_all.80870856")}</button>`;
 }
 
 function renderFileList(
@@ -476,10 +477,10 @@ function renderFileList(
   viewState: GitViewState,
 ) {
   const status = state.status;
-  if (status === undefined) return html`<p class="git-muted">${state.error === undefined ? "Loading status…" : "Status unavailable."}</p>`;
-  if (!status.isGitRepo) return html`<p class="git-muted">Not a git repository.</p>`;
+  if (status === undefined) return html`<p class="git-muted">${state.error === undefined ? t("git-panel.loading_status.efadf79d") : t("git-panel.status_unavailable.494e2de1")}</p>`;
+  if (!status.isGitRepo) return localizedTemplate("git-panel.not_a_git_repository.6736b532", html)`<p class="git-muted">Not a git repository.</p>`;
   const summary = html`<p class="git-summary">${gitSummary(status)}</p>`;
-  if (status.files.length === 0) return html`${summary}<p class="git-muted">No changes.</p>`;
+  if (status.files.length === 0) return localizedTemplate("git-panel.no_changes.216a9e6d", html)`${summary}<p class="git-muted">No changes.</p>`;
   const body = controller.currentView() === "tree"
     ? viewState.nodes.map((node) => renderTreeNode(html, controller, context, state, node, 0))
     : renderListBody(html, controller, context, state, viewState.listModel);
@@ -580,12 +581,12 @@ function renderSelectableRow(
 }
 
 function renderDiffViewer(html: HtmlTemplateTag, state: GitWorkspaceUiState) {
-  if (state.selectedDiffPath === undefined) return html`<p class="git-muted">Select a changed file.</p>`;
+  if (state.selectedDiffPath === undefined) return localizedTemplate("git-panel.select_a_changed_file.c8388354", html)`<p class="git-muted">Select a changed file.</p>`;
   const unstaged = state.selectedDiff;
   const staged = state.selectedStagedDiff;
-  if (unstaged === undefined || staged === undefined) return html`<p class="git-muted">Loading diff…</p>`;
+  if (unstaged === undefined || staged === undefined) return localizedTemplate("git-panel.loading_diff.b7f5df15", html)`<p class="git-muted">Loading diff…</p>`;
   const diffs = [staged, unstaged].filter((diff) => diff.response.diff !== "");
-  if (diffs.length === 0) return html`<p class="git-muted">No staged or unstaged diff.</p>`;
+  if (diffs.length === 0) return localizedTemplate("git-panel.no_staged_or_unstaged_diff.74a0d729", html)`<p class="git-muted">No staged or unstaged diff.</p>`;
   return html`<div class=${diffs.length === 1 ? "git-diffs is-single" : "git-diffs"}>${diffs.map((diff) => renderDiffSection(html, diff))}</div>`;
 }
 
@@ -594,8 +595,8 @@ function renderDiffSection(html: HtmlTemplateTag, view: GitDiffView) {
   const lines = view.lines ??= parseUnifiedDiff(diff.diff);
   return html`
     <section class="git-diff-section">
-      <div class="git-viewer-header"><strong>${diff.path ?? "diff"}</strong><small>${diff.staged ? "staged" : "unstaged"}${diff.truncated ? " · truncated" : ""}</small></div>
-      ${lines.length === 0 ? html`<p class="git-muted">No diff.</p>` : html`
+      <div class="git-viewer-header"><strong>${diff.path ?? t("git-panel.diff.39fa7be8")}</strong><small>${diff.staged ? t("git-panel.staged.799f88c7") : t("git-panel.unstaged.a20e288f")}${diff.truncated ? t("git-panel.truncated.00ce90c9") : ""}</small></div>
+      ${lines.length === 0 ? localizedTemplate("git-panel.no_diff.fa2abfbc", html)`<p class="git-muted">No diff.</p>` : localizedTemplate("git-panel.template.4451727a", html)`
         <div class="git-diff-scroller">
           <div class="git-diff-grid" role="table" aria-label="Unified diff">
             ${lines.map((line) => renderDiffLine(html, line))}
@@ -683,11 +684,11 @@ function defineGitPanelActivityElement(): void {
 }
 
 function submoduleBadge(html: HtmlTemplateTag) {
-  return html`<span class="submodule-badge">submodule</span>`;
+  return localizedTemplate("git-panel.submodule.08eea8be", html)`<span class="submodule-badge">submodule</span>`;
 }
 
 function gitSummary(status: GitStatusResponse): string {
-  const branch = status.branch ?? "detached";
+  const branch = status.branch ?? t("git-panel.detached.968daf6c");
   const ahead = status.ahead ?? 0;
   const behind = status.behind ?? 0;
   return ahead === 0 && behind === 0 ? branch : `${branch} · ↑${String(ahead)} ↓${String(behind)}`;

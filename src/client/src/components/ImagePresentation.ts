@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
@@ -18,7 +19,7 @@ export class ImagePresentation extends LitElement {
   @property() description = "";
   @property() label = "";
   @property({ type: Boolean }) requestDisabled = false;
-  @property() pendingLabel = "Show image";
+  @property() pendingLabel = t("ImagePresentation.show_image.d44ff1f5");
 
   private requestImage(event: MouseEvent): void {
     if (this.requestDisabled) return;
@@ -48,14 +49,14 @@ export class ImagePresentation extends LitElement {
   override render() {
     const pending = this.source === undefined || this.source === "";
     const dimensions = this.dimensions;
-    return html`
+    return localizedTemplate("ImagePresentation.template.97409eaa", html)`
       <div class="frame">
         <button class="placeholder" type="button" ?hidden=${!pending} ?disabled=${this.requestDisabled}
           @click=${(event: MouseEvent) => { this.requestImage(event); }}>
           <span>${this.pendingLabel}</span>${this.label === "" ? null : html`<code>${this.label}</code>`}
         </button>
         <button class="image-button" type="button" ?hidden=${pending} ?disabled=${pending}
-          aria-label=${`Enlarge ${this.description || "image"}`} title="Click to enlarge"
+          aria-label=${localizedText("ImagePresentation.enlarge.718d8165")`Enlarge ${this.description || t("ImagePresentation.image.47ceb860")}`} title="Click to enlarge"
           @click=${(event: MouseEvent) => { this.open(event); }}
           @keydown=${(event: KeyboardEvent) => { if (event.key === "Enter" || event.key === " ") this.open(event); }}>
           <img loading="lazy" decoding="async" src=${pending ? nothing : this.source} alt=${this.description}

@@ -1,3 +1,4 @@
+import { localizedText } from "../../../shared/i18n";
 import { html, type TemplateResult } from "lit";
 import type { Machine, MachineRuntime, PiWebDeprecatedAgentInput } from "../api";
 
@@ -31,13 +32,13 @@ export function deprecatedAgentInputsWarnings(machines: readonly Machine[], mach
  */
 export function deprecatedAgentInputsWarningText(warning: DeprecatedAgentInputsWarning): string {
   const inputs = warning.inputs.map(describeDeprecatedAgentInput).join("; ");
-  return `${warning.machineName}: ${inputs}. Support for deprecated agent configuration inputs will be removed in a future release.`;
+  return localizedText("deprecatedAgentInputsBanner.support_for_deprecated_agent_configuration_inputs_will.790852cc")`${warning.machineName}: ${inputs}. Support for deprecated agent configuration inputs will be removed in a future release.`;
 }
 
 function describeDeprecatedAgentInput(input: PiWebDeprecatedAgentInput): string {
-  const label = input.source === "config" ? `config key ${input.name}` : `environment variable ${input.name}`;
-  if (input.replacement === undefined) return `${label} is deprecated and ignored; remove it, there is no replacement`;
-  return `${label} is deprecated; set ${input.replacement} instead`;
+  const label = input.source === "config" ? localizedText("deprecatedAgentInputsBanner.config_key.6d5c5ef6")`config key ${input.name}` : localizedText("deprecatedAgentInputsBanner.environment_variable.3420d727")`environment variable ${input.name}`;
+  if (input.replacement === undefined) return localizedText("deprecatedAgentInputsBanner.is_deprecated_and_ignored_remove_it_there.e1119f96")`${label} is deprecated and ignored; remove it, there is no replacement`;
+  return localizedText("deprecatedAgentInputsBanner.is_deprecated_set_instead.6cceff97")`${label} is deprecated; set ${input.replacement} instead`;
 }
 
 /**

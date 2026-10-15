@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { queuedMessageRecallConfirmation, type QueuedMessageActionTarget } from "../queuedMessageActions";
 import { LitElement, html, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -470,7 +471,7 @@ export class PiWebApp extends LitElement {
 
   private renderSessionActivityNotice(): TemplateResult | null {
     if (this.unacknowledgedActivitySessionKey() === undefined) return null;
-    return html`
+    return localizedTemplate("PiWebApp.recently_active_in_another_pi_web_instance.21af7111", html)`
       <section class="composer-activity-notice" role="alert" aria-label="Recent activity in another instance">
         <div class="composer-activity-notice-text">
           <p>Recently active in another PI-WEB instance. Avoid working on this session in both instances at once.</p>
@@ -1162,13 +1163,13 @@ export class PiWebApp extends LitElement {
 
   private setRemoteRouteRestoreMessage(route: ParsedAppRoute, options: { exhausted?: boolean } = {}): void {
     const machineId = route.machineId ?? "local";
-    const machineName = this.state.machines.find((machine) => machine.id === machineId)?.name ?? this.state.selectedMachine?.name ?? "Remote machine";
+    const machineName = this.state.machines.find((machine) => machine.id === machineId)?.name ?? this.state.selectedMachine?.name ?? t("PiWebApp.remote_machine.5233c59d");
     const health = this.state.machineStatuses[machineId];
     const existing = this.state.browserErrors[browserErrorScopeKey(machineBrowserErrorScope(machineId))]?.message;
-    const detail = health?.error ?? (existing !== undefined && !existing.startsWith(`${machineName} is unavailable`) && !existing.startsWith(`${machineName} is still unavailable`) ? existing : undefined);
+    const detail = health?.error ?? (existing !== undefined && !existing.startsWith(localizedText("PiWebApp.is_unavailable.3f0a2dc3")`${machineName} is unavailable`) && !existing.startsWith(localizedText("PiWebApp.is_still_unavailable.2ecec746")`${machineName} is still unavailable`) ? existing : undefined);
     const prefix = options.exhausted === true
-      ? `${machineName} is still unavailable.`
-      : `${machineName} is unavailable; reconnecting…`;
+      ? localizedText("PiWebApp.is_still_unavailable.8d35ce76")`${machineName} is still unavailable.`
+      : localizedText("PiWebApp.is_unavailable_reconnecting.954186fb")`${machineName} is unavailable; reconnecting…`;
     this.browserErrors.report(machineBrowserErrorScope(machineId), `${prefix}${detail === undefined ? "" : ` ${detail}`}`);
   }
 
@@ -1769,7 +1770,7 @@ export class PiWebApp extends LitElement {
 
   private renderNavigationPanelEdgeControl() {
     const constraints = this.resizablePanelConstraints("navigation");
-    return html`
+    return localizedTemplate("PiWebApp.template.2fc2fe61", html)`
       <app-panel-edge-control
         side="navigation"
         controls="navigation-panel"
@@ -1792,7 +1793,7 @@ export class PiWebApp extends LitElement {
 
   private renderWorkspacePanelEdgeControl() {
     const constraints = this.resizablePanelConstraints("workspace");
-    return html`
+    return localizedTemplate("PiWebApp.template.d6a1e3c4", html)`
       <app-panel-edge-control
         side="workspace"
         controls="workspace-panel"
@@ -1885,14 +1886,14 @@ export class PiWebApp extends LitElement {
       if (selectedMachineId(this.state) !== machineId) return;
       this.sessionCleanupDialog = { ...this.sessionCleanupDialog, preview, previewRequest: request, result: undefined, loading: false, error: "" };
     } catch (error) {
-      if (selectedMachineId(this.state) === machineId) this.sessionCleanupDialog = { ...this.sessionCleanupDialog, loading: false, error: `Failed to preview cleanup: ${errorMessage(error)}` };
+      if (selectedMachineId(this.state) === machineId) this.sessionCleanupDialog = { ...this.sessionCleanupDialog, loading: false, error: localizedText("PiWebApp.failed_to_preview_cleanup.d2f0d281")`Failed to preview cleanup: ${errorMessage(error)}` };
     }
   }
 
   private async runSessionCleanup(request: SessionCleanupRequest): Promise<void> {
     const dialog = this.sessionCleanupDialog;
     if (dialog?.preview === undefined || sessionCleanupRequestKey(dialog.previewRequest) !== sessionCleanupRequestKey(request)) {
-      this.sessionCleanupDialog = { ...(dialog ?? {}), error: "Preview cleanup before running it." };
+      this.sessionCleanupDialog = { ...(dialog ?? {}), error: t("PiWebApp.preview_cleanup_before_running_it.6bfc1f43") };
       return;
     }
     const machineId = selectedMachineId(this.state);
@@ -1903,7 +1904,7 @@ export class PiWebApp extends LitElement {
       this.sessionCleanupDialog = { ...this.sessionCleanupDialog, preview: result, previewRequest: request, result, running: false, error: "" };
       await this.sessions.applySessionCleanupResult(result, machineId);
     } catch (error) {
-      if (selectedMachineId(this.state) === machineId) this.sessionCleanupDialog = { ...this.sessionCleanupDialog, running: false, error: `Failed to run cleanup: ${errorMessage(error)}` };
+      if (selectedMachineId(this.state) === machineId) this.sessionCleanupDialog = { ...this.sessionCleanupDialog, running: false, error: localizedText("PiWebApp.failed_to_run_cleanup.2b51ce10")`Failed to run cleanup: ${errorMessage(error)}` };
     }
   }
 
@@ -2273,36 +2274,36 @@ export class PiWebApp extends LitElement {
     const project = this.state.selectedProject;
     if (this.state.isLoadingProjects) {
       return {
-        title: "Loading projects…",
-        body: "Looking for projects you have added to PI WEB.",
+        title: t("PiWebApp.loading_projects.c11b5753"),
+        body: t("PiWebApp.looking_for_projects_you_have_added_to.48f17012"),
       };
     }
     if (project === undefined) {
       return this.state.projects.length === 0
         ? {
-            title: "No projects yet",
-            body: "Use Actions → Add Project to add a folder. Workspace tools will appear here after you choose a workspace.",
+            title: t("PiWebApp.no_projects_yet.ae56d5c4"),
+            body: t("PiWebApp.use_actions_add_project_to_add_a.96056a51"),
           }
         : {
-            title: "Select a project",
-            body: "Choose a project from the sidebar, then select a workspace to use its tools.",
+            title: t("PiWebApp.select_a_project.41a584e8"),
+            body: t("PiWebApp.choose_a_project_from_the_sidebar_then.02253883"),
           };
     }
     if (this.state.isLoadingWorkspaces) {
       return {
-        title: "Loading workspaces…",
-        body: `Preparing workspace tools for ${project.name}.`,
+        title: t("PiWebApp.loading_workspaces.1497018c"),
+        body: localizedText("PiWebApp.preparing_workspace_tools_for.d5da16a7")`Preparing workspace tools for ${project.name}.`,
       };
     }
     if (this.state.workspaces.length === 0) {
       return {
-        title: "No workspaces found",
-        body: `${project.name} does not have any available workspaces. Try selecting the project again or re-adding it.`,
+        title: t("PiWebApp.no_workspaces_found.c31be351"),
+        body: localizedText("PiWebApp.does_not_have_any_available_workspaces_try.a63cac06")`${project.name} does not have any available workspaces. Try selecting the project again or re-adding it.`,
       };
     }
     return {
-      title: "Select a workspace",
-      body: `Choose a workspace in ${project.name} to use its tools.`,
+      title: t("PiWebApp.select_a_workspace.0b547f8c"),
+      body: localizedText("PiWebApp.choose_a_workspace_in_to_use_its.7833709a")`Choose a workspace in ${project.name} to use its tools.`,
     };
   }
 
@@ -2332,7 +2333,7 @@ export class PiWebApp extends LitElement {
     if ((requested !== undefined || panel !== undefined) && this.availableWorkspacePanelId(panel) === undefined) {
       return this.pluginLoadErrors.get(selectedMachineId(this.state))
         ?? this.requiredPluginFailureByMachine.get(selectedMachineId(this.state))
-        ?? `Workspace panel unavailable: ${requested ?? panel ?? "unknown"}`;
+        ?? localizedText("PiWebApp.workspace_panel_unavailable.df821270")`Workspace panel unavailable: ${requested ?? panel ?? "unknown"}`;
     }
     return "";
   }
@@ -2340,11 +2341,11 @@ export class PiWebApp extends LitElement {
   private sessionEmptyMessage(): string {
     const error = this.contentError();
     if (error !== "") return error;
-    if (this.state.isLoadingProjects) return "Loading projects…";
-    if (this.state.selectedWorkspace !== undefined) return "Select or start a session.";
-    if (this.state.selectedProject !== undefined) return "Select a workspace to start a session.";
-    if (this.state.projects.length === 0) return "Add a project to start a session.";
-    return "Select a project and workspace to start a session.";
+    if (this.state.isLoadingProjects) return t("PiWebApp.loading_projects.77104082");
+    if (this.state.selectedWorkspace !== undefined) return t("PiWebApp.select_or_start_a_session.0c07f1a7");
+    if (this.state.selectedProject !== undefined) return t("PiWebApp.select_a_workspace_to_start_a_session.e03c1a36");
+    if (this.state.projects.length === 0) return t("PiWebApp.add_a_project_to_start_a_session.18238be1");
+    return t("PiWebApp.select_a_project_and_workspace_to_start.ef065409");
   }
 
   private workspaceLabelItems(workspace: Workspace): WorkspaceLabelItem[] {
@@ -2544,9 +2545,9 @@ export class PiWebApp extends LitElement {
   private workspaceSurfaceActions(): AppAction[] {
     return [{
       id: "core:workspace.refresh-current",
-      title: "Refresh Current Panel",
+      title: t("PiWebApp.refresh_current_panel.6745b25e"),
       shortcut: "mod+shift+r",
-      group: "Workspace",
+      group: t("PiWebApp.workspace.361434e4"),
       enabled: this.state.selectedWorkspace !== undefined,
       run: () => this.refreshCurrentWorkspaceSurface(),
     }];
@@ -2556,9 +2557,9 @@ export class PiWebApp extends LitElement {
     return [
       {
         id: "app.sessions.cleanup",
-        title: "Clean Up Sessions",
-        description: "Preview and manually clean up idle or archived sessions on the selected machine",
-        group: "Sessions",
+        title: t("PiWebApp.clean_up_sessions.cf0c57ac"),
+        description: t("PiWebApp.preview_and_manually_clean_up_idle_or.922f72a3"),
+        group: t("PiWebApp.sessions.602c1493"),
         run: () => { this.openSessionCleanupDialog(); },
       },
     ];
@@ -2568,23 +2569,23 @@ export class PiWebApp extends LitElement {
     return [
       {
         id: "app.layout.reset-navigation-panel-size",
-        title: "Reset Navigation Panel Size",
-        description: "Restore the navigation panel to its default width",
-        group: "View",
+        title: t("PiWebApp.reset_navigation_panel_size.6e70445a"),
+        description: t("PiWebApp.restore_the_navigation_panel_to_its_default.727c9e23"),
+        group: t("PiWebApp.view.9613ea94"),
         run: () => { this.resetResizablePanel("navigation"); },
       },
       {
         id: "app.layout.reset-workspace-panel-size",
-        title: "Reset Workspace Panel Size",
-        description: "Restore the workspace panel to its default width",
-        group: "View",
+        title: t("PiWebApp.reset_workspace_panel_size.bc2e69fc"),
+        description: t("PiWebApp.restore_the_workspace_panel_to_its_default.6fa7c11a"),
+        group: t("PiWebApp.view.aeaf7cca"),
         run: () => { this.resetResizablePanel("workspace"); },
       },
       {
         id: "app.layout.reset-panel-sizes",
-        title: "Reset Panel Sizes",
-        description: "Restore all side panels to their default widths",
-        group: "View",
+        title: t("PiWebApp.reset_panel_sizes.047e79f4"),
+        description: t("PiWebApp.restore_all_side_panels_to_their_default.66de84d2"),
+        group: t("PiWebApp.view.44ce88a7"),
         run: () => { this.resetResizablePanels(); },
       },
     ];
@@ -2594,41 +2595,41 @@ export class PiWebApp extends LitElement {
     return [
       {
         id: "app.navigation.open",
-        title: "Open Navigation",
-        description: "Find destinations and manage pinned tabs",
-        group: "Navigation",
+        title: t("PiWebApp.open_navigation.d486774c"),
+        description: t("PiWebApp.find_destinations_and_manage_pinned_tabs.70f3990a"),
+        group: t("PiWebApp.navigation.35ce8ca9"),
         run: () => { this.showNavigation(); },
       },
       {
         id: "app.navigation.focus-machines",
-        title: "Focus Machines",
-        description: "Move keyboard focus to the machine selector",
+        title: t("PiWebApp.focus_machines.2e0e4bd4"),
+        description: t("PiWebApp.move_keyboard_focus_to_the_machine_selector.4b768e01"),
         shortcut: "mod+g m",
-        group: "Navigation",
+        group: t("PiWebApp.navigation.8f4618fe"),
         run: () => this.focusNavigationSection("machines"),
       },
       {
         id: "app.navigation.focus-projects",
-        title: "Focus Projects",
-        description: "Move keyboard focus to the projects list",
+        title: t("PiWebApp.focus_projects.98925316"),
+        description: t("PiWebApp.move_keyboard_focus_to_the_projects_list.faf0abd3"),
         shortcut: "mod+g p",
-        group: "Navigation",
+        group: t("PiWebApp.navigation.56cb6123"),
         run: () => this.focusNavigationSection("projects"),
       },
       {
         id: "app.navigation.focus-workspaces",
-        title: "Focus Workspaces",
-        description: "Move keyboard focus to the workspaces list",
+        title: t("PiWebApp.focus_workspaces.c81c9507"),
+        description: t("PiWebApp.move_keyboard_focus_to_the_workspaces_list.3bd1f8d4"),
         shortcut: "mod+g w",
-        group: "Navigation",
+        group: t("PiWebApp.navigation.5e8dffc0"),
         run: () => this.focusNavigationSection("workspaces"),
       },
       {
         id: "app.navigation.focus-sessions",
-        title: "Focus Sessions",
-        description: "Move keyboard focus to the sessions list",
+        title: t("PiWebApp.focus_sessions.f626f7c3"),
+        description: t("PiWebApp.move_keyboard_focus_to_the_sessions_list.ee136f70"),
         shortcut: "mod+g s",
-        group: "Navigation",
+        group: t("PiWebApp.navigation.a1222f00"),
         run: () => this.focusNavigationSection("sessions"),
       },
     ];
@@ -2647,7 +2648,7 @@ export class PiWebApp extends LitElement {
   }
 
   private loadExternalPlugins(): Promise<boolean> {
-    return this.registerExternalPlugins("PI WEB plugins", () => loadExternalPlugins("pi-web-plugins/manifest.json", {
+    return this.registerExternalPlugins(t("PiWebApp.pi_web_plugins.44f989e1"), () => loadExternalPlugins("pi-web-plugins/manifest.json", {
       shouldLoadPlugin: (entry) => (entry.id === REQUIRED_TERMINAL_PLUGIN_ID && !this.terminalAvailableForMachine("local"))
         || !this.plugins.hasPlugin(entry.id),
     }));
@@ -2666,7 +2667,7 @@ export class PiWebApp extends LitElement {
     if (machine.kind !== "remote" || this.loadedMachinePluginIds.has(machine.id)) return;
     const runtime = this.state.machineRuntimes[machine.id];
     if (runtime?.ok === true && !supportsPiWebCapability(runtime, PI_WEB_CAPABILITIES.pluginLifecycle)) {
-      const message = `PI WEB plugins from ${machine.name} require a matching plugin lifecycle capability; update and restart PI WEB on that machine`;
+      const message = localizedText("PiWebApp.pi_web_plugins_from_require_a_matching.218d0064")`PI WEB plugins from ${machine.name} require a matching plugin lifecycle capability; update and restart PI WEB on that machine`;
       console.warn(message);
       this.verifiedPluginModeByMachine.delete(machine.id);
       this.clearRequiredTerminal(machine.id);
@@ -2677,7 +2678,7 @@ export class PiWebApp extends LitElement {
     const existing = this.machinePluginLoadPromises.get(machine.id);
     if (existing !== undefined) return existing;
 
-    const load = this.registerExternalPlugins(`PI WEB plugins from ${machine.name}`, () => loadExternalPlugins(`api/machines/${encodeURIComponent(machine.id)}/pi-web-plugins/manifest.json`, {
+    const load = this.registerExternalPlugins(localizedText("PiWebApp.pi_web_plugins_from.1b86a5c3")`PI WEB plugins from ${machine.name}`, () => loadExternalPlugins(`api/machines/${encodeURIComponent(machine.id)}/pi-web-plugins/manifest.json`, {
       machineId: machine.id,
       shouldLoadPlugin: (entry) => this.plugins.shouldLoadRemotePlugin(entry.id, entry.machineSpecific)
         && ((entry.id === REQUIRED_TERMINAL_PLUGIN_ID && !this.terminalAvailableForMachine(machine.id))
@@ -2715,7 +2716,7 @@ export class PiWebApp extends LitElement {
         this.clearRequiredTerminal(machineId);
         this.reconcilePluginLoadSelection(urlAtLoad);
         this.applyPreferredTheme(false);
-        this.setRequiredPluginFailure(machineId, `Required Terminal plugin failed to load: ${errorMessage(requiredTerminalLoadFailure.error)}. Open Settings for recovery guidance.`);
+        this.setRequiredPluginFailure(machineId, localizedText("PiWebApp.required_terminal_plugin_failed_to_load_open.0ccfac72")`Required Terminal plugin failed to load: ${errorMessage(requiredTerminalLoadFailure.error)}. Open Settings for recovery guidance.`);
         this.requestUpdate();
         return false;
       }
@@ -2765,7 +2766,7 @@ export class PiWebApp extends LitElement {
           console.warn(`Failed to register PI WEB plugin ${terminalRuntimeId} during ${terminalFailurePhase}`, error);
           this.verifiedPluginModeByMachine.delete(machineId);
           this.clearRequiredTerminal(machineId);
-          this.setRequiredPluginFailure(machineId, `Required Terminal plugin failed during browser ${terminalFailurePhase}: ${errorMessage(error)}. Open Settings for recovery guidance.`);
+          this.setRequiredPluginFailure(machineId, localizedText("PiWebApp.required_terminal_plugin_failed_during_browser_open.2ddb550d")`Required Terminal plugin failed during browser ${terminalFailurePhase}: ${errorMessage(error)}. Open Settings for recovery guidance.`);
         }
       }
 
@@ -2790,7 +2791,7 @@ export class PiWebApp extends LitElement {
         this.verifiedPluginModeByMachine.delete(machineId);
         this.clearRequiredTerminal(machineId);
         if (!this.requiredPluginFailureByMachine.has(machineId)) {
-          this.setRequiredPluginFailure(machineId, "Required Terminal plugin is unavailable after plugin activation. Open Settings for recovery guidance.");
+          this.setRequiredPluginFailure(machineId, t("PiWebApp.required_terminal_plugin_is_unavailable_after_plugin.5f924c82"));
         }
       } else if (result.terminalMode === "required") {
         this.verifiedPluginModeByMachine.set(machineId, "required");
@@ -2801,13 +2802,13 @@ export class PiWebApp extends LitElement {
       this.invalidateWorkspaceSurface();
       return complete;
     } catch (error) {
-      console.warn(`Failed to load ${label}`, error);
+      console.warn(localizedText("PiWebApp.failed_to_load.55f5e2eb")`Failed to load ${label}`, error);
       this.pluginLoadErrors.set(machineId, errorMessage(error));
       this.verifiedPluginModeByMachine.delete(machineId);
       this.clearRequiredTerminal(machineId);
       this.reconcilePluginLoadSelection(urlAtLoad);
       this.applyPreferredTheme(false);
-      this.setRequiredPluginFailure(machineId, `Failed to load ${label}: ${errorMessage(error)}`);
+      this.setRequiredPluginFailure(machineId, localizedText("PiWebApp.failed_to_load.3bd2b4f5")`Failed to load ${label}: ${errorMessage(error)}`);
       this.requestUpdate();
       return false;
     }
@@ -2958,7 +2959,7 @@ export class PiWebApp extends LitElement {
     const machineId = selectedMachineId(this.state);
     const scope = workspaceBrowserErrorScope(machineId, workspace.projectId, workspace.id);
     if (!canDeleteWorkspace(workspace)) {
-      this.browserErrors.report(scope, "Workspace removal is not available");
+      this.browserErrors.report(scope, t("PiWebApp.workspace_removal_is_not_available.4f4afcb0"));
       return;
     }
     if (isWorkspaceDeletionPending(this.state, workspace)) return;
@@ -2990,11 +2991,11 @@ export class PiWebApp extends LitElement {
     // response have no sessiond-owned notice to rely on, so keep browser
     // feedback even when an older notice for this workspace is still visible.
     if (!(error instanceof HttpRequestError) || message.startsWith("Session daemon unavailable:")) {
-      this.browserErrors.report(scope, `Failed to start workspace removal: ${message}`);
+      this.browserErrors.report(scope, localizedText("PiWebApp.failed_to_start_workspace_removal.c823ebc7")`Failed to start workspace removal: ${message}`);
       return;
     }
 
-    const expectedNoticeMessage = `Workspace removal failed: ${message}`;
+    const expectedNoticeMessage = localizedText("PiWebApp.workspace_removal_failed.3b51ad25")`Workspace removal failed: ${message}`;
     const hasNotice = () => this.serverNotices.hasNotice(machineId, (notice) => {
       const context = notice.context ?? {};
       return notice.source === workspaceDeleteOperation
@@ -3003,7 +3004,7 @@ export class PiWebApp extends LitElement {
         && context["targetWorkspaceId"] === workspace.id;
     });
     if (!hasNotice()) await this.serverNotices.refresh(machineId);
-    if (!hasNotice()) this.browserErrors.report(scope, `Failed to start workspace removal: ${message}`);
+    if (!hasNotice()) this.browserErrors.report(scope, localizedText("PiWebApp.failed_to_start_workspace_removal.34d2279c")`Failed to start workspace removal: ${message}`);
   }
 
   private async workspaceForCommandRun(run: TerminalCommandRun, machineId: string): Promise<Workspace | undefined> {
@@ -3134,7 +3135,7 @@ export class PiWebApp extends LitElement {
 
   private cancelWorkspaceDeletionRefresh(): void {
     this.workspaceDeletionRefreshGeneration += 1;
-    this.workspaceDeletionRefreshAbort?.abort(new DOMException("Workspace deletion scope changed", "AbortError"));
+    this.workspaceDeletionRefreshAbort?.abort(new DOMException(t("PiWebApp.workspace_deletion_scope_changed.f0a2a1c0"), "AbortError"));
     this.workspaceDeletionRefreshAbort = undefined;
     this.workspaceDeletionRefreshScope = undefined;
     this.workspaceDeletionRefreshQueued = false;
@@ -3199,7 +3200,7 @@ export class PiWebApp extends LitElement {
           Math.min(attempt - 1, WORKSPACE_DELETION_RECONCILE_RETRY_DELAYS_MS.length - 1)
         ] ?? 10_000;
         this.workspaceDeletionReconcileRetries.set(runKey, { attempt, retryAt: Date.now() + delay });
-        this.browserErrors.report(errorScope, `Workspace removal succeeded, but refreshing the workspace list failed: ${errorMessage(error)}. Retrying…`);
+        this.browserErrors.report(errorScope, localizedText("PiWebApp.workspace_removal_succeeded_but_refreshing_the_workspac.8f540a64")`Workspace removal succeeded, but refreshing the workspace list failed: ${errorMessage(error)}. Retrying…`);
         return;
       }
       if (!this.workspaceDeletionRefreshIsCurrent(machineId, projectId, generation, controller)) return;
@@ -3230,7 +3231,7 @@ export class PiWebApp extends LitElement {
 
   private async removeMachine(machine: Machine | undefined = this.state.selectedMachine): Promise<void> {
     if (machine === undefined || machine.kind === "local") return;
-    if (!window.confirm(`Remove ${machine.name}?\n\nThis only removes it from this PI WEB gateway.`)) return;
+    if (!window.confirm(localizedText("PiWebApp.remove_this_only_removes_it_from_this.a75d42ca")`Remove ${machine.name}?\n\nThis only removes it from this PI WEB gateway.`)) return;
     const wasSelected = this.state.selectedMachine?.id === machine.id;
     if (wasSelected) this.rememberCurrentMachineNavigation();
     const fallback = await this.machines.deleteMachine(machine, { selectFallback: !wasSelected });
@@ -3252,8 +3253,8 @@ export class PiWebApp extends LitElement {
       .then(() => action.run())
       .catch((error: unknown) => {
         const message = error instanceof Error ? error.message : String(error);
-        console.warn(`Action failed: ${action.id}`, error);
-        this.browserErrors.report({ kind: "global" }, `Action failed: ${message}`);
+        console.warn(localizedText("PiWebApp.action_failed.6ea86288")`Action failed: ${action.id}`, error);
+        this.browserErrors.report({ kind: "global" }, localizedText("PiWebApp.action_failed.17a92ea9")`Action failed: ${message}`);
       });
   }
 
@@ -3268,7 +3269,7 @@ export class PiWebApp extends LitElement {
       modelDialog: {
         instanceId: ++this.modelDialogInstanceId,
         origin,
-        title: "Select Model",
+        title: t("PiWebApp.select_model.d9ea3ae1"),
         defaultsLoading: defaults === undefined,
         ...(defaults?.defaultProvider !== undefined && defaults.defaultModel !== undefined ? { defaultValue: `${defaults.defaultProvider}/${defaults.defaultModel}` } : {}),
         ...(selectedValue !== undefined ? { selectedValue } : {}),
@@ -3315,7 +3316,7 @@ export class PiWebApp extends LitElement {
       const provider = model.provider ?? "";
       const id = model.id ?? "";
       const value = `${provider}/${id}`;
-      return { value, label: `${id}${value === selectedValue ? " ✓ current" : ""}`, description: provider };
+      return { value, label: `${id}${value === selectedValue ? t("PiWebApp.current.15361875") : ""}`, description: provider };
     });
   }
 
@@ -3372,12 +3373,12 @@ export class PiWebApp extends LitElement {
     const current = this.state.status?.thinkingLevel ?? "off";
     this.setState({
       thinkingDialog: {
-        title: "Select Thinking Level",
+        title: t("PiWebApp.select_thinking_level.4e50eb8c"),
         origin,
         defaultsLoading: defaults === undefined,
         ...(defaults?.defaultThinkingLevel === undefined ? {} : { defaultValue: defaults.defaultThinkingLevel }),
         selectedValue: current,
-        options: levels.map((level) => { const description = thinkingDescription(level); return { value: level, label: `${level}${level === current ? " ✓ current" : ""}`, ...(description === undefined ? {} : { description }) }; }),
+        options: levels.map((level) => { const description = thinkingDescription(level); return { value: level, label: `${thinkingDisplayLabel(level)}${level === current ? t("PiWebApp.current.470b0064") : ""}`, ...(description === undefined ? {} : { description }) }; }),
       },
     });
   }
@@ -3458,7 +3459,7 @@ export class PiWebApp extends LitElement {
     if (target.action === "edit") {
       const confirmation = queuedMessageRecallConfirmation(target.expectedQueue, target.index);
       if (confirmation !== undefined && !window.confirm(confirmation)) return;
-      if ((editor?.view?.state.doc.toString() ?? "") !== "" && !window.confirm("Recalling will replace your unsent draft. Continue?")) return;
+      if ((editor?.view?.state.doc.toString() ?? "") !== "" && !window.confirm(t("PiWebApp.recalling_will_replace_your_unsent_draft_continue.99db6ada"))) return;
     }
     this.queuedMessageActionTarget = target;
     try {
@@ -3599,13 +3600,13 @@ export class PiWebApp extends LitElement {
       const isCurrent = () => selectedMachineId(this.state) === input.machine.id && this.state.selectedSession?.id === input.session.id;
       const actOnHistory = async (action: "fork" | "back"): Promise<void> => {
         if (!isCurrent() || !this.plugins.promptChipOwnerAvailable(binding.registrationPluginId, input.machine.id)) {
-          throw new Error("This message's conversation is no longer available.");
+          throw new Error(t("PiWebApp.this_message_s_conversation_is_no_longer.650328cc"));
         }
         if (action === "fork") return this.sessions.actOnMessage(input.message.entryId, action);
-        if (this.messageRevertTarget !== undefined || this.queuedMessageActionTarget !== undefined) throw new Error("Another draft-replacing action is already in progress.");
+        if (this.messageRevertTarget !== undefined || this.queuedMessageActionTarget !== undefined) throw new Error(t("PiWebApp.another_draft_replacing_action_is_already_in.186dfd7b"));
         const editor = this.promptEditor;
         const draft = editor?.view?.state.doc.toString() ?? "";
-        if (draft !== "" && !window.confirm("Going back will replace your unsent draft. Continue?")) return;
+        if (draft !== "" && !window.confirm(t("PiWebApp.going_back_will_replace_your_unsent_draft.fe4f9e9d"))) return;
 
         const target = { machineId: input.machine.id, sessionId: input.session.id };
         this.messageRevertTarget = target;
@@ -3739,7 +3740,7 @@ export class PiWebApp extends LitElement {
         && restored !== this.ownerDocument.documentElement && focusElement(restored)) return;
       // Collapse/resize may replace the original trigger while the dialog is open.
       for (const host of this.renderRoot.querySelectorAll("app-context-bar, app-mobile-main-tabs, workspace-panel")) {
-        const button = host.shadowRoot?.querySelector<HTMLButtonElement>('button[aria-label="Navigation"]');
+        const button = host.shadowRoot?.querySelector<HTMLButtonElement>(t("PiWebApp.button_aria_label_navigation.7fae6367"));
         if (button !== null && button !== undefined && focusElement(button)) return;
       }
     });
@@ -3811,12 +3812,12 @@ export class PiWebApp extends LitElement {
     return [
       {
         id: "navigation",
-        label: "Sessions",
+        label: t("PiWebApp.sessions.326a773f"),
         icon: "navigation",
         className: "navigation-tab",
-        ...(unreadCount === 0 ? {} : { badge: unreadCount, badgeLabel: `${String(unreadCount)} unread`, badgeTone: "unread" }),
+        ...(unreadCount === 0 ? {} : { badge: unreadCount, badgeLabel: localizedText("PiWebApp.unread.f171c6dc")`${String(unreadCount)} unread`, badgeTone: "unread" }),
       },
-      { id: "chat", label: "Chat", icon: "chat" },
+      { id: "chat", label: t("PiWebApp.chat.66fa795b"), icon: "chat" },
       ...panels.map((panel): AppMobileMainTab => {
         const icon = panel.icon;
         return {
@@ -3887,7 +3888,7 @@ export class PiWebApp extends LitElement {
         <main class=${mainViewClass(mainView)}>
           ${this.renderContextBar()}
           ${guard([...this.workspaceSurfaceInputs(), state.sessions, this.unreadSessionIds], () => this.renderMobileMainTabs())}
-          ${this.unknownRouteView() === undefined ? null : html`<div class="error warning" role="alert"><span class="error-text">Unknown view: ${this.unknownRouteView()}</span></div>`}
+          ${this.unknownRouteView() === undefined ? null : localizedTemplate("PiWebApp.unknown_view.36e6e4bd", html)`<div class="error warning" role="alert"><span class="error-text">Unknown view: ${this.unknownRouteView()}</span></div>`}
           ${this.renderServerNoticeBanners()}
           ${errorBanner(this.displayedError(), () => { this.dismissDisplayedError(); })}
           ${this.renderBrowserErrorBanners(state)}
@@ -4145,12 +4146,24 @@ function nextFrame(): Promise<void> {
 
 function thinkingDescription(level: string): string | undefined {
   switch (level) {
-    case "off": return "No reasoning";
-    case "minimal": return "Very brief reasoning (~1k tokens)";
-    case "low": return "Light reasoning (~2k tokens)";
-    case "medium": return "Moderate reasoning (~8k tokens)";
-    case "high": return "Deep reasoning (~16k tokens)";
-    case "xhigh": return "Maximum reasoning (~32k tokens)";
+    case "off": return t("PiWebApp.no_reasoning.34ab682d");
+    case "minimal": return t("PiWebApp.very_brief_reasoning_k_tokens.4a351058");
+    case "low": return t("PiWebApp.light_reasoning_k_tokens.cfef40d8");
+    case "medium": return t("PiWebApp.moderate_reasoning_k_tokens.c46b6830");
+    case "high": return t("PiWebApp.deep_reasoning_k_tokens.04b7b4dc");
+    case "xhigh": return t("PiWebApp.maximum_reasoning_k_tokens.721e91f4");
     default: return undefined; // unknown level from a newer pi: no description
+  }
+}
+
+function thinkingDisplayLabel(level: string): string {
+  switch (level) {
+    case "off": return t("ui.thinking.off");
+    case "minimal": return t("ui.thinking.minimal");
+    case "low": return t("ui.thinking.low");
+    case "medium": return t("ui.thinking.medium");
+    case "high": return t("ui.thinking.high");
+    case "xhigh": return t("ui.thinking.xhigh");
+    default: return level;
   }
 }

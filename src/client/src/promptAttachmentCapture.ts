@@ -1,3 +1,4 @@
+import { t } from "../../shared/i18n";
 import type { PromptAttachmentDelivery } from "../../shared/apiTypes";
 import { extensionForImageMimeType, isSupportedImageMimeType } from "../../shared/promptAttachments";
 
@@ -36,7 +37,7 @@ export interface CaptureResult {
 }
 
 export const DEFAULT_FILE_MIME_TYPE = "application/octet-stream";
-export const READ_FAILURE_MESSAGE = "Failed to read an attachment.";
+export const READ_FAILURE_MESSAGE = t("promptAttachmentCapture.failed_to_read_an_attachment.21c67d96");
 
 /**
  * Read a batch of browser files as prompt attachments.

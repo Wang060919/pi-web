@@ -1,3 +1,4 @@
+import { localizedText, t } from "./i18n.js";
 import type { PiWebPlugin } from "@jmfederico/pi-web/plugin-api";
 import { TASKS_CONFIG_PATH } from "./config.js";
 import { defineTasksPanelElement, tasksPanelBadge } from "./tasksPanelElement.js";
@@ -13,9 +14,9 @@ const plugin = {
         actions: [
           {
             id: "workspace.open-tasks",
-            title: "Open Workspace Tasks",
-            description: `Open the workspace Tasks tab. Configure tasks in ${TASKS_CONFIG_PATH}.`,
-            group: "Workspace",
+            title: t("pi-web-plugin.open_workspace_tasks.e436de67"),
+            description: localizedText("pi-web-plugin.open_the_workspace_tasks_tab_configure_tasks.9030dc94")`Open the workspace Tasks tab. Configure tasks in ${TASKS_CONFIG_PATH}.`,
+            group: t("pi-web-plugin.workspace.9a4c0efe"),
             enabled: (context) => context.state.selectedWorkspace !== undefined,
             run: (context) => {
               if (context.state.selectedWorkspace === undefined) return;
@@ -26,7 +27,7 @@ const plugin = {
         workspacePanels: [
           {
             id: "workspace.tasks",
-            title: "Tasks",
+            title: t("pi-web-plugin.tasks.db35526f"),
             icon: svg`
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 6h11"></path>

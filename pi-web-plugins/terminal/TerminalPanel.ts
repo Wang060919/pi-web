@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "./i18n.js";
 import { css, html, LitElement, unsafeCSS } from "lit";
 import { property, query, state } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
@@ -640,7 +641,7 @@ export class TerminalPanel extends LitElement {
       void channel.closed.then((close) => { this.handleChannelClosed(generation, terminalId, terminal, close); });
     }).catch((error: unknown) => {
       if (controller.signal.aborted || !this.channelIsCurrent(generation, terminalId, terminal)) return;
-      this.connectionError = `Terminal connection failed: ${errorMessage(error)}`;
+      this.connectionError = localizedText("TerminalPanel.terminal_connection_failed.b654e73f")`Terminal connection failed: ${errorMessage(error)}`;
       this.scheduleChannelReconnect(terminalId, terminal);
     });
   }
@@ -669,7 +670,7 @@ export class TerminalPanel extends LitElement {
       void this.refreshAfterCleanChannelClose(generation, terminalId, terminal);
       return;
     }
-    this.connectionError = `Terminal connection closed: ${failure}`;
+    this.connectionError = localizedText("TerminalPanel.terminal_connection_closed.bd174d90")`Terminal connection closed: ${failure}`;
     terminal.writeln(`\r\n[terminal connection closed: ${failure}]`);
     this.scheduleChannelReconnect(terminalId, terminal);
   }
@@ -799,7 +800,7 @@ export class TerminalPanel extends LitElement {
       channel.send(message);
       return true;
     } catch (error) {
-      this.connectionError = `Terminal send failed: ${errorMessage(error)}`;
+      this.connectionError = localizedText("TerminalPanel.terminal_send_failed.5f76c7e1")`Terminal send failed: ${errorMessage(error)}`;
       return false;
     }
   }
@@ -835,27 +836,27 @@ export class TerminalPanel extends LitElement {
     const terminal = this.selectedTerminalInfo();
     if (isCommandRunPending(run)) {
       const cancelling = this.cancellingRunIds.includes(run.id);
-      return html`
+      return localizedTemplate("TerminalPanel.command_is_running_press_ctrl_c_or.08636c3c", html)`
         <section class="command-run-notice running">
           <div>
             <strong>${run.title}</strong>
             <p>Command is running. Press <kbd>Ctrl</kbd>+<kbd>C</kbd> or use the button to cancel.</p>
             <code>${run.command}</code>
           </div>
-          <button class="danger" ?disabled=${cancelling} @click=${() => { void this.cancelCommandRun(run); }}>${cancelling ? "Cancel sent…" : "Cancel command"}</button>
+          <button class="danger" ?disabled=${cancelling} @click=${() => { void this.cancelCommandRun(run); }}>${cancelling ? t("TerminalPanel.cancel_sent.cf3b8bfb") : t("TerminalPanel.cancel_command.7d5376cf")}</button>
         </section>
       `;
     }
     if (terminal?.exited === true) {
       const continuing = this.continuingTerminalIds.includes(terminal.id);
-      return html`
+      return localizedTemplate("TerminalPanel.output_is_preserved_continue_in_a_shell.7e1b7f3a", html)`
         <section class=${`command-run-notice ${run.status}`}>
           <div>
             <strong>${commandRunCompletionLabel(run)}</strong>
             <p>Output is preserved. Continue in a shell to inspect or run follow-up commands.</p>
             <code>${run.command}</code>
           </div>
-          <button ?disabled=${continuing} @click=${() => { void this.continueTerminal(terminal.id); }}>${continuing ? "Starting shell…" : "Continue in shell"}</button>
+          <button ?disabled=${continuing} @click=${() => { void this.continueTerminal(terminal.id); }}>${continuing ? t("TerminalPanel.starting_shell.92fc7e2f") : t("TerminalPanel.continue_in_shell.92e99303")}</button>
         </section>
       `;
     }
@@ -918,10 +919,10 @@ export class TerminalPanel extends LitElement {
   private async copyAllSnapshotText(): Promise<void> {
     const text = this.copySnapshot?.text ?? "";
     if (text === "") {
-      this.copyStatus = "No terminal output to copy.";
+      this.copyStatus = t("TerminalPanel.no_terminal_output_to_copy.db7d49ea");
       return;
     }
-    this.copyStatus = await writeClipboardText(text) ? "Copied all terminal output." : "Unable to copy terminal output.";
+    this.copyStatus = await writeClipboardText(text) ? t("TerminalPanel.copied_all_terminal_output.cbf3dc95") : t("TerminalPanel.unable_to_copy_terminal_output.275c2c60");
   }
 
   private renderCopyModeToggle() {
@@ -931,12 +932,12 @@ export class TerminalPanel extends LitElement {
       <button
         type="button"
         class=${active ? "copy-mode-toggle selected" : "copy-mode-toggle"}
-        title=${active ? "Return to the interactive terminal" : "Select and copy terminal output"}
-        aria-label=${active ? "Close terminal copy mode" : "Open terminal copy mode"}
+        title=${active ? t("TerminalPanel.return_to_the_interactive_terminal.c30a2060") : t("TerminalPanel.select_and_copy_terminal_output.5cc46b65")}
+        aria-label=${active ? t("TerminalPanel.close_terminal_copy_mode.3f9da222") : t("TerminalPanel.open_terminal_copy_mode.fec0a012")}
         aria-pressed=${String(active)}
         @click=${() => { if (active) this.exitCopyMode(); else this.enterCopyMode(); }}
       >
-        <span>${active ? "Done" : "Select"}</span>
+        <span>${active ? t("TerminalPanel.done.30172af5") : t("TerminalPanel.select.1fa059d0")}</span>
       </button>
     `;
   }
@@ -944,9 +945,9 @@ export class TerminalPanel extends LitElement {
   private renderCopyModeToolbar() {
     const snapshot = this.copySnapshot;
     if (snapshot === undefined) return null;
-    return html`
+    return localizedTemplate("TerminalPanel.refresh_copy_all.e4c884f2", html)`
       <div class="terminal-copy-toolbar" role="toolbar" aria-label="Terminal copy controls">
-        <span aria-live="polite">${this.copyStatus ?? "Snapshot · long-press and select text"}</span>
+        <span aria-live="polite">${this.copyStatus ?? t("TerminalPanel.snapshot_long_press_and_select_text.502dd978")}</span>
         <small>${snapshot.physicalLineCount} ${snapshot.physicalLineCount === 1 ? "row" : "rows"}</small>
         <button type="button" @click=${() => { this.refreshCopyMode(); }}>Refresh</button>
         <button type="button" @click=${() => { void this.copyAllSnapshotText(); }}>Copy all</button>
@@ -957,7 +958,7 @@ export class TerminalPanel extends LitElement {
   private renderCopyMode() {
     const snapshot = this.copySnapshot;
     if (snapshot === undefined) return null;
-    return html`
+    return localizedTemplate("TerminalPanel.template.c5d0a7c0", html)`
       <section class="terminal-copy-view" aria-label="Terminal copy mode">
         ${this.copyToolbarReplacesSoftKeys() ? null : this.renderCopyModeToolbar()}
         <div class="terminal-copy-layers">
@@ -1011,12 +1012,12 @@ export class TerminalPanel extends LitElement {
 
   private renderSoftKeysToggle() {
     if (!this.shouldShowSoftKeysToggle()) return null;
-    return html`
+    return localizedTemplate("TerminalPanel.keys.3b02e7bb", html)`
       <button
         type="button"
         class=${this.softKeysEnabled ? "soft-keys-toggle selected" : "soft-keys-toggle"}
-        title=${this.softKeysEnabled ? "Hide terminal soft keys" : "Show terminal soft keys"}
-        aria-label=${this.softKeysEnabled ? "Hide terminal soft keys" : "Show terminal soft keys"}
+        title=${this.softKeysEnabled ? t("TerminalPanel.hide_terminal_soft_keys.36945f31") : t("TerminalPanel.show_terminal_soft_keys.ee2e331e")}
+        aria-label=${this.softKeysEnabled ? t("TerminalPanel.hide_terminal_soft_keys.3e651527") : t("TerminalPanel.show_terminal_soft_keys.7fae8d06")}
         aria-pressed=${String(this.softKeysEnabled)}
         @click=${() => { this.toggleSoftKeys(); }}
       >
@@ -1042,14 +1043,14 @@ export class TerminalPanel extends LitElement {
   }
 
   override render() {
-    return html`
+    return localizedTemplate("TerminalPanel.shell.e180687e", html)`
       <section class="terminal-shell">
         <div class="terminal-tabs">
           ${this.renderCopyModeToggle()}
           ${this.renderSoftKeysToggle()}
           ${this.terminals.map((terminal) => html`
             <button class=${this.selectedId === terminal.id ? "selected" : ""} @click=${() => { this.selectTerminal(terminal.id); }}>
-              <span>${terminal.name}${terminal.exited ? " · exited" : ""}</span>
+              <span>${terminal.name}${terminal.exited ? t("TerminalPanel.exited.29e1f98a") : ""}</span>
               <small @click=${(event: Event) => { void this.closeTerminal(terminal.id, event); }}>×</small>
             </button>
           `)}
@@ -1059,7 +1060,7 @@ export class TerminalPanel extends LitElement {
         ${this.connectionError === undefined ? null : html`<p class="error">${this.connectionError}</p>`}
         ${this.renderCommandRunNotice()}
         ${this.renderTerminalAccessoryBar()}
-        ${this.loading ? html`<p class="muted">Loading terminals…</p>` : null}
+        ${this.loading ? localizedTemplate("TerminalPanel.loading_terminals.b2b8ff3e", html)`<p class="muted">Loading terminals…</p>` : null}
         <div class="terminal-stage">
           <div class=${this.copySnapshot === undefined ? "terminal-host" : "terminal-host copying"} ?inert=${this.copySnapshot !== undefined}></div>
           ${this.renderCopyMode()}
@@ -1164,8 +1165,8 @@ function isCommandRunPending(run: TerminalCommandRun): boolean {
 }
 
 function commandRunCompletionLabel(run: TerminalCommandRun): string {
-  if (run.status === "succeeded") return `Command succeeded${run.exitCode === undefined ? "" : ` with exit code ${String(run.exitCode)}`}`;
-  return `Command failed${run.exitCode === undefined ? "" : ` with exit code ${String(run.exitCode)}`}`;
+  if (run.status === "succeeded") return localizedText("TerminalPanel.command_succeeded.d5d5984e")`Command succeeded${run.exitCode === undefined ? "" : localizedText("TerminalPanel.with_exit_code.139cb560")` with exit code ${String(run.exitCode)}`}`;
+  return localizedText("TerminalPanel.command_failed.81dad9cc")`Command failed${run.exitCode === undefined ? "" : localizedText("TerminalPanel.with_exit_code.834ed091")` with exit code ${String(run.exitCode)}`}`;
 }
 
 export function filterTerminalInput(data: string): string {

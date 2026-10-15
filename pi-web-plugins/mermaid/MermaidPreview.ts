@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "./i18n.js";
 import type { ContentRendererInput } from "@jmfederico/pi-web/plugin-api";
 import { LitElement, css, html, type PropertyValues } from "lit";
 import { property, state } from "lit/decorators.js";
@@ -6,7 +7,7 @@ let enginePromise: Promise<string> | undefined;
 export function loadMermaidEngine(): Promise<string> {
   // The package build emits this self-contained script beside the browser entry.
   enginePromise ??= fetch(new URL(/* @vite-ignore */ "./mermaid-engine.js", import.meta.url), { signal: AbortSignal.timeout(30_000) }).then(async (response) => {
-    if (!response.ok) throw new Error(`Mermaid engine unavailable (${String(response.status)})`);
+    if (!response.ok) throw new Error(localizedText("MermaidPreview.mermaid_engine_unavailable.d87213b9")`Mermaid engine unavailable (${String(response.status)})`);
     return response.text();
   }).catch((error: unknown) => {
     enginePromise = undefined;
@@ -62,7 +63,7 @@ export class MermaidPreview extends LitElement {
       if (data.type === "mermaid-ready") {
         frame.contentWindow?.postMessage({ type: "mermaid-render", text: input.text }, "*");
       } else if (data.type === "mermaid-error") {
-        input.fail(new Error("Mermaid could not render this source"));
+        input.fail(new Error(t("MermaidPreview.mermaid_could_not_render_this_source.ecb939e2")));
         window.clearTimeout(timeout);
       } else if (data.type === "mermaid-rendered" && "height" in data && typeof data.height === "number" && Number.isFinite(data.height)) {
         window.clearTimeout(timeout);
@@ -77,7 +78,7 @@ export class MermaidPreview extends LitElement {
       if (current()) {
         this.generation += 1;
         this.document = undefined;
-        input.fail(new Error("Mermaid preview timed out"));
+        input.fail(new Error(t("MermaidPreview.mermaid_preview_timed_out.be46c065")));
       }
       cleanup();
     }, 30_000);
@@ -100,8 +101,8 @@ export class MermaidPreview extends LitElement {
 
   override render() {
     return this.document === undefined
-      ? html`<p role="status">Rendering diagram…</p>`
-      : html`<iframe title="Mermaid diagram" sandbox="allow-scripts" referrerpolicy="no-referrer" .srcdoc=${this.document} style=${`height:${String(this.height)}px`}></iframe>`;
+      ? localizedTemplate("MermaidPreview.rendering_diagram.9c9404d9", html)`<p role="status">Rendering diagram…</p>`
+      : localizedTemplate("MermaidPreview.template.9967b04a", html)`<iframe title="Mermaid diagram" sandbox="allow-scripts" referrerpolicy="no-referrer" .srcdoc=${this.document} style=${`height:${String(this.height)}px`}></iframe>`;
   }
 
   static override styles = css`

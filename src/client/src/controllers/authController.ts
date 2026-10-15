@@ -1,3 +1,4 @@
+import { localizedText } from "../../../shared/i18n";
 import { api as defaultApi, type AuthProviderOption, type AuthType, type OAuthFlowState, type SessionStatus } from "../api";
 import type { AuthDialogState } from "../appState";
 import { BrowserErrorReporter, machineBrowserErrorScope } from "../browserErrors";
@@ -98,7 +99,7 @@ export class AuthController {
       if (providerId !== undefined && providerId !== "") {
         const provider = providers.find((candidate) => candidate.id === providerId);
         if (provider !== undefined) await this.logoutProviderOnMachine(provider.id, machineId, operationGeneration);
-        else this.browserErrors.report(machineBrowserErrorScope(machineId), `No stored credentials for ${providerId}`);
+        else this.browserErrors.report(machineBrowserErrorScope(machineId), localizedText("authController.no_stored_credentials_for.65d740e5")`No stored credentials for ${providerId}`);
         return;
       }
       this.setState({ authDialog: { step: "logout", machineId, providers } });
@@ -179,7 +180,7 @@ export class AuthController {
       if (!this.isCurrentAuthOperation(operationGeneration)) return;
       const exact = providers.filter((provider) => provider.id === providerId);
       if (exact.length === 0) {
-        this.browserErrors.report(machineBrowserErrorScope(machineId), `Auth provider not found: ${providerId}`);
+        this.browserErrors.report(machineBrowserErrorScope(machineId), localizedText("authController.auth_provider_not_found.5e40c25e")`Auth provider not found: ${providerId}`);
         return;
       }
       if (exact.length > 1) {

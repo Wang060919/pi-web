@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { AppAction } from "../actions";
@@ -6,6 +7,7 @@ import type { SettingsSection } from "../settingsRoute";
 import "./ModalSurface";
 import "./settings/SettingsGeneralPanel";
 import "./settings/SettingsThemePanel";
+import "./settings/SettingsLanguagePanel";
 import type { QualifiedThemeContribution } from "../plugins/types";
 import { DEFAULT_THEME_PREFERENCE, type ThemePreference } from "../theme";
 import "./settings/SettingsSessiondPanel";
@@ -103,8 +105,8 @@ export class SettingsDialog extends LitElement {
   }
 
   override render(): TemplateResult {
-    return html`
-      <modal-surface .onClose=${() => this.onClose?.()} .label=${"PI WEB settings"}>
+    return localizedTemplate("SettingsDialog.settings_pi_web.760f578b", html)`
+      <modal-surface .onClose=${() => this.onClose?.()} .label=${t("SettingsDialog.pi_web_settings.5d890f4d")}>
         <header class="settings-header">
           <div>
             <span class="eyebrow">Settings</span>
@@ -114,11 +116,11 @@ export class SettingsDialog extends LitElement {
         </header>
         <div class="settings-body">
           <nav class="settings-nav" aria-label="Settings sections">
-            ${this.renderNavButton("general", "General", "Gateway + selected machine")}
-            ${this.renderNavButton("sessiond", "Session daemon", "Selected machine")}
-            ${this.renderNavButton("packages", "Pi packages", "Selected machine")}
-            ${this.renderNavButton("plugins", "PI WEB plugins", "Selected machine")}
-            ${this.renderNavButton("shortcuts", "Keyboard", "Gateway shortcuts")}
+            ${this.renderNavButton("general", t("SettingsDialog.general.9d6707b6"), t("SettingsDialog.gateway_selected_machine.97827f75"))}
+            ${this.renderNavButton("sessiond", t("SettingsDialog.session_daemon.a8a7922c"), t("SettingsDialog.selected_machine.60ce1c88"))}
+            ${this.renderNavButton("packages", t("SettingsDialog.pi_packages.91f80e11"), t("SettingsDialog.selected_machine.600984f6"))}
+            ${this.renderNavButton("plugins", t("SettingsDialog.pi_web_plugins.e0e9e6b6"), t("SettingsDialog.selected_machine.17c9b7b9"))}
+            ${this.renderNavButton("shortcuts", t("SettingsDialog.keyboard.39b81103"), t("SettingsDialog.gateway_shortcuts.e71cb404"))}
           </nav>
           <main class="settings-content">
             ${this.renderActiveSection()}
@@ -208,6 +210,7 @@ export class SettingsDialog extends LitElement {
         .onSave=${(config: PiWebConfigValues) => this.saveConfig(config)}
         .onSaveMachineConfig=${(config: PiWebConfigValues) => this.saveMachineAccessConfig(config)}
       >
+        <settings-language-panel slot="appearance"></settings-language-panel>
         <settings-theme-panel
           slot="appearance"
           .themes=${this.themes}
@@ -271,7 +274,7 @@ export class SettingsDialog extends LitElement {
       this.accessConfigResponse = response;
     } catch (error) {
       if (this.isCurrentAccessLoad(requestSeq, target)) {
-        this.accessError = `Failed to load file access/upload config from ${settingsMachineTargetLabel(target)}: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(error), target)}`;
+        this.accessError = localizedText("SettingsDialog.failed_to_load_file_access_upload_config.b5ad76ea")`Failed to load file access/upload config from ${settingsMachineTargetLabel(target)}: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(error), target)}`;
       }
     } finally {
       if (this.isCurrentAccessLoad(requestSeq, target)) this.accessLoading = false;
@@ -295,7 +298,7 @@ export class SettingsDialog extends LitElement {
       this.sessiondConfigResponse = response;
     } catch (error) {
       if (this.isCurrentSessiondLoad(requestSeq, target)) {
-        this.sessiondError = `Failed to load session-daemon config from ${settingsMachineTargetLabel(target)}: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(error), target)}`;
+        this.sessiondError = localizedText("SettingsDialog.failed_to_load_session_daemon_config_from.ae288701")`Failed to load session-daemon config from ${settingsMachineTargetLabel(target)}: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(error), target)}`;
       }
     } finally {
       if (this.isCurrentSessiondLoad(requestSeq, target)) this.sessiondLoading = false;
@@ -314,10 +317,10 @@ export class SettingsDialog extends LitElement {
           if (!this.isCurrentPluginLoad(requestSeq, target)) return;
           this.selectedPluginConfigResponse = config;
           this.selectedPluginsResponse = undefined;
-          this.pluginError = lifecycleSupport.message ?? `Plugin lifecycle diagnostics are not available on ${settingsMachineTargetLabel(target)}.`;
+          this.pluginError = lifecycleSupport.message ?? localizedText("SettingsDialog.plugin_lifecycle_diagnostics_are_not_available_on.cf9cd176")`Plugin lifecycle diagnostics are not available on ${settingsMachineTargetLabel(target)}.`;
         } catch (error) {
           if (!this.isCurrentPluginLoad(requestSeq, target)) return;
-          this.pluginError = `Failed to load PI WEB plugin config from ${settingsMachineTargetLabel(target)}: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(error), target)}; ${lifecycleSupport.message ?? "plugin lifecycle diagnostics are unsupported"}`;
+          this.pluginError = localizedText("SettingsDialog.failed_to_load_pi_web_plugin_config.cc48ef42")`Failed to load PI WEB plugin config from ${settingsMachineTargetLabel(target)}: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(error), target)}; ${lifecycleSupport.message ?? t("SettingsDialog.plugin_lifecycle_diagnostics_are_unsupported.d1c878a2")}`;
         }
         return;
       }
@@ -327,12 +330,12 @@ export class SettingsDialog extends LitElement {
 
       const errors: string[] = [];
       if (config.status === "fulfilled") this.selectedPluginConfigResponse = config.value;
-      else errors.push(`config: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(config.reason), target)}`);
+      else errors.push(localizedText("SettingsDialog.config.173e652a")`config: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(config.reason), target)}`);
 
       if (plugins.status === "fulfilled") this.selectedPluginsResponse = plugins.value;
-      else errors.push(`PI WEB plugins: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(plugins.reason), target)}`);
+      else errors.push(localizedText("SettingsDialog.pi_web_plugins.409564f1")`PI WEB plugins: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(plugins.reason), target)}`);
 
-      this.pluginError = errors.length === 0 ? "" : `Failed to load PI WEB plugin settings from ${settingsMachineTargetLabel(target)}: ${errors.join("; ")}`;
+      this.pluginError = errors.length === 0 ? "" : localizedText("SettingsDialog.failed_to_load_pi_web_plugin_settings.b65c96a9")`Failed to load PI WEB plugin settings from ${settingsMachineTargetLabel(target)}: ${errors.join(t("SettingsDialog.template.d8c062e2"))}`;
     } finally {
       if (this.isCurrentPluginLoad(requestSeq, target)) this.pluginLoading = false;
     }
@@ -359,7 +362,7 @@ export class SettingsDialog extends LitElement {
     const target = this.settingsTarget();
     const lifecycleSupport = this.pluginLifecycleSupport(target);
     if (this.selectedPluginConfigResponse === undefined) {
-      this.pluginError = `Plugin config is not loaded for ${settingsMachineTargetLabel(target)}. Reload before changing plugin enablement.`;
+      this.pluginError = localizedText("SettingsDialog.plugin_config_is_not_loaded_for_reload.50cfd48f")`Plugin config is not loaded for ${settingsMachineTargetLabel(target)}. Reload before changing plugin enablement.`;
       return;
     }
     const patch = pluginEnabledConfigPatch(this.selectedPluginConfigResponse.config, pluginId, enabled);
@@ -377,7 +380,7 @@ export class SettingsDialog extends LitElement {
       let pluginRefreshError: string | undefined;
       if (isSelectedMachineSettingsUnsupported(lifecycleSupport)) {
         this.selectedPluginsResponse = undefined;
-        pluginRefreshError = lifecycleSupport.message ?? `Plugin lifecycle diagnostics are not available on ${settingsMachineTargetLabel(target)}.`;
+        pluginRefreshError = lifecycleSupport.message ?? localizedText("SettingsDialog.plugin_lifecycle_diagnostics_are_not_available_on.53c653ea")`Plugin lifecycle diagnostics are not available on ${settingsMachineTargetLabel(target)}.`;
       } else {
         pluginRefreshError = await this.refreshPluginsForTarget(target);
       }
@@ -386,7 +389,7 @@ export class SettingsDialog extends LitElement {
       this.showSavedMessage();
     } catch (error) {
       if (this.isCurrentSettingsTarget(target)) {
-        this.pluginError = `Failed to save PI WEB plugin config on ${settingsMachineTargetLabel(target)}: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(error), target)}`;
+        this.pluginError = localizedText("SettingsDialog.failed_to_save_pi_web_plugin_config.5e227998")`Failed to save PI WEB plugin config on ${settingsMachineTargetLabel(target)}: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(error), target)}`;
       }
     } finally {
       this.saving = false;
@@ -404,7 +407,7 @@ export class SettingsDialog extends LitElement {
       this.onConfigSaved?.(response.effectiveConfig);
       this.showSavedMessage();
     } catch (error) {
-      this.error = `Failed to save config: ${errorMessage(error)}`;
+      this.error = localizedText("SettingsDialog.failed_to_save_config.cfd6a279")`Failed to save config: ${errorMessage(error)}`;
     } finally {
       this.saving = false;
     }
@@ -426,7 +429,7 @@ export class SettingsDialog extends LitElement {
       this.onConfigSaved?.(response.effectiveConfig);
       this.showSavedMessage();
     } catch (error) {
-      this.error = `Failed to save default theme: ${errorMessage(error)}`;
+      this.error = localizedText("SettingsDialog.failed_to_save_default_theme.2d52aa4e")`Failed to save default theme: ${errorMessage(error)}`;
     } finally {
       this.saving = false;
     }
@@ -449,7 +452,7 @@ export class SettingsDialog extends LitElement {
       this.showSavedMessage();
     } catch (error) {
       if (this.isCurrentSettingsTarget(target)) {
-        this.accessError = `Failed to save file access/upload config on ${settingsMachineTargetLabel(target)}: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(error), target)}`;
+        this.accessError = localizedText("SettingsDialog.failed_to_save_file_access_upload_config.4a64399d")`Failed to save file access/upload config on ${settingsMachineTargetLabel(target)}: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(error), target)}`;
       }
     } finally {
       this.saving = false;
@@ -470,7 +473,7 @@ export class SettingsDialog extends LitElement {
       this.showSavedMessage();
     } catch (error) {
       if (this.isCurrentSettingsTarget(target)) {
-        this.sessiondError = `Failed to save session-daemon config on ${settingsMachineTargetLabel(target)}: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(error), target)}`;
+        this.sessiondError = localizedText("SettingsDialog.failed_to_save_session_daemon_config_on.32c3c9dd")`Failed to save session-daemon config on ${settingsMachineTargetLabel(target)}: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(error), target)}`;
       }
     } finally {
       this.saving = false;
@@ -479,21 +482,21 @@ export class SettingsDialog extends LitElement {
 
   private async installPiPackage(source: string): Promise<void> {
     const target = this.packageTarget();
-    await this.runPiPackageMutation({ kind: "install", source }, "install Pi package", target, () => piPackagesApi.install(source, target.id));
+    await this.runPiPackageMutation({ kind: "install", source }, t("SettingsDialog.install_pi_package.b31b8385"), target, () => piPackagesApi.install(source, target.id));
   }
 
   private async removePiPackage(source: string, scope: PiPackageScope): Promise<void> {
     const target = this.packageTarget();
-    await this.runPiPackageMutation({ kind: "remove", source }, "remove Pi package", target, () => piPackagesApi.remove(source, scope, target.id));
+    await this.runPiPackageMutation({ kind: "remove", source }, t("SettingsDialog.remove_pi_package.fb3324ad"), target, () => piPackagesApi.remove(source, scope, target.id));
   }
 
   private async updatePiPackage(source?: string): Promise<void> {
     const target = this.packageTarget();
-    await this.runPiPackageMutation(source === undefined ? { kind: "update-all" } : { kind: "update", source }, "update Pi packages", target, () => piPackagesApi.update(source, target.id));
+    await this.runPiPackageMutation(source === undefined ? { kind: "update-all" } : { kind: "update", source }, t("SettingsDialog.update_pi_packages.8b88516e"), target, () => piPackagesApi.update(source, target.id));
   }
 
   private async runPiPackageMutation(operation: PiPackageOperationState, label: string, target: PiPackageTargetContext, mutate: () => Promise<PiPackageMutationResponse>): Promise<void> {
-    if (this.saving) throw new Error("A settings operation is already running.");
+    if (this.saving) throw new Error(t("SettingsDialog.a_settings_operation_is_already_running.dbe5efc0"));
     const requestSeq = ++this.packageMutationSeq;
     this.packageLoadRequestSeq += 1;
     this.packageLoading = false;
@@ -510,7 +513,7 @@ export class SettingsDialog extends LitElement {
       if (pluginRefreshError !== undefined) this.packageError = pluginRefreshError;
       this.packageMessage = piPackageMutationFollowUpMessage(response.action, target);
     } catch (error) {
-      if (this.isCurrentPackageMutation(requestSeq, target)) this.packageError = `Failed to ${label} on ${piPackageTargetLabel(target)}: ${friendlyPiPackageErrorMessage(errorMessage(error), target)}`;
+      if (this.isCurrentPackageMutation(requestSeq, target)) this.packageError = localizedText("SettingsDialog.failed_to_on.48f2c37f")`Failed to ${label} on ${piPackageTargetLabel(target)}: ${friendlyPiPackageErrorMessage(errorMessage(error), target)}`;
       throw error;
     } finally {
       if (this.packageMutationSeq === requestSeq) {
@@ -525,7 +528,7 @@ export class SettingsDialog extends LitElement {
       this.pluginsResponse = await pluginsApi.plugins();
       return undefined;
     } catch (error) {
-      return `Failed to refresh gateway PI WEB plugins: ${errorMessage(error)}`;
+      return localizedText("SettingsDialog.failed_to_refresh_gateway_pi_web_plugins.5439f935")`Failed to refresh gateway PI WEB plugins: ${errorMessage(error)}`;
     }
   }
 
@@ -536,7 +539,7 @@ export class SettingsDialog extends LitElement {
       return undefined;
     } catch (error) {
       if (this.isCurrentSettingsTarget(target)) this.selectedPluginsResponse = undefined;
-      return `Config saved, but failed to refresh PI WEB plugins from ${settingsMachineTargetLabel(target)}: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(error), target)}`;
+      return localizedText("SettingsDialog.config_saved_but_failed_to_refresh_pi.71254876")`Config saved, but failed to refresh PI WEB plugins from ${settingsMachineTargetLabel(target)}: ${friendlySelectedMachineSettingsErrorMessage(errorMessage(error), target)}`;
     }
   }
 
@@ -628,10 +631,10 @@ export class SettingsDialog extends LitElement {
   }
 
   private showSavedMessage(): void {
-    this.savedMessage = "Config saved.";
+    this.savedMessage = t("SettingsDialog.config_saved.e57a93f0");
     if (this.savedMessageTimer !== undefined) window.clearTimeout(this.savedMessageTimer);
     this.savedMessageTimer = window.setTimeout(() => {
-      if (this.savedMessage === "Config saved.") this.savedMessage = "";
+      if (this.savedMessage === t("SettingsDialog.config_saved.524176ed")) this.savedMessage = "";
       this.savedMessageTimer = undefined;
     }, 3000);
   }

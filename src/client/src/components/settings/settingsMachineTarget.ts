@@ -1,3 +1,4 @@
+import { localizedText } from "../../../../shared/i18n";
 import type { Machine, MachineKind, MachineRuntime } from "../../api";
 import { PI_WEB_CAPABILITIES, supportsPiWebCapability } from "../../../../shared/capabilities";
 
@@ -22,7 +23,7 @@ export function settingsMachineTarget(machine: Pick<Machine, "id" | "name" | "ki
 }
 
 export function settingsMachineTargetLabel(target: SettingsMachineTarget): string {
-  return target.kind === "local" ? `${target.name} (local gateway)` : `${target.name} (remote machine)`;
+  return target.kind === "local" ? localizedText("settingsMachineTarget.local_gateway.f0c12e35")`${target.name} (local gateway)` : localizedText("settingsMachineTarget.remote_machine.9d494487")`${target.name} (remote machine)`;
 }
 
 export function pluginLifecycleSupport(target: SettingsMachineTarget, runtime: Pick<MachineRuntime, "ok" | "capabilities"> | undefined): PluginLifecycleSupport {
@@ -41,17 +42,17 @@ export function isSelectedMachineSettingsUnsupported(support: SelectedMachineSet
 }
 
 export function pluginLifecycleUnavailableMessage(target: SettingsMachineTarget): string {
-  return `Plugin lifecycle diagnostics are not available on ${target.name}. Update and restart PI WEB on that machine before loading server-backed plugins.`;
+  return localizedText("settingsMachineTarget.plugin_lifecycle_diagnostics_are_not_available_on.35795395")`Plugin lifecycle diagnostics are not available on ${target.name}. Update and restart PI WEB on that machine before loading server-backed plugins.`;
 }
 
 export function friendlySelectedMachineSettingsErrorMessage(message: string, target: SettingsMachineTarget): string {
   const normalized = message.trim();
   if (target.kind !== "remote") return normalized;
   if (normalized === "Remote machine timeout") {
-    return `Timed out while contacting ${target.name} for selected-machine settings. The operation may still be running remotely; reload before retrying.`;
+    return localizedText("settingsMachineTarget.timed_out_while_contacting_for_selected_machine.33ed05b3")`Timed out while contacting ${target.name} for selected-machine settings. The operation may still be running remotely; reload before retrying.`;
   }
   if (normalized === "Remote machine unavailable") {
-    return `Could not reach ${target.name} for selected-machine settings. Check the machine connection and try again.`;
+    return localizedText("settingsMachineTarget.could_not_reach_for_selected_machine_settings.782122db")`Could not reach ${target.name} for selected-machine settings. Check the machine connection and try again.`;
   }
   return normalized;
 }

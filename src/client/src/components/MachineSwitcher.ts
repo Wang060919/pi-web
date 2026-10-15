@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { Machine, MachineHealth, MachineStatus } from "../api";
@@ -63,7 +64,7 @@ export class MachineSwitcher extends LitElement implements KeyboardNavigableSect
     if (this.machines.length <= 1) return this.locationIndicator ? this.renderMachineInfo(selected) : null;
     const status = machineStatus(selected, this.statuses);
     const label = selected.name;
-    return html`
+    return localizedTemplate("MachineSwitcher.machine.8b398990", html)`
       <div class="machine-switcher">
         <button
           type="button"
@@ -110,19 +111,19 @@ export class MachineSwitcher extends LitElement implements KeyboardNavigableSect
           <span class="machine-option-name">${this.renderMachineIcon(machine)}${this.renderActivity(machine)}<span>${machine.name}</span></span>
           <small>${machineSubtitle(machine)} · ${machineStatusLabel(status)}</small>
         </button>
-        ${hasActions ? html`
+        ${hasActions ? localizedTemplate("MachineSwitcher.template.99c7c152", html)`
           <div class="machine-option-actions">
             <button
               type="button"
               class="machine-option-actions-toggle"
               title="Machine actions"
-              aria-label=${`Actions for ${machine.name}`}
+              aria-label=${localizedText("MachineSwitcher.actions_for.86e47525")`Actions for ${machine.name}`}
               aria-expanded=${String(actionsOpen)}
               @click=${(event: MouseEvent) => { event.stopPropagation(); this.toggleActionsMenu(machine.id, event.currentTarget); }}
             >⋯</button>
-            ${actionsOpen ? html`
+            ${actionsOpen ? localizedTemplate("MachineSwitcher.remove.5b9e2913", html)`
               <div class="machine-option-actions-panel" style=${this.actionMenuStyle} @click=${(event: MouseEvent) => { event.stopPropagation(); }}>
-                <button class="danger" title=${`Remove ${machine.name}`} @click=${() => { this.removeMachine(machine); }}>Remove</button>
+                <button class="danger" title=${localizedText("MachineSwitcher.remove.0d9de645")`Remove ${machine.name}`} @click=${() => { this.removeMachine(machine); }}>Remove</button>
               </div>
             ` : null}
           </div>
@@ -159,8 +160,8 @@ export class MachineSwitcher extends LitElement implements KeyboardNavigableSect
     // Unread survives offline: an offline machine keeps its last-known unread
     // state (stale-but-present still counts), so only the work dot is gated.
     const kind = status === "offline" || status === "error" ? undefined : statusActivityKind(flags);
-    const unreadLabel = hasStatusUnread(flags) ? "Unread sessions on this machine" : undefined;
-    return renderActivityIndicator(kind, kind === "terminal" ? "Machine terminal active" : "Machine active", unreadLabel);
+    const unreadLabel = hasStatusUnread(flags) ? t("MachineSwitcher.unread_sessions_on_this_machine.0787630c") : undefined;
+    return renderActivityIndicator(kind, kind === "terminal" ? t("MachineSwitcher.machine_terminal_active.aedbe619") : t("MachineSwitcher.machine_active.c8c38e26"), unreadLabel);
   }
 
   private selectedMachine(): Machine | undefined {
@@ -168,7 +169,7 @@ export class MachineSwitcher extends LitElement implements KeyboardNavigableSect
   }
 
   private machineSwitcherAriaLabel(machine: Machine): string {
-    return `Machine: ${machine.name}. Switch machine.`;
+    return localizedText("MachineSwitcher.machine_switch_machine.38ce040a")`Machine: ${machine.name}. Switch machine.`;
   }
 
   private switcherButton(): HTMLElement | null {
@@ -355,7 +356,7 @@ function machineStatus(machine: Machine, statuses: Record<string, MachineHealth>
 }
 
 function machineStatusLabel(status: MachineStatus): string {
-  return status === "online" ? "online" : status === "offline" ? "offline" : status === "error" ? "error" : "unknown";
+  return status === "online" ? t("MachineSwitcher.online.26e0d2c4") : status === "offline" ? t("MachineSwitcher.offline.8d4b5e98") : status === "error" ? t("MachineSwitcher.error.16e7741c") : t("MachineSwitcher.unknown.274775f3");
 }
 
 function machineTitle(machine: Machine): string {
@@ -365,7 +366,7 @@ function machineTitle(machine: Machine): string {
 /** The local machine identifies itself by the serving gateway's URL. */
 function machineSubtitle(machine: Machine): string {
   if (machine.kind === "local") return browserGatewayDisplayUrl();
-  return machine.baseUrl ?? "Remote Pi Web";
+  return machine.baseUrl ?? t("MachineSwitcher.remote_pi_web.a4540631");
 }
 
 function machineSwitcherMenuStyle(target: EventTarget | null): string {

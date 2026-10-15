@@ -1,3 +1,4 @@
+import { localizedTemplate, t } from "../../../shared/i18n";
 import { LitElement, css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -70,7 +71,7 @@ export class AskUserCard extends LitElement {
   private renderOpenAsk(ask: AskUserRequest): TemplateResult {
     const count = answeredCount(ask.questions, this.answers);
     const unanswered = unansweredQuestions(ask.questions, this.answers);
-    return html`
+    return localizedTemplate("AskUserCard.questions_of_answered_skip_questions.9742eb96", html)`
       <article class="card open-card" aria-labelledby="ask-user-heading">
         <header class="card-header">
           <h2 id="ask-user-heading">Questions</h2>
@@ -89,7 +90,7 @@ export class AskUserCard extends LitElement {
               ? this.renderPartialSubmitConfirmation(ask, unanswered)
               : html`
                   <button class="primary-action" type="submit" ?disabled=${this.submitting}>
-                    ${this.submitting ? "Sending…" : "Send answers"}
+                    ${this.submitting ? t("AskUserCard.sending.3fd54f08") : t("AskUserCard.send_answers.d76b03bb")}
                   </button>
                 `}
           </footer>
@@ -133,7 +134,7 @@ export class AskUserCard extends LitElement {
               </span>
             </label>
           `)}
-          ${freeTextOnly ? null : html`
+          ${freeTextOnly ? null : localizedTemplate("AskUserCard.custom.3c0d5239", html)`
             <label class="option other-option">
               <input
                 type=${inputType}
@@ -145,7 +146,7 @@ export class AskUserCard extends LitElement {
               <span class="option-copy"><span class="option-label">Custom</span></span>
             </label>
           `}
-          ${customSelected ? html`
+          ${customSelected ? localizedTemplate("AskUserCard.custom_answer.571bfe1a", html)`
             <label class="other-answer" for=${this.otherInputId(index)}>
               <span>Custom answer</span>
               <textarea
@@ -163,7 +164,7 @@ export class AskUserCard extends LitElement {
   }
 
   private renderPartialSubmitConfirmation(ask: AskUserRequest, unanswered: AskUserQuestion[]): TemplateResult {
-    return html`
+    return localizedTemplate("AskUserCard.send_without_answering_keep_editing.7a8e81c0", html)`
       <div class="partial-confirmation" role="group" aria-label="Confirm partial answers">
         <p>
           <strong>Send without answering:</strong>
@@ -176,7 +177,7 @@ export class AskUserCard extends LitElement {
         <div class="confirmation-actions">
           <button class="secondary-action" type="button" @click=${() => { this.keepEditing(ask, unanswered); }}>Keep editing</button>
           <button class="primary-action send-anyway" type="button" ?disabled=${this.submitting} @click=${() => { this.submitAnswers(ask); }}>
-            ${this.submitting ? "Sending…" : "Send anyway"}
+            ${this.submitting ? t("AskUserCard.sending.1dd6ffb6") : t("AskUserCard.send_anyway.8f8e2ef0")}
           </button>
         </div>
       </div>
@@ -184,7 +185,7 @@ export class AskUserCard extends LitElement {
   }
 
   private renderClosedAsk(ask: AskUserRequest): TemplateResult {
-    return html`
+    return localizedTemplate("AskUserCard.questions_closed_questions.a3bcefce", html)`
       <details class="card closed-card">
         <summary class="card-header"><h2><span class="disclosure-indicator" aria-hidden="true">▸</span> Questions</h2><span class="header-status">Closed · ${ask.questions.length} questions</span></summary>
         ${this.outcomes.map((outcome) => html`<p class="record-summary">${outcome.summary}</p>`)}
@@ -208,27 +209,27 @@ export class AskUserCard extends LitElement {
   }
 
   private renderOfferedOptions(question: AskUserQuestion): TemplateResult {
-    return html`${question.multiple === true ? html`<p class="question-detail">Multiple choices allowed</p>` : null}<ul class="offered-options">
+    return html`${question.multiple === true ? localizedTemplate("AskUserCard.multiple_choices_allowed.13fd6707", html)`<p class="question-detail">Multiple choices allowed</p>` : null}<ul class="offered-options">
       ${question.options.map((option) => html`<li><span>${option.label}</span>${option.detail === undefined ? null : html`<p class="option-detail">${option.detail}</p>`}</li>`)}
-      <li>${question.options.length === 0 ? "Custom answer" : "Custom"}</li>
+      <li>${question.options.length === 0 ? t("AskUserCard.custom_answer.d4e9bc1d") : t("AskUserCard.custom.c4073abe")}</li>
     </ul>`;
   }
 
   private renderRecord(outcome: AskUserOutcome): TemplateResult {
     const recordLabel = outcome.reason === "submitted"
-      ? outcome.answeredCount === 0 ? "Questions skipped" : "Answers sent"
+      ? outcome.answeredCount === 0 ? t("AskUserCard.questions_skipped.da81d824") : t("AskUserCard.answers_sent.a011123d")
       : outcome.reason === "superseded"
-        ? "Superseded"
-        : "Cancelled";
+        ? t("AskUserCard.superseded.fc2c5392")
+        : t("AskUserCard.cancelled.500d5b4d");
     return html`
       <article class="card record-card" aria-labelledby="ask-user-record-heading">
         <header class="card-header">
-          <h2 id="ask-user-record-heading">${this.compact ? "Answers" : "Questions"}</h2>
+          <h2 id="ask-user-record-heading">${this.compact ? t("AskUserCard.answers.19b8b8b0") : t("AskUserCard.questions.833630f1")}</h2>
           <span class=${`header-status ${outcome.reason}`}>${recordLabel}</span>
         </header>
         <p class="record-summary">
           ${outcome.reason === "superseded"
-            ? "A newer question set replaced this one. Draft answers shown below were not sent to the model."
+            ? t("AskUserCard.a_newer_question_set_replaced_this_one.cdb0ae04")
             : outcome.summary}
         </p>
         <div class="record-questions">
@@ -256,13 +257,13 @@ export class AskUserCard extends LitElement {
     const answer = this.displayedRecordAnswer(outcome, record);
     return html`
         ${answer === undefined
-          ? html`<p class="unanswered-record">Unanswered</p>`
+          ? localizedTemplate("AskUserCard.unanswered.7733faef", html)`<p class="unanswered-record">Unanswered</p>`
           : html`
               <ul class="record-answers">
                 ${answer.values.map((value) => html`<li>${this.optionLabel(record.question, value)}</li>`)}
-                ${answer.otherText === undefined ? null : html`<li><strong>Custom:</strong> <span class="other-record-text">${answer.otherText}</span></li>`}
+                ${answer.otherText === undefined ? null : localizedTemplate("AskUserCard.custom.7852b995", html)`<li><strong>Custom:</strong> <span class="other-record-text">${answer.otherText}</span></li>`}
               </ul>
-              ${answer.fromDraft ? html`<p class="draft-note">Draft answer · not sent</p>` : null}
+              ${answer.fromDraft ? localizedTemplate("AskUserCard.draft_answer_not_sent.3b3ec1f0", html)`<p class="draft-note">Draft answer · not sent</p>` : null}
             `}
     `;
   }

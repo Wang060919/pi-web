@@ -1,3 +1,4 @@
+import { localizedTemplate } from "./i18n.js";
 import { css, html, LitElement } from "lit";
 import { property } from "lit/decorators.js";
 import { TERMINAL_SOFT_KEYS, terminalSoftKeySequence, type TerminalModesSnapshot, type TerminalSoftKeyDefinition } from "./terminalKeys";
@@ -60,7 +61,7 @@ export class TerminalSoftKeys extends LitElement {
   }
 
   override render() {
-    return html`
+    return localizedTemplate("TerminalSoftKeys.template.a03f8f6b", html)`
       <div class="terminal-soft-keys" role="toolbar" aria-label="Terminal soft keys">
         ${TERMINAL_SOFT_KEYS.map((key) => html`
           <button

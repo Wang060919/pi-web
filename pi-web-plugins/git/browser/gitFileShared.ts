@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import type { GitStatusFile } from "./git-contract.js";
 
 /**
@@ -7,7 +8,7 @@ import type { GitStatusFile } from "./git-contract.js";
 export function pointerName(file: GitStatusFile): string {
   const from = file.submoduleFromCommit;
   const to = file.submoduleToCommit;
-  return from !== undefined && to !== undefined ? `${from} → ${to}` : "commit";
+  return from !== undefined && to !== undefined ? `${from} → ${to}` : t("gitFileShared.commit.21699918");
 }
 
 /** Final segment of a path, used as the display name for tree/list rows. */

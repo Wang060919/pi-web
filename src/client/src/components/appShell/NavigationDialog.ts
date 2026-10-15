@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../../shared/i18n";
 import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { paletteStyles } from "../paletteStyles";
@@ -39,8 +40,8 @@ export class NavigationDialog extends LitElement {
 
   override render() {
     const tabs = this.filteredTabs();
-    return html`
-      <modal-surface .label=${"Navigation"} .initialFocus=${"input"} .onClose=${this.onClose} @keydown=${this.navigateDestinations}>
+    return localizedTemplate("NavigationDialog.navigation_pin_destinations_to_the_tab_bars.842b25d7", html)`
+      <modal-surface .label=${t("NavigationDialog.navigation.81259b67")} .initialFocus=${"input"} .onClose=${this.onClose} @keydown=${this.navigateDestinations}>
         <header>
           <input aria-label="Search navigation" aria-describedby="navigation-selection" placeholder="Search navigation..." .value=${this.query} @input=${(event: Event) => {
             if (event.target instanceof HTMLInputElement) {
@@ -50,15 +51,15 @@ export class NavigationDialog extends LitElement {
           }}>
           <button aria-label="Close" title="Close" @click=${this.onClose}>×</button>
         </header>
-        <span id="navigation-selection" class="sr-only" role="status" aria-live="polite" aria-atomic="true">${tabs.length === 0 ? "No destinations found." : `${tabs[this.selectedIndex]?.label ?? ""}, ${String(this.selectedIndex + 1)} of ${String(tabs.length)}`}</span>
+        <span id="navigation-selection" class="sr-only" role="status" aria-live="polite" aria-atomic="true">${tabs.length === 0 ? t("NavigationDialog.no_destinations_found.d366459a") : localizedText("NavigationDialog.of.0e166819")`${tabs[this.selectedIndex]?.label ?? ""}, ${String(this.selectedIndex + 1)} of ${String(tabs.length)}`}</span>
         <h2>Navigation</h2>
         <p>Pin destinations to the tab bars. Removing the last pin shows all tabs.</p>
         <nav class="options" aria-label="Destinations">
-          ${tabs.length === 0 ? html`<div class="empty">No destinations found.</div>` : nothing}
+          ${tabs.length === 0 ? localizedTemplate("NavigationDialog.no_destinations_found.afa3249e", html)`<div class="empty">No destinations found.</div>` : nothing}
           ${tabs.map((tab, index) => html`
             <div class="destination">
               <button class=${`destination-button ${index === this.selectedIndex ? "selected" : ""}`} aria-current=${tab.id === this.selectedTab ? "page" : nothing} aria-pressed=${String(tab.id === this.selectedTab)} ${scrollWhenSelected(index === this.selectedIndex, tab.id)} @focus=${() => { this.selectedIndex = index; }} @click=${() => { this.select(tab); }}>${tab.label}</button>
-              <button type="button" class="pin-button" aria-label=${`Pin ${tab.label}`} title=${isNavigationPinned(tab.id, this.preferences.pinnedIds) ? `Unpin ${tab.label}` : `Pin ${tab.label}`} aria-pressed=${String(isNavigationPinned(tab.id, this.preferences.pinnedIds))} @click=${() => {
+              <button type="button" class="pin-button" aria-label=${localizedText("NavigationDialog.pin.e4baae6b")`Pin ${tab.label}`} title=${isNavigationPinned(tab.id, this.preferences.pinnedIds) ? localizedText("NavigationDialog.unpin.55006b08")`Unpin ${tab.label}` : localizedText("NavigationDialog.pin.9bce8597")`Pin ${tab.label}`} aria-pressed=${String(isNavigationPinned(tab.id, this.preferences.pinnedIds))} @click=${() => {
                 this.onPreferencesChange?.({ ...this.preferences, pinnedIds: toggleNavigationPin(tab.id, this.preferences.pinnedIds, this.pinUniverse ?? this.tabs.map((item) => item.id)) });
               }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill=${isNavigationPinned(tab.id, this.preferences.pinnedIds) ? "currentColor" : "none"} stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">

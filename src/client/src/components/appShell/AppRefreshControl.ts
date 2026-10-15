@@ -1,3 +1,4 @@
+import { t } from "../../../../shared/i18n";
 import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
@@ -6,7 +7,7 @@ export class AppRefreshControl extends LitElement {
   @property({ attribute: false }) onReload?: () => void;
 
   override render() {
-    const label = "Full page reload";
+    const label = t("AppRefreshControl.full_page_reload.9009dfc6");
     return html`
       <button
         class="app-refresh-button"

@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import type { PiWebPlugin, PluginRuntimeContext } from "@jmfederico/pi-web/plugin-api";
 
 type WorktreePromptContext = Pick<PluginRuntimeContext, "state" | "prompt" | "focusPrompt">;
@@ -19,11 +20,11 @@ const plugin = {
     contributions: {
       actions: [{
         id: "worktree.create",
-        title: "Create Worktree",
-        description: "Prepare /worktree; describe its purpose and/or base branch before sending",
-        group: "Workflows",
+        title: t("pi-web-plugin.create_worktree.46433ba1"),
+        description: t("pi-web-plugin.prepare_worktree_describe_its_purpose_and_or.1ed5b8ff"),
+        group: t("pi-web-plugin.workflows.8abe73c8"),
         enabled: canPrepareWorktreePrompt,
-        disabledReason: () => "Select an active conversation in Chat with an empty prompt first.",
+        disabledReason: () => t("pi-web-plugin.select_an_active_conversation_in_chat_with.784472bd"),
         run: (context: WorktreePromptContext) => {
           if (!canPrepareWorktreePrompt(context)) return;
           context.focusPrompt();

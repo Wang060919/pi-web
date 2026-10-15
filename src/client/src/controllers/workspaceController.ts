@@ -1,3 +1,4 @@
+import { localizedText, t } from "../../../shared/i18n";
 import { api as defaultApi, type Project, type Workspace } from "../api";
 import { resetWorkspaceScopedState, type AppState } from "../appState";
 import { BrowserErrorReporter, projectBrowserErrorScope, workspaceBrowserErrorScope } from "../browserErrors";
@@ -90,8 +91,8 @@ export class WorkspaceController {
         return await this.selectWorkspace(workspace, { sessionId: target?.sessionId, updateUrl: target?.updateUrl, navigation });
       }
       if (target?.workspaceId !== undefined && target.workspaceId !== "") {
-        this.browserErrors.report(errorScope, `Workspace not found: ${target.workspaceId}`);
-        return `Workspace not found: ${target.workspaceId}`;
+        this.browserErrors.report(errorScope, localizedText("workspaceController.workspace_not_found.2c6716a6")`Workspace not found: ${target.workspaceId}`);
+        return localizedText("workspaceController.workspace_not_found.af868a7a")`Workspace not found: ${target.workspaceId}`;
       }
       if (target?.updateUrl !== false && this.navigationIsCurrent(navigation)) this.updateUrl();
     } catch (error) {
@@ -128,8 +129,8 @@ export class WorkspaceController {
       if (!this.navigationIsCurrent(navigation) || !workspaceMutationIsCurrent(target)) return;
       if (session) await this.sessions.selectSession(session, { updateUrl: target?.updateUrl, ...(navigation === undefined ? {} : { navigation }) });
       else if (target?.sessionId !== undefined && target.sessionId !== "") {
-        this.browserErrors.report(errorScope, `Session not found: ${target.sessionId}`);
-        return `Session not found: ${target.sessionId}`;
+        this.browserErrors.report(errorScope, localizedText("workspaceController.session_not_found.86c53063")`Session not found: ${target.sessionId}`);
+        return localizedText("workspaceController.session_not_found.83617599")`Session not found: ${target.sessionId}`;
       }
       else if (target?.updateUrl !== false) this.updateUrl();
     } catch (error) {
@@ -155,7 +156,7 @@ export class WorkspaceController {
   ): Promise<{ workspaces: Workspace[]; isCurrent: () => boolean }> {
     if (!workspaceMutationIsCurrent(options)) return { workspaces: [], isCurrent: () => false };
     const project = this.getState().projects.find((candidate) => candidate.id === projectId);
-    if (project === undefined) throw new Error("Project not found");
+    if (project === undefined) throw new Error(t("workspaceController.project_not_found.aebda77a"));
     const isCurrent = this.beginWorkspaceListRequest(projectId, machineId);
     const workspaces = options?.signal === undefined
       ? await this.api.workspaces(project.id, machineId)
@@ -199,7 +200,7 @@ export class WorkspaceController {
         // A provider outage is not evidence of removal. Automatic hints and
         // reconnects must not replace a previously healthy topology with fallback.
         if (resolution.status === "degraded") {
-          throw new Error(resolution.diagnostics.map(({ message }) => message).join("; ") || "Workspace authority is degraded");
+          throw new Error(resolution.diagnostics.map(({ message }) => message).join("; ") || t("workspaceController.workspace_authority_is_degraded.0b245fcd"));
         }
         this.applyProjectWorkspaces(project.id, [...resolution.workspaces]);
       } catch (error) {

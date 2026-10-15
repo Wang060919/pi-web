@@ -1,3 +1,4 @@
+import { t } from "../../../shared/i18n";
 import { parseSessionDefaults } from "../../../shared/sessionDefaults";
 import type { SessionDefaultsUpdate } from "../../../shared/apiTypes";
 import type { AskUserSubmission, DeleteWorkspaceFileResponse, ExtensionDialogAnswer, FileSuggestion, MoveWorkspaceFileOptions, PiPackageInstallRequest, PiPackageRemoveRequest, PiPackageScope, PiPackageUpdateRequest, PiWebConfigValues, PromptAttachment, ServerNoticeDismissRequest, SessionBulkMutationRef, SessionCleanupRequest, SessionModelScopeMode, SessionNotificationDismissThrough, SessionQueueMessageMutation, SessionRef, SessionTreeForkRequest, SessionTreeForkResult, SessionTreeNavigateRequest, SessionUnreadAcknowledgeRequest, WorkspaceRemovalRequest, WriteWorkspaceFileOptions } from "../../../shared/apiTypes";
@@ -312,7 +313,7 @@ export const sessionsApi = {
  */
 export class SessionTreeForkUnavailableError extends Error {
   constructor() {
-    super("Fork from the session tree is unavailable. Restart the session daemon to enable it.");
+    super(t("clients.fork_from_the_session_tree_is_unavailable.02c41b7d"));
     this.name = "SessionTreeForkUnavailableError";
   }
 }

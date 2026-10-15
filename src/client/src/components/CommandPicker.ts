@@ -1,3 +1,4 @@
+import { localizedTemplate, t } from "../../../shared/i18n";
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { CommandOption } from "../api";
@@ -8,7 +9,7 @@ import { scrollWhenSelected } from "./scrollWhenSelected";
 
 @customElement("command-picker")
 export class CommandPicker extends LitElement {
-  @property() override title = "Select";
+  @property() override title = t("CommandPicker.select.d3775a76");
   @property({ type: Boolean }) searchable = false;
   @property({ attribute: false }) options: CommandOption[] = [];
   @property({ attribute: false }) selectedValue?: string;
@@ -24,7 +25,7 @@ export class CommandPicker extends LitElement {
 
   override render() {
     const options = this.filteredOptions();
-    return html`
+    return localizedTemplate("CommandPicker.template.ac370c64", html)`
       <modal-surface
         .onClose=${() => this.onCancel?.()}
         .initialFocus=${this.searchable ? "input" : ".options"}
@@ -35,7 +36,7 @@ export class CommandPicker extends LitElement {
           <strong>${this.title}</strong>
           <button aria-label="Close" @click=${() => this.onCancel?.()}>×</button>
         </header>
-        ${this.searchable ? html`<input placeholder="Search" .value=${this.query} @input=${(event: Event) => { this.handleSearchInput(event); }}>` : null}
+        ${this.searchable ? localizedTemplate("CommandPicker.template.c8c7219f", html)`<input placeholder="Search" .value=${this.query} @input=${(event: Event) => { this.handleSearchInput(event); }}>` : null}
         ${this.onSetDefault ? defaultPinHelp : nothing}
         <div class="options" tabindex="0">
           ${options.map((option, index) => {
@@ -51,7 +52,7 @@ export class CommandPicker extends LitElement {
             </button>`;
             return this.onSetDefault ? html`<div class="default-row">${pick}${defaultPin(option.label, option.value === this.defaultValue, this.defaultsLoading || this.defaultPending, () => { void this.setDefault(option.value); })}</div>` : pick;
           })}
-          ${options.length === 0 ? html`<div class="empty">No matching options</div>` : null}
+          ${options.length === 0 ? localizedTemplate("CommandPicker.no_matching_options.d4a7964c", html)`<div class="empty">No matching options</div>` : null}
         </div>
       </modal-surface>
     `;
@@ -64,7 +65,7 @@ export class CommandPicker extends LitElement {
       await this.onSetDefault(value);
     } catch (error: unknown) {
       // Hosts own user-facing errors; keep unexpected callback rejections observable.
-      console.warn("Failed to set default option", error);
+      console.warn(t("CommandPicker.failed_to_set_default_option.de894d10"), error);
     } finally {
       this.defaultPending = false;
     }

@@ -1,3 +1,4 @@
+import { localizedText, t } from "../../../shared/i18n";
 import type { TerminalCommandRun, TerminalCommandRunStatus, Workspace } from "../api";
 import type { ContributionQueryValue, PluginCapability, PluginPeer, QualifiedContributionId, WorkspacePanelTerminal, WorkspacePluginBinding, WorkspaceTerminalCommandInput } from "./types";
 
@@ -93,8 +94,8 @@ export function snapshotRequiredTerminalBrowserFacade(value: unknown): RequiredT
 export function requiredTerminalUnavailableError(machineId: string): RequiredTerminalBrowserUnavailableError {
   return new RequiredTerminalBrowserUnavailableError(
     machineId === "local"
-      ? "Required Terminal plugin is unavailable. Open Settings for recovery guidance."
-      : `Required Terminal plugin is unavailable on machine ${machineId}. Open Settings for recovery guidance.`,
+      ? t("requiredTerminalFacade.required_terminal_plugin_is_unavailable_open_settings.583780da")
+      : localizedText("requiredTerminalFacade.required_terminal_plugin_is_unavailable_on_machine.0836b061")`Required Terminal plugin is unavailable on machine ${machineId}. Open Settings for recovery guidance.`,
   );
 }
 

@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 // Skeleton of a PI WEB plugin: metadata plus contribution definitions.
 //
 // Everything the bundled Info panel and action actually render lives in
@@ -16,9 +17,9 @@ const plugin = {
       actions: [
         {
           id: "copy-diagnostics",
-          title: "Copy PI WEB Diagnostics",
-          description: "Copy version, installation, and status details for this machine, ready to paste into a bug report",
-          group: "Info",
+          title: t("pi-web-plugin.copy_pi_web_diagnostics.87241f21"),
+          description: t("pi-web-plugin.copy_version_installation_and_status_details_for.87c3040a"),
+          group: t("pi-web-plugin.info.57902ba5"),
           run: (context) => copyDiagnostics(context),
         },
       ],
@@ -26,13 +27,13 @@ const plugin = {
         {
           id: "workspace.kind-label",
           order: 100,
-          items: (context) => [{ type: "text", text: context.workspace.provider?.pluginId ?? "folder", title: context.workspace.path }],
+          items: (context) => [{ type: "text", text: context.workspace.provider?.pluginId ?? t("pi-web-plugin.folder.d09be788"), title: context.workspace.path }],
         },
       ],
       applicationPanels: [
         {
           id: "workspace.info",
-          title: "Info",
+          title: t("pi-web-plugin.info.61667373"),
           icon: svg`
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="9"></circle>

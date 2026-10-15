@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../../shared/i18n";
 import { LitElement, css, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import type { Machine, Project, SessionInfo, Workspace } from "../../api";
@@ -53,14 +54,14 @@ export class AppContextBar extends LitElement {
     const projectLabel = projectContextLabel(this.project);
     const workspaceLabel = workspaceContextLabel(this.workspace);
     const sessionLabel = sessionContextLabel(this.session);
-    return html`
+    return localizedTemplate("AppContextBar.location_project_workspace_session.90317777", html)`
       <nav class=${this.contextBarClass()} aria-label="Current location">
         <span class="context-bar-label">Location</span>
         <ol class="context-items" @scroll=${this.onContextScroll}>
           ${showMachineChip ? html`
             <li class="context-item">
               ${machineChoice ? html`
-                <button type="button" class=${machineChipClass} title=${machineContextTitle(machine)} aria-label=${`Machine: ${machineContextLabel(machine)}. Open machine selection.`} @click=${() => { this.onOpenSection?.("machines"); }}>
+                <button type="button" class=${machineChipClass} title=${machineContextTitle(machine)} aria-label=${localizedText("AppContextBar.machine_open_machine_selection.fc7b1a94")`Machine: ${machineContextLabel(machine)}. Open machine selection.`} @click=${() => { this.onOpenSection?.("machines"); }}>
                   ${this.renderMachineChipContent(machine, this.locationIndicator)}
                 </button>
               ` : html`
@@ -72,31 +73,31 @@ export class AppContextBar extends LitElement {
             </li>
           ` : null}
           <li class="context-item">
-            <button type="button" class=${this.project === undefined ? "context-chip empty" : "context-chip"} title=${projectContextTitle(this.project)} aria-label=${`Project: ${projectLabel}. Open project selection.`} @click=${() => { this.onOpenSection?.("projects"); }}>
+            <button type="button" class=${this.project === undefined ? "context-chip empty" : "context-chip"} title=${projectContextTitle(this.project)} aria-label=${localizedText("AppContextBar.project_open_project_selection.805aa728")`Project: ${projectLabel}. Open project selection.`} @click=${() => { this.onOpenSection?.("projects"); }}>
               <span class="context-kind">Project</span>
               <span class="context-value">${projectLabel}</span>
             </button>
           </li>
           <li class="context-item">
-            <button type="button" class=${this.workspace === undefined ? "context-chip empty" : "context-chip"} title=${workspaceContextTitle(this.workspace)} aria-label=${`Workspace: ${workspaceLabel}. Open workspace selection.`} @click=${() => { this.onOpenSection?.("workspaces"); }}>
+            <button type="button" class=${this.workspace === undefined ? "context-chip empty" : "context-chip"} title=${workspaceContextTitle(this.workspace)} aria-label=${localizedText("AppContextBar.workspace_open_workspace_selection.1e2f44a7")`Workspace: ${workspaceLabel}. Open workspace selection.`} @click=${() => { this.onOpenSection?.("workspaces"); }}>
               <span class="context-kind">Workspace</span>
               <span class="context-value">${workspaceLabel}</span>
             </button>
           </li>
           <li class="context-item">
-            <button type="button" class=${this.session === undefined ? "context-chip empty" : "context-chip"} title=${sessionContextTitle(this.session)} aria-label=${`Session: ${sessionLabel}. Open session selection.`} @click=${() => { this.onOpenSection?.("sessions"); }}>
+            <button type="button" class=${this.session === undefined ? "context-chip empty" : "context-chip"} title=${sessionContextTitle(this.session)} aria-label=${localizedText("AppContextBar.session_open_session_selection.b575725d")`Session: ${sessionLabel}. Open session selection.`} @click=${() => { this.onOpenSection?.("sessions"); }}>
               <span class="context-kind">Session</span>
               <span class="context-value">${sessionLabel}</span>
             </button>
           </li>
         </ol>
-        ${this.hasContextActions() ? html`<div class="context-actions">${this.onShowNavigation === undefined ? null : html`<button type="button" class=${`context-action-button${this.hiddenActiveDestination ? " selected" : ""}`} title="Navigation" aria-label="Navigation" aria-haspopup="dialog" @click=${this.onShowNavigation}>${renderNavigationMenuIcon()}</button>`}${this.renderActionsButton()}${this.refreshControl}</div>` : null}
+        ${this.hasContextActions() ? html`<div class="context-actions">${this.onShowNavigation === undefined ? null : localizedTemplate("AppContextBar.template.29f1820d", html)`<button type="button" class=${`context-action-button${this.hiddenActiveDestination ? " selected" : ""}`} title="Navigation" aria-label="Navigation" aria-haspopup="dialog" @click=${this.onShowNavigation}>${renderNavigationMenuIcon()}</button>`}${this.renderActionsButton()}${this.refreshControl}</div>` : null}
       </nav>
     `;
   }
 
   private renderMachineChipContent(machine: Machine | undefined, locationIndicator: boolean) {
-    if (machine === undefined) return html`<span class="context-value">No machine</span>`;
+    if (machine === undefined) return localizedTemplate("AppContextBar.no_machine.e672d7d6", html)`<span class="context-value">No machine</span>`;
     // Browser mode keeps the chip a plain machine picker; the location identity
     // (favicon and host) only shows where the browser chrome does not.
     if (!locationIndicator) return html`<span class="context-value">${machineSelectionLabel(machine)}</span>`;
@@ -114,7 +115,7 @@ export class AppContextBar extends LitElement {
 
   private renderActionsButton() {
     if (this.onShowActions === undefined) return null;
-    return html`
+    return localizedTemplate("AppContextBar.template.f9feeffd", html)`
       <button type="button" class="context-action-button" title="Show Actions" aria-label="Show Actions" @click=${(event: MouseEvent) => { event.stopPropagation(); this.onShowActions?.(); }}>
         <svg class="context-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M13 2 4 14h7l-1 8 10-13h-7V2Z"></path>
@@ -203,12 +204,12 @@ function displayMachine(machine: Machine | undefined, machines: readonly Machine
 }
 
 function machineContextLabel(machine: Machine | undefined): string {
-  return machine?.name ?? "No machine";
+  return machine?.name ?? t("AppContextBar.no_machine.f7f92e3f");
 }
 
 /** The plain picker label used in browser mode, where the chip carries no location identity. */
 function machineSelectionLabel(machine: Machine): string {
-  return `${machine.name}${machine.kind === "remote" ? " · remote" : ""}`;
+  return `${machine.name}${machine.kind === "remote" ? t("AppContextBar.remote.6e06c0a1") : ""}`;
 }
 
 /**
@@ -225,31 +226,31 @@ export function machineContextDetail(machine: Machine, gatewayDisplay: string): 
 }
 
 function machineContextTitle(machine: Machine | undefined): string {
-  return machine === undefined ? "No machine selected" : machine.baseUrl ?? machine.name;
+  return machine === undefined ? t("AppContextBar.no_machine_selected.9fa17d18") : machine.baseUrl ?? machine.name;
 }
 
 function projectContextLabel(project: Project | undefined): string {
-  return project?.name ?? "No project";
+  return project?.name ?? t("AppContextBar.no_project.9a842642");
 }
 
 function projectContextTitle(project: Project | undefined): string {
-  return project === undefined ? "No project selected" : `${project.name} — ${project.path}`;
+  return project === undefined ? t("AppContextBar.no_project_selected.30bf775c") : `${project.name} — ${project.path}`;
 }
 
 function workspaceContextLabel(workspace: Workspace | undefined): string {
-  return workspace === undefined ? "No workspace" : `${workspace.label}${workspace.isMain ? " · main" : ""} · ${workspace.path}`;
+  return workspace === undefined ? t("AppContextBar.no_workspace.3afbf59b") : `${workspace.label}${workspace.isMain ? t("AppContextBar.main.0ef52ece") : ""} · ${workspace.path}`;
 }
 
 function workspaceContextTitle(workspace: Workspace | undefined): string {
-  return workspace === undefined ? "No workspace selected" : `${workspace.label}${workspace.isMain ? " · main" : ""} — ${workspace.path}`;
+  return workspace === undefined ? t("AppContextBar.no_workspace_selected.a554d91b") : `${workspace.label}${workspace.isMain ? t("AppContextBar.main.9962e11f") : ""} — ${workspace.path}`;
 }
 
 function sessionContextLabel(session: SessionInfo | undefined): string {
   const name = session?.name?.trim();
   const firstMessage = session?.firstMessage.trim();
-  return name !== undefined && name !== "" ? name : firstMessage !== undefined && firstMessage !== "" ? firstMessage : session === undefined ? "No session" : shortSessionId(session.id);
+  return name !== undefined && name !== "" ? name : firstMessage !== undefined && firstMessage !== "" ? firstMessage : session === undefined ? t("AppContextBar.no_session.77f43535") : shortSessionId(session.id);
 }
 
 function sessionContextTitle(session: SessionInfo | undefined): string {
-  return session === undefined ? "No session selected" : session.path;
+  return session === undefined ? t("AppContextBar.no_session_selected.77ebce4c") : session.path;
 }

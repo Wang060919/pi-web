@@ -1,3 +1,4 @@
+import { localizedText, t } from "./i18n.js";
 import type {
   FileContentResponse,
   FileTreeEntry,
@@ -357,7 +358,7 @@ export class FilesRuntime {
 
   private requireFiles(scope: ScopeRecord): WorkspaceFilesCapabilityV1 | undefined {
     if (scope.files !== undefined && scope.capabilityError === undefined) return scope.files;
-    scope.capabilityError ??= "Files requires workspace-files capability v1 and contribution navigation v1. Update the PI WEB host.";
+    scope.capabilityError ??= t("FilesRuntime.files_requires_workspace_files_capability_v_and.6ce2ef70");
     this.notify(scope);
     return undefined;
   }
@@ -539,10 +540,10 @@ export class FilesRuntime {
       batch.status = failed.length === 0 ? "completed" : "error";
       batch.completedAt = this.now();
       if (failed.length === 0) delete batch.error;
-      else batch.error = failed.length === 1 ? failed[0]?.error ?? "Workspace upload failed" : `${String(failed.length)} files failed to upload`;
+      else batch.error = failed.length === 1 ? failed[0]?.error ?? t("FilesRuntime.workspace_upload_failed.214cedc7") : localizedText("FilesRuntime.files_failed_to_upload.bf848058")`${String(failed.length)} files failed to upload`;
       for (const pending of batch.files.filter((file) => file.status === "pending" || file.status === "uploading")) {
         pending.status = "cancelled";
-        pending.error = "Not uploaded.";
+        pending.error = t("FilesRuntime.not_uploaded.df9d2ff4");
       }
       this.recalculateUploadProgress(batch, true);
       this.notify(scope);
@@ -632,14 +633,14 @@ export function workspaceFilesCapabilityV1(files: WorkspaceFilesContextValue): W
 }
 
 export function workspaceUploadPath(destinationFolder: string, fileName: string): string {
-  const folder = normalizeWorkspaceUploadPath(destinationFolder, "upload destination", { allowEmpty: true });
-  const name = normalizeWorkspaceUploadPath(fileName, "upload file name", { allowEmpty: false });
+  const folder = normalizeWorkspaceUploadPath(destinationFolder, t("FilesRuntime.upload_destination.3a279659"), { allowEmpty: true });
+  const name = normalizeWorkspaceUploadPath(fileName, t("FilesRuntime.upload_file_name.9bb72b7a"), { allowEmpty: false });
   return folder === "" ? name : `${folder}/${name}`;
 }
 
 function filesCapabilityError(files: WorkspaceFilesContextValue, navigation: WorkspacePanelNavigationV1 | undefined): string | undefined {
-  if (files.capabilityVersion !== 1) return "Files requires workspace-files capability v1. Update the PI WEB host.";
-  if (navigation?.version !== 1) return "Files requires contribution navigation v1. Update the PI WEB host.";
+  if (files.capabilityVersion !== 1) return t("FilesRuntime.files_requires_workspace_files_capability_v_update.2c755021");
+  if (navigation?.version !== 1) return t("FilesRuntime.files_requires_contribution_navigation_v_update_the.b52b3bd3");
   return undefined;
 }
 
@@ -689,11 +690,11 @@ function createUploadBatch(
 function cancelUploadBatch(batch: WorkspaceUploadBatchState, completedAt: string): void {
   batch.status = "cancelled";
   batch.completedAt = completedAt;
-  batch.error = "Upload cancelled";
+  batch.error = t("FilesRuntime.upload_cancelled.86c12a42");
   for (const file of batch.files) {
     if (file.status === "completed" || file.status === "error") continue;
     file.status = "cancelled";
-    file.error = "Upload cancelled";
+    file.error = t("FilesRuntime.upload_cancelled.c532161a");
   }
   batch.loaded = batch.total;
   batch.percent = 1;
@@ -703,16 +704,16 @@ function normalizeWorkspaceUploadPath(value: string, label: string, options: { a
   const trimmed = value.trim();
   if (trimmed === "") {
     if (options.allowEmpty) return "";
-    throw new Error(`${label} must not be empty`);
+    throw new Error(localizedText("FilesRuntime.must_not_be_empty.1ff7fb61")`${label} must not be empty`);
   }
   const withForwardSlashes = trimmed.replace(/\\/gu, "/");
-  if (withForwardSlashes.startsWith("/") || /^[A-Za-z]:\//u.test(withForwardSlashes)) throw new Error(`${label} must be workspace-relative`);
+  if (withForwardSlashes.startsWith("/") || /^[A-Za-z]:\//u.test(withForwardSlashes)) throw new Error(localizedText("FilesRuntime.must_be_workspace_relative.8883ff66")`${label} must be workspace-relative`);
   const parts = withForwardSlashes.split("/").filter((part) => part !== "" && part !== ".");
   if (parts.length === 0) {
     if (options.allowEmpty) return "";
-    throw new Error(`${label} must not be empty`);
+    throw new Error(localizedText("FilesRuntime.must_not_be_empty.f324a9b6")`${label} must not be empty`);
   }
-  if (parts.some((part) => part === "..")) throw new Error(`${label} must not contain path traversal`);
+  if (parts.some((part) => part === "..")) throw new Error(localizedText("FilesRuntime.must_not_contain_path_traversal.a39e7904")`${label} must not contain path traversal`);
   return parts.join("/");
 }
 

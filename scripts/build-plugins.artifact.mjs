@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -172,7 +172,27 @@ describe("plugin delivery artifacts", () => {
       browserRoot: expect.objectContaining({ path: "browser" }),
     })]);
     const browserModule = snapshot.plugins[0].browserModule.filePath;
-    expect(moduleSpecifiers(await readFile(browserModule, "utf8"))).toEqual([]);
+    const browserRoot = await realpath(join(source, "browser"));
+    const visited = new Set();
+    const pending = [browserModule];
+    while (pending.length > 0) {
+      const file = await realpath(pending.pop());
+      expect(file.startsWith(`${browserRoot}${sep}`), `${file} leaves the Workflows browser root`).toBe(true);
+      if (visited.has(file)) continue;
+      visited.add(file);
+      expect((await stat(file)).isFile()).toBe(true);
+      const sourceText = await readFile(file, "utf8");
+      for (const specifier of moduleSpecifiers(sourceText)) {
+        expect(specifier, `${file} contains a bare or absolute runtime import`).toMatch(/^\.\.?\//u);
+        const dependency = resolve(dirname(file), specifier);
+        expect(dependency.startsWith(`${browserRoot}${sep}`), `${specifier} leaves the Workflows browser root`).toBe(true);
+        pending.push(dependency);
+      }
+    }
+    expect([...visited].map((file) => relative(browserRoot, file))).toEqual(expect.arrayContaining([
+      "pi-web-plugin.js", "i18n.js", "i18nCore.js", "locales/en.js", "locales/zh-CN.js",
+    ]));
+    expect(await readFile(join(browserRoot, "locales/zh-CN.js"), "utf8")).toContain("创建工作树");
     expect((await import(pathToFileURL(browserModule).href)).default.name).toBe("Workflows");
     enabled = false;
     expect((await catalog.snapshot()).plugins[0].enabled).toBe(false);

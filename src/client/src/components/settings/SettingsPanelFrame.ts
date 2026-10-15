@@ -1,3 +1,4 @@
+import { localizedTemplate, t } from "../../../../shared/i18n";
 import { css, html, LitElement, nothing, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
@@ -43,7 +44,7 @@ export class SettingsPanelFrame extends LitElement {
 
   override render(): TemplateResult {
     return html`
-      <section class="panel" aria-label=${this.heading || "Settings panel"}>
+      <section class="panel" aria-label=${this.heading || t("SettingsPanelFrame.settings_panel.761760dd")}>
         <header class="section-heading">
           <div class="heading-copy">
             ${this.heading === "" ? nothing : html`<h2>${this.heading}</h2>`}
@@ -71,7 +72,7 @@ export class SettingsPanelFrame extends LitElement {
 
   private renderNoticeStack(): TemplateResult | typeof nothing {
     if (this.notices.length === 0) return nothing;
-    return html`
+    return localizedTemplate("SettingsPanelFrame.template.57f44c9e", html)`
       <div class="notice-stack" aria-label="Settings notices">
         ${this.notices.map((notice) => this.renderNotice(notice))}
       </div>

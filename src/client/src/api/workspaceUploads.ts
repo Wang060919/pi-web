@@ -1,3 +1,4 @@
+import { t } from "../../../shared/i18n";
 import type { WriteWorkspaceFileOptions, WriteWorkspaceFileResponse } from "../../../shared/apiTypes";
 import { parseWriteWorkspaceFileResponse } from "./parsers";
 import { workspaceFileWriteUrl } from "./urls";
@@ -47,7 +48,7 @@ export interface UploadWorkspaceFileOptions extends WriteWorkspaceFileOptions {
 }
 
 export class WorkspaceUploadCancelledError extends Error {
-  constructor(message = "Workspace upload cancelled") {
+  constructor(message = t("workspaceUploads.workspace_upload_cancelled.592407c1")) {
     super(message);
     this.name = "WorkspaceUploadCancelledError";
   }
@@ -113,8 +114,8 @@ export function uploadWorkspaceFile(
       }
       fail(new Error(readXhrErrorMessage(xhr)));
     };
-    xhr.onerror = () => { fail(new Error("Workspace upload failed")); };
-    xhr.onabort = () => { fail(new WorkspaceUploadCancelledError(cancelled ? undefined : "Workspace upload aborted")); };
+    xhr.onerror = () => { fail(new Error(t("workspaceUploads.workspace_upload_failed.719d68c1"))); };
+    xhr.onabort = () => { fail(new WorkspaceUploadCancelledError(cancelled ? undefined : t("workspaceUploads.workspace_upload_aborted.b5505fc9"))); };
     xhr.send(input.file);
   });
 

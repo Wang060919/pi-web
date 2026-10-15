@@ -1,3 +1,4 @@
+import { localizedText, t } from "../../../../shared/i18n";
 import type { PiWebConfigValues } from "../../api";
 
 export interface GatewayServerConfigDraft {
@@ -45,7 +46,7 @@ export function gatewayServerConfigFromDraft(draft: GatewayServerConfigDraft, ba
   if (host !== "") config.host = host;
   if (port !== "") {
     const parsed = Number(port);
-    if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) throw new Error("Port must be an integer from 1 to 65535.");
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) throw new Error(t("settingsConfigDraft.port_must_be_an_integer_from_to.83c34a7a"));
     config.port = parsed;
   }
   config.allowedHosts = draft.allowedHostsMode === "all" ? true : parseAllowedHostsText(draft.allowedHostsText);
@@ -54,8 +55,8 @@ export function gatewayServerConfigFromDraft(draft: GatewayServerConfigDraft, ba
 
 export function machineAccessConfigPatchFromDraft(draft: MachineAccessConfigDraft): PiWebConfigValues {
   const allowedPaths = parseAllowedPathsText(draft.allowedPathsText);
-  const uploadDefaultFolder = normalizeWorkspaceRelativeFolder(draft.uploadDefaultFolder, "Upload default folder");
-  const attachmentDefaultFolder = normalizeWorkspaceRelativeFolder(draft.attachmentDefaultFolder, "Attachment default folder");
+  const uploadDefaultFolder = normalizeWorkspaceRelativeFolder(draft.uploadDefaultFolder, t("settingsConfigDraft.upload_default_folder.a55ac9e4"));
+  const attachmentDefaultFolder = normalizeWorkspaceRelativeFolder(draft.attachmentDefaultFolder, t("settingsConfigDraft.attachment_default_folder.8e99c7a1"));
   return {
     pathAccess: { allowedPaths },
     uploads: uploadDefaultFolder === "" ? {} : { defaultFolder: uploadDefaultFolder },
@@ -86,17 +87,17 @@ function parseAllowedHostsText(value: string): string[] {
 function parseAllowedPathsText(value: string): string[] {
   const paths = value.split("\n").map((path) => path.trim()).filter((path) => path !== "");
   const invalid = paths.find((path) => !isAbsoluteishAllowedPath(path));
-  if (invalid !== undefined) throw new Error(`Allowed external paths must be absolute paths or start with ~: ${invalid}`);
+  if (invalid !== undefined) throw new Error(localizedText("settingsConfigDraft.allowed_external_paths_must_be_absolute_paths.7185bde1")`Allowed external paths must be absolute paths or start with ~: ${invalid}`);
   return paths;
 }
 
 function normalizeWorkspaceRelativeFolder(value: string, label: string): string {
   const trimmed = value.trim();
   if (trimmed === "") return "";
-  if (isAbsoluteLike(trimmed)) throw new Error(`${label} must be workspace-relative.`);
+  if (isAbsoluteLike(trimmed)) throw new Error(localizedText("settingsConfigDraft.must_be_workspace_relative.1050254c")`${label} must be workspace-relative.`);
   const parts = trimmed.split(/[\\/]+/u).filter((part) => part !== "" && part !== ".");
   if (parts.length === 0) return "";
-  if (parts.some((part) => part === "..")) throw new Error(`${label} must not contain path traversal.`);
+  if (parts.some((part) => part === "..")) throw new Error(localizedText("settingsConfigDraft.must_not_contain_path_traversal.3e60bfc4")`${label} must not contain path traversal.`);
   return parts.join("/");
 }
 

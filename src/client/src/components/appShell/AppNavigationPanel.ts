@@ -1,3 +1,4 @@
+import { localizedTemplate } from "../../../../shared/i18n";
 import { LitElement, css, html } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import type { Machine, MachineHealth, Project, SessionActivity, SessionInfo, SessionStatus, Workspace } from "../../api";
@@ -137,7 +138,7 @@ export class AppNavigationPanel extends LitElement {
   };
 
   override render() {
-    return html`
+    return localizedTemplate("AppNavigationPanel.pi_web_actions.a6cbb6f6", html)`
       <header>
         <strong>PI WEB</strong>
         <machine-switcher

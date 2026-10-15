@@ -1,3 +1,4 @@
+import { localizedTemplate, t } from "../../../shared/i18n";
 import { LitElement, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { api, trustApi, type FileSuggestion } from "../api";
@@ -119,7 +120,7 @@ export class ProjectDialog extends LitElement {
 
   private renderTrustChoice() {
     const unavailable = this.trust === undefined || this.trust.loading || this.trust.error !== undefined;
-    return html`
+    return localizedTemplate("ProjectDialog.trust_this_project_trusting_lets_pi_load.06efff24", html)`
       <label class="check">
         <input type="checkbox" .checked=${this.trust?.trusted ?? false} ?disabled=${unavailable} @change=${(event: InputEvent) => { if (event.target instanceof HTMLInputElement) this.onTrustChange(event.target.checked); }} />
         <span>Trust this project</span>
@@ -128,7 +129,7 @@ export class ProjectDialog extends LitElement {
         Trusting lets pi load this project's .pi settings, extensions, skills, and packages.
         <a href="https://pi.dev/docs/latest/security" target="_blank" rel="noreferrer">Learn about project trust</a>
       </small>
-      ${this.trust?.error === undefined ? null : html`<small class="trust-error">Trust state unavailable: ${this.trust.error}</small>`}
+      ${this.trust?.error === undefined ? null : localizedTemplate("ProjectDialog.trust_state_unavailable.e2320232", html)`<small class="trust-error">Trust state unavailable: ${this.trust.error}</small>`}
     `;
   }
 
@@ -156,11 +157,11 @@ export class ProjectDialog extends LitElement {
   }
 
   override render() {
-    return html`
+    return localizedTemplate("ProjectDialog.add_project_project_folder_create_the_folder.059a9ba1", html)`
       <modal-surface
         .onClose=${() => this.onCancel?.()}
         .initialFocus=${"input"}
-        .label=${"Add project"}
+        .label=${t("ProjectDialog.add_project.d38cd98d")}
         @keydown=${(event: KeyboardEvent) => { this.onKeyDown(event); }}
       >
         <header>
@@ -173,13 +174,13 @@ export class ProjectDialog extends LitElement {
             <input .value=${this.path} @input=${(event: InputEvent) => { this.onPathInput(event); }} placeholder="/path/to/project or ~/code/project" />
           </label>
           <div class="suggestions">
-            ${this.loading ? html`<div class="hint">Loading folders…</div>` : null}
+            ${this.loading ? localizedTemplate("ProjectDialog.loading_folders.74f367df", html)`<div class="hint">Loading folders…</div>` : null}
             ${this.suggestions.map((suggestion, index) => html`
               <button class=${index === this.selected ? "selected" : ""} @click=${() => { this.pick(suggestion); }}>
                 ${suggestion.path}
               </button>
             `)}
-            ${!this.loading && this.suggestions.length === 0 ? html`<div class="hint">No matching folders. Enter a new path to create it.</div>` : null}
+            ${!this.loading && this.suggestions.length === 0 ? localizedTemplate("ProjectDialog.no_matching_folders_enter_a_new_path.ebaedc30", html)`<div class="hint">No matching folders. Enter a new path to create it.</div>` : null}
           </div>
           <label class="check">
             <input type="checkbox" .checked=${this.createMissing} @change=${(event: InputEvent) => { this.onCreateMissingChange(event); }} />

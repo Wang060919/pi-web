@@ -1,3 +1,4 @@
+import { getLocale, localizedTemplate, localizedText, t } from "./i18n.js";
 import type { ContentRenderingCapability, FileTreeEntry, WorkspacePanelContext } from "@jmfederico/pi-web/plugin-api";
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
 import { property, query, state } from "lit/decorators.js";
@@ -84,9 +85,9 @@ export class WorkspaceFilesPanel extends LitElement {
     const context = this.context;
     const runtime = this.runtime;
     const scope = this.scope;
-    if (context === undefined || runtime === undefined || scope === undefined) return html`<p class="muted">Files unavailable.</p>`;
+    if (context === undefined || runtime === undefined || scope === undefined) return localizedTemplate("FilesPanel.files_unavailable.63b15dff", html)`<p class="muted">Files unavailable.</p>`;
     if (scope.capabilityError !== undefined) {
-      return html`
+      return localizedTemplate("FilesPanel.files_is_unavailable_on_this_host.5486aef0", html)`
         <section class="capability-error" role="alert">
           <strong>Files is unavailable on this host.</strong>
           <span>${scope.capabilityError}</span>
@@ -94,12 +95,12 @@ export class WorkspaceFilesPanel extends LitElement {
       `;
     }
     const files = workspaceFilesCapabilityV1(context.files);
-    if (files === undefined) return html`<p class="capability-error" role="alert">Files requires workspace-files capability v1.</p>`;
+    if (files === undefined) return localizedTemplate("FilesPanel.files_requires_workspace_files_capability_v.89686927", html)`<p class="capability-error" role="alert">Files requires workspace-files capability v1.</p>`;
     const previewUrlBuilder: WorkspaceFilePreviewUrlBuilder = (_projectId, _workspaceId, path, options) => {
       const reference = options?.modifiedAt === undefined ? undefined : { version: options.modifiedAt };
       return options?.download === true ? files.downloadUrl(path, reference) : files.previewUrl(path, reference);
     };
-    return html`
+    return localizedTemplate("FilesPanel.files_upload_refresh_drop_files_to_upload.86aad454", html)`
       <section
         class=${this.dragActive ? "files-panel dragging" : "files-panel"}
         @dragenter=${this.handleDragEnter}
@@ -109,8 +110,8 @@ export class WorkspaceFilesPanel extends LitElement {
       >
         <section class="toolbar">
           <strong>Files</strong>
-          ${scope.treeLoading ? html`<span class="muted">loading…</span>` : null}
-          ${scope.treeStale ? html`<span class="stale">stale</span>` : null}
+          ${scope.treeLoading ? localizedTemplate("FilesPanel.loading.28330ace", html)`<span class="muted">loading…</span>` : null}
+          ${scope.treeStale ? localizedTemplate("FilesPanel.stale.e70c7684", html)`<span class="stale">stale</span>` : null}
           <div class="toolbar-actions">
             <button @click=${this.openFilePicker}>Upload</button>
             <button @click=${() => { void runtime.refreshFiles(context); }}>Refresh</button>
@@ -121,7 +122,7 @@ export class WorkspaceFilesPanel extends LitElement {
         ${this.renderUploadProgress(context, runtime, scope)}
         <section class="split">
           <div class="list tree">
-            ${scope.fileTree.length === 0 ? html`<p class="muted">No files loaded.</p>` : scope.fileTree.map((entry) => this.renderTreeEntry(context, runtime, scope, entry, 0))}
+            ${scope.fileTree.length === 0 ? localizedTemplate("FilesPanel.no_files_loaded.c8f2a390", html)`<p class="muted">No files loaded.</p>` : scope.fileTree.map((entry) => this.renderTreeEntry(context, runtime, scope, entry, 0))}
           </div>
           <div class="viewer">
             <pi-web-files-viewer
@@ -199,7 +200,7 @@ export class WorkspaceFilesPanel extends LitElement {
   private renderUploadProgress(context: WorkspacePanelContext, runtime: FilesRuntime, scope: FilesScopeState): TemplateResult | null {
     const batches = workspaceUploadBatches(scope.uploadBatches);
     if (batches.length === 0) return null;
-    return html`
+    return localizedTemplate("FilesPanel.uploads.d8a39c53", html)`
       <section class="upload-progress" aria-label="Workspace uploads">
         <div class="upload-progress-header">
           <strong>Uploads</strong>
@@ -210,7 +211,7 @@ export class WorkspaceFilesPanel extends LitElement {
             <div class="upload-batch-heading">
               <div>
                 <strong>${uploadBatchTitle(batch)}</strong>
-                <small>${batch.destinationFolder === "" ? "workspace root" : batch.destinationFolder}</small>
+                <small>${batch.destinationFolder === "" ? t("FilesPanel.workspace_root.a28d8001") : batch.destinationFolder}</small>
               </div>
               <span>${uploadBatchStatusLabel(batch)}</span>
             </div>
@@ -218,8 +219,8 @@ export class WorkspaceFilesPanel extends LitElement {
             <div class="upload-file-list">${batch.files.map((file) => this.renderUploadFile(file))}</div>
             <div class="upload-actions">
               ${batch.status === "uploading"
-                ? html`<button @click=${() => { runtime.cancelWorkspaceUpload(context, batch.id); }}>Cancel</button>`
-                : html`<button @click=${() => { runtime.clearWorkspaceUpload(context, batch.id); }}>Dismiss</button>`}
+                ? localizedTemplate("FilesPanel.cancel.6fcf7ba6", html)`<button @click=${() => { runtime.cancelWorkspaceUpload(context, batch.id); }}>Cancel</button>`
+                : localizedTemplate("FilesPanel.dismiss.62780d9c", html)`<button @click=${() => { runtime.clearWorkspaceUpload(context, batch.id); }}>Dismiss</button>`}
             </div>
           </article>
         `)}
@@ -246,12 +247,12 @@ export class WorkspaceFilesPanel extends LitElement {
     defaultFolder: string,
   ): TemplateResult {
     const fileCount = review.files.length;
-    return html`
+    return localizedTemplate("FilesPanel.upload_review_destination_folder_workspace_relative_lea.0fd3495b", html)`
       <dialog class="upload-dialog" aria-label="Review file upload" @cancel=${this.handleDialogCancel} @close=${this.handleDialogClose} @click=${this.handleDialogClick}>
         <header>
           <div>
             <span class="eyebrow">Upload</span>
-            <h2>Review ${fileCount === 1 ? "file" : `${String(fileCount)} files`}</h2>
+            <h2>Review ${uploadReviewCount(fileCount)}</h2>
           </div>
           <button class="close-button" type="button" title="Cancel upload" aria-label="Cancel upload" @click=${() => { this.closeUploadDialog(); }}>×</button>
         </header>
@@ -404,7 +405,7 @@ export class WorkspaceFilesPanel extends LitElement {
       dialog.showModal();
       this.renderRoot.querySelector<HTMLInputElement>("#workspace-upload-destination")?.focus();
     } catch (error) {
-      this.formError = `Unable to open upload review: ${errorMessage(error)}`;
+      this.formError = localizedText("FilesPanel.unable_to_open_upload_review.25ce5d64")`Unable to open upload review: ${errorMessage(error)}`;
     }
   }
 
@@ -504,7 +505,7 @@ export function workspaceUploadBatches(batches: Record<string, WorkspaceUploadBa
 }
 
 export function workspaceUploadReviewError(files: readonly File[], destinationFolder: string): string | undefined {
-  if (files.length === 0) return "Choose at least one file to upload.";
+  if (files.length === 0) return t("FilesPanel.choose_at_least_one_file_to_upload.6f017d64");
   for (const file of files) {
     try {
       workspaceUploadPath(destinationFolder, file.name);
@@ -537,9 +538,9 @@ export function startDirectWorkspaceUpload(
 
 export function uploadBatchStatusLabel(batch: WorkspaceUploadBatchState): string {
   switch (batch.status) {
-    case "completed": return "Done";
-    case "error": return "Failed";
-    case "cancelled": return "Cancelled";
+    case "completed": return t("FilesPanel.done.3a797c59");
+    case "error": return t("FilesPanel.failed.93770093");
+    case "cancelled": return t("FilesPanel.cancelled.25dfd907");
     case "uploading": return formatPercent(batch.percent);
   }
 }
@@ -550,33 +551,33 @@ export function uploadBatchProgressValue(batch: WorkspaceUploadBatchState): numb
 
 function uploadSummaryLabel(batches: readonly WorkspaceUploadBatchState[]): string {
   const uploading = batches.filter((batch) => batch.status === "uploading").length;
-  return uploading === 0 ? `${String(batches.length)} recent` : `${String(uploading)} uploading`;
+  return uploading === 0 ? localizedText("FilesPanel.recent.00d2c624")`${String(batches.length)} recent` : localizedText("FilesPanel.uploading.6ca38b4d")`${String(uploading)} uploading`;
 }
 
 function uploadBatchTitle(batch: WorkspaceUploadBatchState): string {
   const count = batch.files.length;
   const files = count === 1 ? "file" : "files";
   switch (batch.status) {
-    case "completed": return `Uploaded ${String(count)} ${files}`;
-    case "error": return `Upload failed for ${String(count)} ${files}`;
-    case "cancelled": return `Upload cancelled for ${String(count)} ${files}`;
-    case "uploading": return `Uploading ${String(count)} ${files}`;
+    case "completed": return localizedText("FilesPanel.uploaded.3666b55c")`Uploaded ${String(count)} ${files}`;
+    case "error": return localizedText("FilesPanel.upload_failed_for.8cd580d6")`Upload failed for ${String(count)} ${files}`;
+    case "cancelled": return localizedText("FilesPanel.upload_cancelled_for.4ae83177")`Upload cancelled for ${String(count)} ${files}`;
+    case "uploading": return localizedText("FilesPanel.uploading.c8c265cd")`Uploading ${String(count)} ${files}`;
   }
 }
 
 function uploadFileStatusLabel(file: WorkspaceUploadFileState): string {
   switch (file.status) {
-    case "pending": return "Pending";
+    case "pending": return t("FilesPanel.pending.11e52ad3");
     case "uploading": return formatPercent(file.percent);
-    case "completed": return "Done";
-    case "error": return "Error";
-    case "cancelled": return "Cancelled";
+    case "completed": return t("FilesPanel.done.9ebd0520");
+    case "error": return t("FilesPanel.error.44175d7a");
+    case "cancelled": return t("FilesPanel.cancelled.91078e74");
   }
 }
 
 function uploadFileDetail(file: WorkspaceUploadFileState): string {
   if (file.error !== undefined) return file.error;
-  if (file.response !== undefined) return `Wrote ${file.response.path}`;
+  if (file.response !== undefined) return localizedText("FilesPanel.wrote.d4d34d2b")`Wrote ${file.response.path}`;
   return `${file.path} · ${formatFileSize(file.loaded)} / ${formatFileSize(file.total)}`;
 }
 
@@ -624,4 +625,9 @@ function isFileDrag(event: DragEvent): boolean {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function uploadReviewCount(count: number): string {
+  if (getLocale() === "zh-CN") return String(count);
+  return count === 1 ? "file" : `${String(count)} files`;
 }

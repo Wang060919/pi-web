@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { writeClipboardText } from "../clipboard";
@@ -46,9 +47,9 @@ export class ToolExecutionView extends LitElement {
           </div>
         </div>
 
-        ${previewMismatch ? html`<p class="notice">Applied diff differs from the preview.</p>` : null}
+        ${previewMismatch ? localizedTemplate("ToolExecutionView.applied_diff_differs_from_the_preview.67520e1d", html)`<p class="notice">Applied diff differs from the preview.</p>` : null}
         ${errorText === undefined || errorText === "" ? null : html`<pre class="error-text">${errorText}</pre>`}
-        ${visibleDiff === undefined ? this.renderTextBody(bodyText, execution.status === "error", target) : this.renderDiffBody(visibleDiff, actualDiff === undefined ? "Preview diff" : "Applied diff", target)}
+        ${visibleDiff === undefined ? this.renderTextBody(bodyText, execution.status === "error", target) : this.renderDiffBody(visibleDiff, actualDiff === undefined ? t("ToolExecutionView.preview_diff.5d45110d") : t("ToolExecutionView.applied_diff.fb9a87b0"), target)}
       </section>
     `;
   }
@@ -56,14 +57,14 @@ export class ToolExecutionView extends LitElement {
   private renderHeaderTarget(target: ToolTarget | undefined) {
     if (target === undefined) return null;
     const className = target.label === "File" ? "path" : "summary";
-    return html`<span class=${className} title=${target.text} aria-label=${`${target.label}: ${target.text}`}>${target.text}</span>`;
+    return html`<span class=${className} title=${target.text} aria-label=${`${toolTargetLabel(target.label)}: ${target.text}`}>${target.text}</span>`;
   }
 
   private renderExpandedTarget(target: ToolTarget | undefined) {
     if (target === undefined) return null;
     return html`
       <div class="detail-target">
-        <span class="detail-label">${target.label}</span>
+        <span class="detail-label">${toolTargetLabel(target.label)}</span>
         <pre class="detail-target-value">${target.text}</pre>
       </div>
     `;
@@ -71,11 +72,11 @@ export class ToolExecutionView extends LitElement {
 
   private renderTextBody(text: string | undefined, open: boolean, target: ToolTarget | undefined) {
     if ((text === undefined || text === "") && target === undefined) return null;
-    return html`
+    return localizedTemplate("ToolExecutionView.details.9ee206f3", html)`
       <details class="text-body" ?open=${open}>
         <summary>Details</summary>
         ${this.renderExpandedTarget(target)}
-        ${text === undefined || text === "" ? null : html`
+        ${text === undefined || text === "" ? null : localizedTemplate("ToolExecutionView.result.5f8bc2b0", html)`
           <div class="detail-result">
             <span class="detail-label">Result</span>
             <pre>${text}</pre>
@@ -97,8 +98,8 @@ export class ToolExecutionView extends LitElement {
         </summary>
         ${this.renderExpandedTarget(target)}
         <div class="diff-toolbar">
-          <span>${truncated ? `Showing ${String(visibleLines.length)} of ${String(lines.length)} lines` : "Full diff"}</span>
-          <button type="button" @click=${() => { void this.copyDiff(diff); }}>${this.copied ? "Copied" : "Copy diff"}</button>
+          <span>${truncated ? localizedText("ToolExecutionView.showing_of_lines.25201e9f")`Showing ${String(visibleLines.length)} of ${String(lines.length)} lines` : t("ToolExecutionView.full_diff.9d79d291")}</span>
+          <button type="button" @click=${() => { void this.copyDiff(diff); }}>${this.copied ? t("ToolExecutionView.copied.22728566") : t("ToolExecutionView.copy_diff.29fecc82")}</button>
         </div>
         <pre class="diff" aria-label=${label}><code class="diff-content">${visibleLines.map((line) => html`<span class=${diffLineClass(line)}>${line}</span>`)}</code></pre>
         ${truncated ? html`
@@ -187,8 +188,8 @@ function pathFromArgs(args: unknown): string | undefined {
 function editCountLabel(execution: ToolExecutionPart): string | undefined {
   if (execution.toolName !== "edit") return undefined;
   const edits = getProperty(execution.args, "edits");
-  if (Array.isArray(edits)) return `${String(edits.length)} edit${edits.length === 1 ? "" : "s"}`;
-  if (typeof getProperty(execution.args, "oldText") === "string" && typeof getProperty(execution.args, "newText") === "string") return "1 edit";
+  if (Array.isArray(edits)) return localizedText("ToolExecutionView.edit.b20676b2")`${String(edits.length)} edit${edits.length === 1 ? "" : "s"}`;
+  if (typeof getProperty(execution.args, "oldText") === "string" && typeof getProperty(execution.args, "newText") === "string") return t("ToolExecutionView.edit.00b5f0df");
   return undefined;
 }
 
@@ -231,10 +232,10 @@ function statusIcon(status: ToolExecutionPart["status"]): string {
 }
 
 function statusLabel(status: ToolExecutionPart["status"]): string {
-  if (status === "success") return "done";
-  if (status === "error") return "failed";
-  if (status === "running") return "running";
-  return "pending";
+  if (status === "success") return t("ToolExecutionView.done.89ba87a2");
+  if (status === "error") return t("ToolExecutionView.failed.7451a21d");
+  if (status === "running") return t("ToolExecutionView.running.a2835d3a");
+  return t("ToolExecutionView.pending.75d0ead0");
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -248,4 +249,10 @@ function getProperty(value: unknown, key: string): unknown {
 function getString(value: unknown, key: string): string | undefined {
   const property = getProperty(value, key);
   return typeof property === "string" ? property : undefined;
+}
+
+function toolTargetLabel(label: ToolTarget["label"]): string {
+  if (label === "File") return t("ToolExecutionView.file.2e137c95");
+  if (label === "Command") return t("ToolExecutionView.command.22162053");
+  return t("ToolExecutionView.input.492ae516");
 }

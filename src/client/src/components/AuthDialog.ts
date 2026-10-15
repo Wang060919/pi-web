@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, css, html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import type { AuthDialogState } from "../appState";
@@ -37,7 +38,7 @@ export class AuthDialog extends LitElement {
   override render() {
     const state = this.state;
     if (state === undefined) return null;
-    return html`
+    return localizedTemplate("AuthDialog.template.5bfc64fa", html)`
       <modal-surface
         .onClose=${() => { this.cancel(); }}
         .initialFocus=${this.initialFocusTarget(state)}
@@ -58,8 +59,8 @@ export class AuthDialog extends LitElement {
     switch (state.step) {
       case "method":
         return [
-          { key: "oauth", title: "Use a subscription", detail: "ChatGPT Plus/Pro, Claude Pro/Max, or GitHub Copilot", searchText: "Use a subscription", run: () => { this.onChooseMethod?.("oauth"); } },
-          { key: "api_key", title: "Use provider credentials", detail: "Configure an API key or provider-specific credentials in the active Pi-compatible profile's auth.json", searchText: "Use provider credentials", run: () => { this.onChooseMethod?.("api_key"); } },
+          { key: "oauth", title: t("AuthDialog.use_a_subscription.3afb4acc"), detail: t("AuthDialog.chatgpt_plus_pro_claude_pro_max_or.1a9e4fb5"), searchText: t("AuthDialog.use_a_subscription.c9a2c5c8"), run: () => { this.onChooseMethod?.("oauth"); } },
+          { key: "api_key", title: t("AuthDialog.use_provider_credentials.7d6c38c9"), detail: t("AuthDialog.configure_an_api_key_or_provider_specific.2e823718"), searchText: t("AuthDialog.use_provider_credentials.61e5d0c2"), run: () => { this.onChooseMethod?.("api_key"); } },
         ];
       case "providers":
         return state.providers.map((provider) => ({
@@ -144,10 +145,10 @@ export class AuthDialog extends LitElement {
 
   private dialogTitle(state: AuthDialogState): string {
     switch (state.step) {
-      case "method": return "Configure provider authentication";
-      case "providers": return state.authType === undefined ? "Select provider authentication" : state.authType === "oauth" ? "Select subscription provider" : "Select credential provider";
-      case "oauth": return `Login to ${state.flow.providerName}`;
-      case "logout": return "Remove stored provider authentication";
+      case "method": return t("AuthDialog.configure_provider_authentication.25d5721b");
+      case "providers": return state.authType === undefined ? t("AuthDialog.select_provider_authentication.6457c0c5") : state.authType === "oauth" ? t("AuthDialog.select_subscription_provider.629a2356") : t("AuthDialog.select_credential_provider.c53aef8c");
+      case "oauth": return localizedText("AuthDialog.login_to.f534145c")`Login to ${state.flow.providerName}`;
+      case "logout": return t("AuthDialog.remove_stored_provider_authentication.b889d3a1");
     }
   }
 
@@ -156,12 +157,12 @@ export class AuthDialog extends LitElement {
     const options = this.optionsFor(state) ?? [];
     const visible = this.filteredOptions(options);
     return html`
-      ${this.stepHasSearch(state) && options.length > 0 ? html`
+      ${this.stepHasSearch(state) && options.length > 0 ? localizedTemplate("AuthDialog.template.c5f78314", html)`
         <input aria-label="Search providers" placeholder="Search providers" .value=${this.query} @input=${(event: Event) => { this.handleSearchInput(event); }}>
       ` : null}
       <div class="options">
-        ${options.length === 0 ? html`<div class="empty">${state.step === "logout" ? "No stored credentials. Environment variables and models.json settings are unchanged." : "No providers available."}</div>`
-        : visible.length === 0 ? html`<div class="empty">No matching providers</div>`
+        ${options.length === 0 ? html`<div class="empty">${state.step === "logout" ? t("AuthDialog.no_stored_credentials_environment_variables_and_models.6b471b8a") : t("AuthDialog.no_providers_available.dc18b5b8")}</div>`
+        : visible.length === 0 ? localizedTemplate("AuthDialog.no_matching_providers.6b986890", html)`<div class="empty">No matching providers</div>`
         : visible.map((option, index) => html`
           <button
             class=${index === this.selectedIndex ? "selected" : ""}
@@ -190,21 +191,21 @@ export class AuthDialog extends LitElement {
       && prompt?.promptType === "manual_code";
     return html`
       <div class="form">
-        ${flow.auth !== undefined ? html`
+        ${flow.auth !== undefined ? localizedTemplate("AuthDialog.open_this_authorization_link.bbd3440b", html)`
           <p>Open this authorization link:</p>
           <p><a href=${flow.auth.url} target="_blank" rel="noreferrer">${flow.auth.url}</a></p>
-          ${flow.auth.deviceCode !== undefined ? html`
+          ${flow.auth.deviceCode !== undefined ? localizedTemplate("AuthDialog.enter_code.ee4724bb", html)`
             <p class="warning">Enter code: <code>${flow.auth.deviceCode.userCode}</code></p>
           ` : flow.auth.instructions !== undefined ? html`<p class="warning">${flow.auth.instructions}</p>` : null}
-        ` : html`<p>Starting login flow…</p>`}
-        ${showPasteNote ? html`<p class="warning">After you approve, the redirect page will probably fail to load — that is expected. Copy the full URL from your browser's address bar and paste it below.</p>` : null}
+        ` : localizedTemplate("AuthDialog.starting_login_flow.be26d72e", html)`<p>Starting login flow…</p>`}
+        ${showPasteNote ? localizedTemplate("AuthDialog.after_you_approve_the_redirect_page_will.321c0917", html)`<p class="warning">After you approve, the redirect page will probably fail to load — that is expected. Copy the full URL from your browser's address bar and paste it below.</p>` : null}
         ${flow.progress.length > 0 ? html`<ul class="progress">${flow.progress.map((line) => html`<li>${line}</li>`)}</ul>` : null}
-        ${flow.info?.map((item) => item.links === undefined || item.links.length === 0 ? null : html`
+        ${flow.info?.map((item) => item.links === undefined || item.links.length === 0 ? null : localizedTemplate("AuthDialog.template.b3cb1a23", html)`
           <div class="info-links" aria-label="Related information">
             ${item.links.map((link) => html`<a href=${link.url} target="_blank" rel="noreferrer" title=${item.message}>${link.label ?? link.url}</a>`)}
           </div>
         `) ?? null}
-        ${prompt !== undefined ? html`
+        ${prompt !== undefined ? localizedTemplate("AuthDialog.cancel_submit.05d1242f", html)`
           <label>${prompt.message}</label>
           <input type=${promptInputType} autocomplete=${promptInputType === "password" ? "off" : "on"} .value=${state.inputValue ?? ""} placeholder=${prompt.placeholder ?? ""} @input=${(event: Event) => { if (event.target instanceof HTMLInputElement) this.onOAuthInput?.(event.target.value); }}>
           <div class="actions"><button @click=${() => { this.onOAuthCancel?.(); }}>Cancel</button><button class="primary" ?disabled=${state.responding === true} @click=${() => { this.onOAuthRespond?.(); }}>Submit</button></div>
@@ -219,8 +220,8 @@ export class AuthDialog extends LitElement {
           `)}</div>
         ` : null}
         ${state.error !== undefined && state.error !== "" ? html`<div class="error-text">${state.error}</div>` : null}
-        ${flow.status === "error" || flow.status === "cancelled" ? html`<div class="error-text">${flow.error ?? flow.status}</div><div class="actions"><button @click=${() => { this.cancel(); }}>Close</button></div>` : null}
-        ${prompt === undefined && select === undefined && flow.status === "running" ? html`<div class="actions"><button @click=${() => { this.onOAuthCancel?.(); }}>Cancel</button></div>` : null}
+        ${flow.status === "error" || flow.status === "cancelled" ? localizedTemplate("AuthDialog.close.686f543f", html)`<div class="error-text">${flow.error ?? (flow.status === "error" ? t("ui.auth.error") : t("ui.auth.cancelled"))}</div><div class="actions"><button @click=${() => { this.cancel(); }}>Close</button></div>` : null}
+        ${prompt === undefined && select === undefined && flow.status === "running" ? localizedTemplate("AuthDialog.cancel.a8243a20", html)`<div class="actions"><button @click=${() => { this.onOAuthCancel?.(); }}>Cancel</button></div>` : null}
       </div>
     `;
   }
@@ -315,7 +316,7 @@ export function isBrowserRemoteOAuthMachine(machineId: string, hostname: string)
 }
 
 function authTypeLabel(authType: "oauth" | "api_key"): string {
-  return authType === "oauth" ? "subscription" : "credentials";
+  return authType === "oauth" ? t("AuthDialog.subscription.2d840827") : t("AuthDialog.credentials.59c26340");
 }
 
 /**
@@ -361,12 +362,12 @@ function authDialogStateStep(value: unknown): AuthDialogState["step"] | undefine
 function statusLabel(provider: AuthProviderOption): string {
   if (provider.status.source === undefined) return "";
   switch (provider.status.source) {
-    case "stored": return "✓ configured";
-    case "environment": return `✓ env${provider.status.label === undefined ? "" : `: ${provider.status.label}`}`;
-    case "runtime": return "✓ runtime";
-    case "fallback": return "✓ custom key";
-    case "models_json_key": return "✓ models.json key";
-    case "models_json_command": return "✓ models.json command";
+    case "stored": return t("AuthDialog.configured.e8edecae");
+    case "environment": return localizedText("AuthDialog.env.eb248a90")`✓ env${provider.status.label === undefined ? "" : `: ${provider.status.label}`}`;
+    case "runtime": return t("AuthDialog.runtime.f4f918cf");
+    case "fallback": return t("AuthDialog.custom_key.d8971bec");
+    case "models_json_key": return t("AuthDialog.models_json_key.e5843869");
+    case "models_json_command": return t("AuthDialog.models_json_command.d2095b18");
     default: return "";
   }
 }

@@ -1,3 +1,4 @@
+import { localizedText, t } from "./i18n.js";
 import type { WorkspacePanelContext } from "@jmfederico/pi-web/plugin-api";
 import { TASKS_CONFIG_PATH, type WorkspaceTask } from "./config.js";
 import { runWorkspaceTaskInTerminal } from "./taskRunner.js";
@@ -66,12 +67,12 @@ class PiWebTasksPanel extends HTMLElement {
   private render(): void {
     const context = this.contextValue;
     if (context === undefined) {
-      this.root.innerHTML = `${taskStyles()}<section class="empty">Select a workspace.</section>`;
+      this.root.innerHTML = localizedText("tasksPanelElement.select_a_workspace.edd74da4")`${taskStyles()}<section class="empty">Select a workspace.</section>`;
       return;
     }
 
     const state = getOrLoadWorkspaceConfig(context);
-    this.root.innerHTML = `
+    this.root.innerHTML = localizedText("tasksPanelElement.workspace_tasks_refresh_open_terminal.d546a107")`
       ${taskStyles()}
       <section class="toolbar">
         <strong>Workspace Tasks</strong>
@@ -105,7 +106,7 @@ class PiWebTasksPanel extends HTMLElement {
     if (!this.isCurrentContext(context)) return Promise.resolve();
     const task = taskFromConfigState(getCachedWorkspaceConfig(context), taskId);
     if (task === undefined) {
-      this.status = { kind: "error", message: "That task is no longer available. Click Refresh, then try again." };
+      this.status = { kind: "error", message: t("tasksPanelElement.that_task_is_no_longer_available_click.8300c61e") };
       this.render();
       return Promise.resolve();
     }
@@ -117,12 +118,12 @@ class PiWebTasksPanel extends HTMLElement {
   }
 
   private renderConfigState(state: ConfigState): string {
-    if (state.kind === "loading") return `<p class="muted">Loading ${escapeHtml(TASKS_CONFIG_PATH)}…</p>`;
+    if (state.kind === "loading") return localizedText("tasksPanelElement.loading.13100637")`<p class="muted">Loading ${escapeHtml(TASKS_CONFIG_PATH)}…</p>`;
     if (state.kind === "missing") return renderMissingState(state);
     if (state.kind === "unavailable") return renderUnavailableState(state);
 
-    if (state.config.tasks.length === 0) return `<p class="muted">No tasks are defined in ${escapeHtml(state.path)}. Add tasks to the file, then click Refresh.</p>`;
-    return `
+    if (state.config.tasks.length === 0) return localizedText("tasksPanelElement.no_tasks_are_defined_in_add_tasks.ea10d421")`<p class="muted">No tasks are defined in ${escapeHtml(state.path)}. Add tasks to the file, then click Refresh.</p>`;
+    return localizedText("tasksPanelElement.tasks_run_in_a_dedicated_workspace_terminal.953e5cca")`
       <p class="muted">Tasks run in a dedicated workspace terminal, then switch to that terminal. Edit ${escapeHtml(state.path)} and click Refresh to reload.</p>
       ${renderTaskGroups(state.config.tasks, this.runningTaskId)}
     `;
@@ -135,32 +136,32 @@ class PiWebTasksPanel extends HTMLElement {
   }
 
   private async refreshConfig(context: WorkspacePanelContext): Promise<void> {
-    this.status = { kind: "info", message: `Refreshing ${TASKS_CONFIG_PATH}…` };
+    this.status = { kind: "info", message: localizedText("tasksPanelElement.refreshing.40a8d9d0")`Refreshing ${TASKS_CONFIG_PATH}…` };
     configCache.set(cacheKeyForContext(context), { kind: "loading" });
     this.render();
 
     const state = await refreshWorkspaceConfig(context);
     if (!this.isCurrentContext(context)) return;
     this.status = state.kind === "loaded"
-      ? { kind: "success", message: `Loaded ${String(state.config.tasks.length)} task${state.config.tasks.length === 1 ? "" : "s"}.` }
+      ? { kind: "success", message: localizedText("tasksPanelElement.loaded_task.314f60f6")`Loaded ${String(state.config.tasks.length)} task${state.config.tasks.length === 1 ? "" : "s"}.` }
       : undefined;
     this.render();
   }
 
   private async dispatchTask(context: WorkspacePanelContext, task: WorkspaceTask): Promise<void> {
     if (this.runningTaskId !== undefined) {
-      this.status = { kind: "info", message: "Another task is already starting. Wait for it to finish dispatching, then try again." };
+      this.status = { kind: "info", message: t("tasksPanelElement.another_task_is_already_starting_wait_for.00962e8d") };
       this.render();
       return;
     }
-    if (task.confirm && !window.confirm(`Run ${task.title}?\n\n${task.command}`)) {
-      this.status = { kind: "info", message: `Cancelled ${task.title}.` };
+    if (task.confirm && !window.confirm(localizedText("tasksPanelElement.run.b1efe9c1")`Run ${task.title}?\n\n${task.command}`)) {
+      this.status = { kind: "info", message: localizedText("tasksPanelElement.cancelled.8fdfb99b")`Cancelled ${task.title}.` };
       this.render();
       return;
     }
 
     this.runningTaskId = task.id;
-    this.status = { kind: "info", message: `Starting ${task.title}…` };
+    this.status = { kind: "info", message: localizedText("tasksPanelElement.starting.0aa80c4e")`Starting ${task.title}…` };
     this.render();
 
     try {
@@ -168,7 +169,7 @@ class PiWebTasksPanel extends HTMLElement {
       if (!this.isCurrentContext(context)) return;
       this.status = {
         kind: "success",
-        message: `Started terminal command “${handle.run.title}”.`,
+        message: localizedText("tasksPanelElement.started_terminal_command.89f04ff2")`Started terminal command “${handle.run.title}”.`,
         detail: task.command,
       };
       this.runningTaskId = undefined;
@@ -184,7 +185,7 @@ class PiWebTasksPanel extends HTMLElement {
   private openWorkspaceTerminal(terminalId?: string): void {
     const context = this.contextValue;
     if (context === undefined) {
-      this.status = { kind: "error", message: "Select a workspace before opening a terminal." };
+      this.status = { kind: "error", message: t("tasksPanelElement.select_a_workspace_before_opening_a_terminal.a528e377") };
       this.render();
       return;
     }
@@ -268,7 +269,7 @@ function renderTask(task: WorkspaceTask, runningTaskId: string | undefined): str
         ${description}
         <code>${escapeHtml(task.command)}</code>
       </div>
-      <button data-task-id="${escapeAttr(task.id)}" ${disabled ? "disabled" : ""}>${running ? "Dispatching…" : "Run"}</button>
+      <button data-task-id="${escapeAttr(task.id)}" ${disabled ? "disabled" : ""}>${running ? t("tasksPanelElement.dispatching.93fc59b6") : t("tasksPanelElement.run.cf138a75")}</button>
     </article>
   `;
 }

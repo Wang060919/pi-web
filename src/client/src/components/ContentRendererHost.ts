@@ -1,3 +1,4 @@
+import { localizedTemplate, t } from "../../../shared/i18n";
 import { LitElement, css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { ContentRendererContribution } from "../../../plugin-api";
@@ -32,7 +33,7 @@ export class ContentRendererHost extends LitElement {
   private renderer: ContentRendererContribution | undefined;
   @state() private raw = false;
   @state() private failure: string | undefined;
-  @state() private copyStatus = "Copy source";
+  @state() private copyStatus = t("ContentRendererHost.copy_source.0521b5bf");
   private controller: AbortController | undefined;
   private preview: TemplateResult | undefined;
   private ancestorDetails: HTMLDetailsElement[] = [];
@@ -57,7 +58,7 @@ export class ContentRendererHost extends LitElement {
       this.renderer = choice?.renderer;
       this.cancelPreview();
       this.failure = undefined;
-      this.copyStatus = "Copy source";
+      this.copyStatus = t("ContentRendererHost.copy_source.89d602e9");
     }
     if (this.externalControls) this.manuallyActivated = this.allowManualPreview;
   }
@@ -124,7 +125,7 @@ export class ContentRendererHost extends LitElement {
     const fail = (error: unknown): void => {
       if (controller.signal.aborted || this.controller !== controller) return;
       console.warn(`Content renderer ${this.renderer?.id ?? "unknown"} failed`, error);
-      this.failure = "Preview failed. Raw source is shown below.";
+      this.failure = t("ContentRendererHost.preview_failed_raw_source_is_shown_below.0ed9badd");
       this.cancelPreview();
     };
     try {
@@ -143,7 +144,7 @@ export class ContentRendererHost extends LitElement {
   private async copy(): Promise<void> {
     const text = this.text;
     const copied = await writeClipboardText(text);
-    if (this.isConnected && text === this.text) this.copyStatus = copied ? "Copied source" : "Failed to copy source";
+    if (this.isConnected && text === this.text) this.copyStatus = copied ? t("ContentRendererHost.copied_source.02f3ab73") : t("ContentRendererHost.failed_to_copy_source.5a0b0301");
   }
 
   override render() {
@@ -156,30 +157,30 @@ export class ContentRendererHost extends LitElement {
     const sourceClass = this.codeBlocks?.overflow === "wrap" ? "source-wrap" : "source-scroll";
     const choice = this.choices.find(({ id }) => id === this.selectedId);
     return html`<div class=${this.externalControls ? "" : "code-block-frame"}>
-      ${this.externalControls ? null : html`<div class="controls code-block-header" role="group" aria-label="Code block controls">
+      ${this.externalControls ? null : localizedTemplate("ContentRendererHost.template.629c2610", html)`<div class="controls code-block-header" role="group" aria-label="Code block controls">
         ${this.choices.length < 2
           ? choice === undefined ? null : html`<span class="code-block-label" title=${choice.label}>${choice.label}</span>`
-          : html`
+          : localizedTemplate("ContentRendererHost.template.95814392", html)`
           <select class="code-block-label" aria-label="Diagram renderer" @change=${(event: Event) => { if (event.target instanceof HTMLSelectElement) this.selectRenderer(event.target.value); }}>
             ${this.choices.map(({ id, label }) => html`<option value=${id} .selected=${id === this.selectedId}>${label}</option>`)}
           </select>
         `}
-        ${this.renderer === undefined ? null : html`
-          <button type="button" aria-controls="content" aria-pressed=${!showingRaw} @click=${() => { this.setRaw(false); }}>${this.renderer.renderMode === "automatic" ? "Preview" : "Render"}</button>
+        ${this.renderer === undefined ? null : localizedTemplate("ContentRendererHost.raw.025d8adb", html)`
+          <button type="button" aria-controls="content" aria-pressed=${!showingRaw} @click=${() => { this.setRaw(false); }}>${this.renderer.renderMode === "automatic" ? t("ContentRendererHost.preview.1e9a6cbb") : t("ContentRendererHost.render.9d8e085c")}</button>
           <button type="button" aria-controls="content" aria-pressed=${showingRaw} @click=${() => { this.setRaw(true); }}>Raw</button>
         `}
         ${this.codeBlocks?.copy === false ? null : html`
-          <button class="copy code-block-copy" type="button" title=${this.copyStatus} aria-label=${this.copyStatus} @click=${() => { void this.copy(); }}><span aria-hidden="true">${this.copyStatus === "Copied source" ? "✓" : "⧉"}</span></button>
-          <span class="sr-only" role="status">${this.copyStatus === "Copy source" ? "" : this.copyStatus}</span>
+          <button class="copy code-block-copy" type="button" title=${this.copyStatus} aria-label=${this.copyStatus} @click=${() => { void this.copy(); }}><span aria-hidden="true">${this.copyStatus === t("ContentRendererHost.copied_source.d92c9bc8") ? "✓" : "⧉"}</span></button>
+          <span class="sr-only" role="status">${this.copyStatus === t("ContentRendererHost.copy_source.6c1cb102") ? "" : this.copyStatus}</span>
         `}
       </div>`}
       <div id="content">
         ${diagnostic === undefined ? null : html`<p role="status">${diagnostic}</p>`}
         ${showingRaw
           ? this.codeBlocks?.presentation === "plain"
-            ? html`<div class=${`plain-code-block ${sourceClass}`} tabindex="0" aria-label="Raw source">${this.text}</div>`
-            : html`<pre class=${sourceClass} tabindex="0" aria-label="Raw source"><code>${this.text}</code></pre>`
-          : html`<div class="preview" tabindex="0" aria-label="Diagram preview">${preview}</div>`}
+            ? localizedTemplate("ContentRendererHost.template.35c94939", html)`<div class=${`plain-code-block ${sourceClass}`} tabindex="0" aria-label="Raw source">${this.text}</div>`
+            : localizedTemplate("ContentRendererHost.template.21921372", html)`<pre class=${sourceClass} tabindex="0" aria-label="Raw source"><code>${this.text}</code></pre>`
+          : localizedTemplate("ContentRendererHost.template.5787b0d5", html)`<div class="preview" tabindex="0" aria-label="Diagram preview">${preview}</div>`}
       </div>
     </div>`;
   }

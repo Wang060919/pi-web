@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { SessionCleanupExecuteResponse, SessionCleanupPreviewResponse, SessionCleanupProjectSummary, SessionCleanupRequest } from "../api";
@@ -28,9 +29,9 @@ export class SessionCleanupDialog extends LitElement {
     const validation = validateSessionCleanupDraft(this.draft);
     const selectedPreview = this.selectedPreview();
     const runEnabled = canRunSessionCleanup({ draft: this.draft, preview: selectedPreview, previewRequest: this.previewRequest, loading: this.loading, running: this.running });
-    const runTitle = runEnabled ? "Run cleanup" : selectedPreview !== undefined && !sessionCleanupPreviewHasTargets(selectedPreview) ? "Select at least one project to run cleanup" : "Preview cleanup before running it";
-    return html`
-      <modal-surface .onClose=${() => { this.onClose?.(); }} .label=${"Clean up sessions"}>
+    const runTitle = runEnabled ? t("SessionCleanupDialog.run_cleanup.5fce8304") : selectedPreview !== undefined && !sessionCleanupPreviewHasTargets(selectedPreview) ? t("SessionCleanupDialog.select_at_least_one_project_to_run.bfa342bc") : t("SessionCleanupDialog.preview_cleanup_before_running_it.5bc5269e");
+    return localizedTemplate("SessionCleanupDialog.sessions_clean_up_sessions_preview_manual_cleanup.06a74625", html)`
+      <modal-surface .onClose=${() => { this.onClose?.(); }} .label=${t("SessionCleanupDialog.clean_up_sessions.4c9fa7b7")}>
         <header>
           <div>
             <span class="eyebrow">Sessions</span>
@@ -46,9 +47,9 @@ export class SessionCleanupDialog extends LitElement {
           ${this.result === undefined ? null : this.renderResult(this.result)}
         </div>
         <footer>
-          <button @click=${() => { this.onClose?.(); }}>${this.result === undefined ? "Cancel" : "Close"}</button>
-          <button ?disabled=${this.loading || this.running} @click=${() => { this.previewCleanup(); }}>${this.loading ? "Previewing…" : "Preview"}</button>
-          <button class="danger" ?disabled=${!runEnabled} title=${runTitle} @click=${() => { this.runCleanup(); }}>${this.running ? "Running…" : "Run cleanup"}</button>
+          <button @click=${() => { this.onClose?.(); }}>${this.result === undefined ? t("SessionCleanupDialog.cancel.d355c95d") : t("SessionCleanupDialog.close.98874c72")}</button>
+          <button ?disabled=${this.loading || this.running} @click=${() => { this.previewCleanup(); }}>${this.loading ? t("SessionCleanupDialog.previewing.2c40ad17") : t("SessionCleanupDialog.preview.396ef5ec")}</button>
+          <button class="danger" ?disabled=${!runEnabled} title=${runTitle} @click=${() => { this.runCleanup(); }}>${this.running ? t("SessionCleanupDialog.running.603d0ae6") : t("SessionCleanupDialog.run_cleanup.e281c161")}</button>
         </footer>
       </modal-surface>
     `;
@@ -58,7 +59,7 @@ export class SessionCleanupDialog extends LitElement {
     const disabled = this.loading || this.running;
     const validation = validateSessionCleanupDraft(this.draft);
     const previewOutOfDate = this.preview !== undefined && validation.ok && sessionCleanupRequestKey(validation.request) !== sessionCleanupRequestKey(this.previewRequest) && sessionCleanupPreviewHasTargets(this.preview);
-    return html`
+    return localizedTemplate("SessionCleanupDialog.archive_non_archived_sessions_idle_for_more.65b9eb9a", html)`
       <fieldset ?disabled=${disabled}>
         <label class="toggle-row">
           <input type="checkbox" .checked=${this.draft.archiveIdleEnabled} @change=${(event: Event) => { this.updateDraft({ archiveIdleEnabled: checkedValue(event) }); }}>
@@ -75,7 +76,7 @@ export class SessionCleanupDialog extends LitElement {
       </fieldset>
       <p class="warning"><strong>Deletion is permanent.</strong> Cleanup only deletes sessions that are already archived.</p>
       ${validationError === "" ? null : html`<div class="dialog-error" role="alert">${validationError}</div>`}
-      ${previewOutOfDate ? html`<div class="hint" role="status">Thresholds changed. Preview again before running cleanup.</div>` : null}
+      ${previewOutOfDate ? localizedTemplate("SessionCleanupDialog.thresholds_changed_preview_again_before_running_cleanup.beba1c04", html)`<div class="hint" role="status">Thresholds changed. Preview again before running cleanup.</div>` : null}
     `;
   }
 
@@ -88,10 +89,10 @@ export class SessionCleanupDialog extends LitElement {
     const selectedCwds = this.selectedProjectCwdsForPreview();
     const selected = new Set(selectedCwds);
     const selectedPreview = sessionCleanupPreviewForSelectedProjects(preview, selectedCwds);
-    return html`
+    return localizedTemplate("SessionCleanupDialog.preview.583a0bba", html)`
       <section class="preview" aria-label="Cleanup preview">
         <h2>Preview</h2>
-        ${preview.projects.length === 0 ? html`<p class="empty">No sessions match these thresholds.</p>` : html`
+        ${preview.projects.length === 0 ? localizedTemplate("SessionCleanupDialog.no_sessions_match_these_thresholds.6d09a1e2", html)`<p class="empty">No sessions match these thresholds.</p>` : localizedTemplate("SessionCleanupDialog.clean_up_project_workspace_path_archive_delete.69b41ead", html)`
           ${this.renderSelectionControls(preview, selectedCwds)}
           <div class="table-scroll" tabindex="0" aria-label="Cleanup projects table">
             <table>
@@ -107,27 +108,27 @@ export class SessionCleanupDialog extends LitElement {
             </table>
           </div>
         `}
-        ${preview.skippedBusySessionIds === undefined || preview.skippedBusySessionIds.length === 0 ? null : html`<p class="hint">${preview.skippedBusySessionIds.length} busy ${preview.skippedBusySessionIds.length === 1 ? "session was" : "sessions were"} skipped.</p>`}
+        ${preview.skippedBusySessionIds === undefined || preview.skippedBusySessionIds.length === 0 ? null : localizedTemplate("SessionCleanupDialog.busy_skipped.2b5c0ac1", html)`<p class="hint">${preview.skippedBusySessionIds.length} busy ${preview.skippedBusySessionIds.length === 1 ? "session was" : "sessions were"} skipped.</p>`}
       </section>
     `;
   }
 
   private renderSelectionControls(preview: SessionCleanupPreviewResponse, selectedCwds: readonly string[]): TemplateResult {
     const disabled = this.loading || this.running;
-    return html`
+    return localizedTemplate("SessionCleanupDialog.of_projects_selected_select_all_deselect_all.3efcdf6d", html)`
       <div class="selection-controls" role="group" aria-label="Project selection">
         <span>${selectedCwds.length} of ${preview.projects.length} projects selected</span>
         <button ?disabled=${disabled || selectedCwds.length === preview.projects.length} @click=${() => { this.selectAllProjects(); }}>Select all</button>
         <button ?disabled=${disabled || selectedCwds.length === 0} @click=${() => { this.deselectAllProjects(); }}>Deselect all</button>
       </div>
-      ${selectedCwds.length === 0 ? html`<p class="hint" role="status">Select at least one project to run cleanup.</p>` : null}
+      ${selectedCwds.length === 0 ? localizedTemplate("SessionCleanupDialog.select_at_least_one_project_to_run.2b4ceacb", html)`<p class="hint" role="status">Select at least one project to run cleanup.</p>` : null}
     `;
   }
 
   private renderProjectRow(project: SessionCleanupProjectSummary, selected: boolean): TemplateResult {
     return html`
       <tr class=${selected ? "" : "unselected"}>
-        <td class="select-cell"><input type="checkbox" aria-label=${`Clean up ${project.cwd}`} .checked=${selected} ?disabled=${this.running} @change=${(event: Event) => { this.setProjectSelected(project.cwd, checkedValue(event)); }}></td>
+        <td class="select-cell"><input type="checkbox" aria-label=${localizedText("SessionCleanupDialog.clean_up.1eda4c66")`Clean up ${project.cwd}`} .checked=${selected} ?disabled=${this.running} @change=${(event: Event) => { this.setProjectSelected(project.cwd, checkedValue(event)); }}></td>
         <th title=${project.cwd} dir="auto">${project.cwd}</th>
         <td>${project.archiveCount}</td>
         <td>${project.deleteCount}</td>
@@ -136,7 +137,7 @@ export class SessionCleanupDialog extends LitElement {
   }
 
   private renderResult(result: SessionCleanupExecuteResponse): TemplateResult {
-    return html`
+    return localizedTemplate("SessionCleanupDialog.cleanup_complete_archived_permanently_deleted_archived.4813659d", html)`
       <section class="result" aria-label="Cleanup result">
         <h2>Cleanup complete</h2>
         <p>Archived ${result.archivedSessionIds.length} ${result.archivedSessionIds.length === 1 ? "session" : "sessions"}; permanently deleted ${result.deletedSessionIds.length} archived ${result.deletedSessionIds.length === 1 ? "session" : "sessions"}.</p>
@@ -196,7 +197,7 @@ export class SessionCleanupDialog extends LitElement {
     const selectedPreview = this.selectedPreview();
     const selectedProjectCwds = this.selectedProjectCwdsForPreview();
     if (!canRunSessionCleanup({ draft: this.draft, preview: selectedPreview, previewRequest: this.previewRequest })) {
-      this.formError = selectedPreview !== undefined && !sessionCleanupPreviewHasTargets(selectedPreview) ? "Select at least one project to run cleanup." : "Preview cleanup before running it.";
+      this.formError = selectedPreview !== undefined && !sessionCleanupPreviewHasTargets(selectedPreview) ? t("SessionCleanupDialog.select_at_least_one_project_to_run.59afcf1f") : t("SessionCleanupDialog.preview_cleanup_before_running_it.273df4a8");
       return;
     }
     if (selectedPreview === undefined || !confirmSessionCleanup(selectedPreview, (message) => confirm(message))) return;

@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import type { PiWebPlugin, PluginActivationContext, PluginActivationResult, PluginRuntimeContext, WorkspacePanelContext } from "@jmfederico/pi-web/plugin-api";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import { TerminalBrowserRuntime } from "./TerminalBrowserRuntime";
@@ -53,7 +54,7 @@ export function activateTerminalPlugin(
     contributions: {
       workspacePanels: [{
         id: "workspace.terminal",
-        title: "Terminal",
+        title: t("pi-web-plugin.terminal.a679d665"),
         icon,
         order: 30,
         badge: (workspaceContext: WorkspacePanelContext) => runtime.activeTerminalBadge(workspaceContext),
@@ -62,10 +63,10 @@ export function activateTerminalPlugin(
       }],
       actions: [{
         id: "view.terminal",
-        title: "Go to Terminal",
+        title: t("pi-web-plugin.go_to_terminal.63a3cc0b"),
         shortcut: "mod+4",
         shortcutAliases: ["core:view.terminal"],
-        group: "Navigation",
+        group: t("pi-web-plugin.navigation.a3747f18"),
         enabled: (runtimeContext: PluginRuntimeContext) => runtimeContext.state.selectedWorkspace !== undefined,
         run: (runtimeContext: PluginRuntimeContext) => { runtimeContext.openTerminal(); },
       }],

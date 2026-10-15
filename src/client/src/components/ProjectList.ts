@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -72,7 +73,7 @@ export class ProjectList extends LitElement implements KeyboardNavigableSection 
         <h2>${this.renderHeading()}</h2>
         ${this.collapsed ? null : html`
           <div class="list-body">
-            ${repeat(this.projects, (project) => project.id, (project, index) => html`
+            ${repeat(this.projects, (project) => project.id, (project, index) => localizedTemplate("ProjectList.template.3f8eed18", html)`
               <div
                 class=${`action-row ${this.selected?.id === project.id ? "selected" : ""}`}
                 tabindex="0"
@@ -88,10 +89,10 @@ export class ProjectList extends LitElement implements KeyboardNavigableSection 
                   ${this.renderActivity(project)}
                 </div>
                 <div class="action-menu">
-                  <button class="action-menu-toggle" title="Project actions" aria-label=${`Actions for ${project.name}`} @click=${(event: MouseEvent) => { event.stopPropagation(); this.toggleMenu(project.id, event.currentTarget); }}>⋯</button>
-                  ${this.openMenuProjectId === project.id ? html`
+                  <button class="action-menu-toggle" title="Project actions" aria-label=${localizedText("ProjectList.actions_for.a80f0aa3")`Actions for ${project.name}`} @click=${(event: MouseEvent) => { event.stopPropagation(); this.toggleMenu(project.id, event.currentTarget); }}>⋯</button>
+                  ${this.openMenuProjectId === project.id ? localizedTemplate("ProjectList.close.9291ad4b", html)`
                     <div class="action-menu-panel" style=${this.menuStyle} @click=${(event: MouseEvent) => { event.stopPropagation(); }}>
-                      ${this.onMove === undefined ? null : html`
+                      ${this.onMove === undefined ? null : localizedTemplate("ProjectList.move_up_move_down.4d3d29db", html)`
                         <button data-move ?disabled=${index === 0} @click=${() => { this.onMove?.(project, -1); }}>Move up</button>
                         <button data-move ?disabled=${index === this.projects.length - 1} @click=${() => { this.onMove?.(project, 1); }}>Move down</button>
                       `}
@@ -117,17 +118,17 @@ export class ProjectList extends LitElement implements KeyboardNavigableSection 
   }
 
   private renderHeading() {
-    if (!this.collapsible) return html`<span>Projects</span>`;
-    const selectedSummary = this.selected?.name ?? "No project selected";
+    if (!this.collapsible) return localizedTemplate("ProjectList.projects.60d23590", html)`<span>Projects</span>`;
+    const selectedSummary = this.selected?.name ?? t("ProjectList.no_project_selected.edb7a30b");
     const selectedTitle = this.selected?.path ?? selectedSummary;
-    return html`<button class="section-toggle" aria-expanded=${String(!this.collapsed)} @click=${() => { this.onToggleCollapsed?.(); }}><span class="section-title"><span class="section-name">${this.collapsed ? "▸" : "▾"} Projects</span>${this.collapsed ? html`<small class="section-selected" title=${selectedTitle}>${selectedSummary}</small>` : null}</span><small class="section-count">${this.projects.length}</small></button>`;
+    return localizedTemplate("ProjectList.projects.fd9190cd", html)`<button class="section-toggle" aria-expanded=${String(!this.collapsed)} @click=${() => { this.onToggleCollapsed?.(); }}><span class="section-title"><span class="section-name">${this.collapsed ? "▸" : "▾"} Projects</span>${this.collapsed ? html`<small class="section-selected" title=${selectedTitle}>${selectedSummary}</small>` : null}</span><small class="section-count">${this.projects.length}</small></button>`;
   }
 
   private renderActivity(project: Project) {
     const flags = this.statusSnapshot?.projects[project.id];
     const kind = statusActivityKind(flags);
-    const unreadLabel = hasStatusUnread(flags) ? "Unread sessions in this project" : undefined;
-    return renderActionActivityIndicator(kind, kind === "terminal" ? "Project terminal active" : "Project active", unreadLabel);
+    const unreadLabel = hasStatusUnread(flags) ? t("ProjectList.unread_sessions_in_this_project.3eaa893c") : undefined;
+    return renderActionActivityIndicator(kind, kind === "terminal" ? t("ProjectList.project_terminal_active.ccf696aa") : t("ProjectList.project_active.af61b42e"), unreadLabel);
   }
 
   private toggleMenu(projectId: string, target: EventTarget | null) {
@@ -141,7 +142,7 @@ export class ProjectList extends LitElement implements KeyboardNavigableSection 
 
   private close(project: Project) {
     this.openMenuProjectId = undefined;
-    if (confirm(`Close ${project.name}?\n\nThis only removes it from PI WEB; it will not change the project folder.`)) this.onClose?.(project);
+    if (confirm(localizedText("ProjectList.close_this_only_removes_it_from_pi.32531eeb")`Close ${project.name}?\n\nThis only removes it from PI WEB; it will not change the project folder.`)) this.onClose?.(project);
   }
 
   static override styles = listStyles;

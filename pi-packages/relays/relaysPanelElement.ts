@@ -1,3 +1,4 @@
+import { localizedText, t } from "./i18n.js";
 import type { WorkspacePanelContext } from "@jmfederico/pi-web/plugin-api";
 import { isMarkdownDocumentPath, renderRelayDocumentHtml } from "./markdownDocument.js";
 import { isRelayPacketPath } from "./relayIdentity.js";
@@ -67,7 +68,7 @@ class PiWebRelaysPanel extends HTMLElement {
   constructor() {
     super();
     this.root = this.attachShadow({ mode: "open" });
-    this.root.innerHTML = `
+    this.root.innerHTML = localizedText("relaysPanelElement.select_a_workspace.fc7af65c")`
       ${relaysStyles()}
       <section class="toolbar" hidden></section>
       <nav class="document-tabs" aria-label="Relay documents" hidden></nav>
@@ -308,7 +309,7 @@ class PiWebRelaysPanel extends HTMLElement {
       return;
     }
     this.toolbar.hidden = false;
-    this.toolbar.innerHTML = `
+    this.toolbar.innerHTML = localizedText("relaysPanelElement.relays.51c6f97c")`
       <strong>Relays</strong>
       <span class="toolbar-actions">
         ${this.renderRelayPicker()}
@@ -329,7 +330,7 @@ class PiWebRelaysPanel extends HTMLElement {
       const selected = relay.path === this.selectedRelayPath ? " selected" : "";
       return `<option value="${escapeAttr(relay.path)}"${selected}>${escapeHtml(relay.name)}</option>`;
     }).join("");
-    return `<select data-relay-picker aria-label="Relay">${options}</select>`;
+    return localizedText("relaysPanelElement.template.72bbc8aa")`<select data-relay-picker aria-label="Relay">${options}</select>`;
   }
 
   private renderTabs(): void {
@@ -372,7 +373,7 @@ class PiWebRelaysPanel extends HTMLElement {
   private renderDirectoryChip(directory: RelayDirectoryNode, containsActivePath: string | undefined): string {
     const expanded = this.expandedDirs.has(directory.path);
     const containsActive = directory.path === containsActivePath;
-    const title = containsActive ? "Contains the open document" : directory.relativePath;
+    const title = containsActive ? t("relaysPanelElement.contains_the_open_document.f7e4f9e0") : directory.relativePath;
     return `<button class="document-tab directory-tab${containsActive ? " contains-active" : ""}" data-directory-path="${escapeAttr(directory.path)}" title="${escapeAttr(title)}" aria-expanded="${expanded ? "true" : "false"}">${chevronSvg()}${escapeHtml(directory.name)}</button>`;
   }
 
@@ -390,7 +391,7 @@ class PiWebRelaysPanel extends HTMLElement {
 
   private renderViewer(): void {
     if (this.contextValue === undefined) {
-      this.viewer.innerHTML = `<div class="empty">Select a workspace.</div>`;
+      this.viewer.innerHTML = localizedText("relaysPanelElement.select_a_workspace.ba41ce2e")`<div class="empty">Select a workspace.</div>`;
       return;
     }
     this.viewer.innerHTML = this.renderViewerContent();
@@ -398,24 +399,24 @@ class PiWebRelaysPanel extends HTMLElement {
 
   private renderViewerContent(): string {
     const listing = this.listing;
-    if (listing === undefined) return `<p class="muted">Scanning ${escapeHtml(RELAYS_ROOT)}…</p>`;
-    if (listing.kind === "unavailable") return renderErrorState("Could not scan workspace relays.", listing.detail);
+    if (listing === undefined) return localizedText("relaysPanelElement.scanning.c2a87b77")`<p class="muted">Scanning ${escapeHtml(RELAYS_ROOT)}…</p>`;
+    if (listing.kind === "unavailable") return renderErrorState(t("relaysPanelElement.could_not_scan_workspace_relays.1dd616a9"), listing.detail);
     if (listing.kind === "missing" || listing.relays.length === 0) return renderEmptyState();
     return this.renderSelectedRelay();
   }
 
   private renderSelectedRelay(): string {
     const documents = this.documents;
-    if (documents === undefined) return `<p class="muted">Loading relay documents…</p>`;
-    if (documents.kind === "unavailable") return renderErrorState("Could not list this relay's documents.", documents.detail);
+    if (documents === undefined) return localizedText("relaysPanelElement.loading_relay_documents.655891d2")`<p class="muted">Loading relay documents…</p>`;
+    if (documents.kind === "unavailable") return renderErrorState(t("relaysPanelElement.could_not_list_this_relay_s_documents.94208d5d"), documents.detail);
     if (documents.kind === "missing") {
-      return `<div class="empty-state"><strong>This relay no longer exists.</strong><p>Click Refresh to rescan ${escapeHtml(RELAYS_ROOT)}.</p></div>`;
+      return localizedText("relaysPanelElement.this_relay_no_longer_exists_click_refresh.ed38e570")`<div class="empty-state"><strong>This relay no longer exists.</strong><p>Click Refresh to rescan ${escapeHtml(RELAYS_ROOT)}.</p></div>`;
     }
     const partialNotice = documents.partial
-      ? `<div class="status info">Some nested content is not listed — this relay tree is deeper or larger than the panel lists.</div>`
+      ? localizedText("relaysPanelElement.some_nested_content_is_not_listed_this.7a91f140")`<div class="status info">Some nested content is not listed — this relay tree is deeper or larger than the panel lists.</div>`
       : "";
     if (documents.documentCount === 0) {
-      return `${partialNotice}
+      return localizedText("relaysPanelElement.this_relay_has_no_documents_yet_relay.55181019")`${partialNotice}
         <div class="empty-state">
           <strong>This relay has no documents yet.</strong>
           <p>Relay packets contain <code>charter.md</code> (goal), <code>status.md</code> (current baton), and <code>log.md</code> (history). An optional <code>decisions.md</code> keeps consequential decisions and their reasons.</p>
@@ -428,17 +429,17 @@ class PiWebRelaysPanel extends HTMLElement {
   private renderSelectedDocument(): string {
     const documentPath = this.selectedDocumentPath;
     const content = this.documentContent;
-    if (documentPath === undefined) return `<p class="muted">Select a document.</p>`;
-    if (content === undefined) return `<p class="muted">Loading ${escapeHtml(documentName(documentPath))}…</p>`;
-    if (content.kind === "unavailable") return renderErrorState("Could not read this document.", content.detail);
+    if (documentPath === undefined) return localizedText("relaysPanelElement.select_a_document.d9c30fae")`<p class="muted">Select a document.</p>`;
+    if (content === undefined) return localizedText("relaysPanelElement.loading.03b9f108")`<p class="muted">Loading ${escapeHtml(documentName(documentPath))}…</p>`;
+    if (content.kind === "unavailable") return renderErrorState(t("relaysPanelElement.could_not_read_this_document.7d544b41"), content.detail);
     if (content.kind === "missing") {
-      return `<div class="empty-state"><strong>This document no longer exists.</strong><p>Click Refresh to rescan the relay.</p></div>`;
+      return localizedText("relaysPanelElement.this_document_no_longer_exists_click_refresh.618eb479")`<div class="empty-state"><strong>This document no longer exists.</strong><p>Click Refresh to rescan the relay.</p></div>`;
     }
     if (content.binary) {
-      return `<div class="empty-state"><strong>Binary file: ${escapeHtml(documentName(documentPath))}</strong><p>Binary documents have no text preview.</p></div>`;
+      return localizedText("relaysPanelElement.binary_file_binary_documents_have_no_text.53b85155")`<div class="empty-state"><strong>Binary file: ${escapeHtml(documentName(documentPath))}</strong><p>Binary documents have no text preview.</p></div>`;
     }
     const truncation = content.truncated
-      ? `<div class="status info">This document is truncated — only the beginning is shown.</div>`
+      ? localizedText("relaysPanelElement.this_document_is_truncated_only_the_beginning.f5a765b2")`<div class="status info">This document is truncated — only the beginning is shown.</div>`
       : "";
     if (isMarkdownDocumentPath(documentPath)) {
       return `${truncation}<div class="document markdown">${renderRelayDocumentHtml(content.content)}</div>`;
@@ -510,7 +511,7 @@ function documentName(path: string): string {
 }
 
 function renderEmptyState(): string {
-  return `
+  return localizedText("relaysPanelElement.no_relays_in_this_workspace_relay_packets.62a42af7")`
     <div class="empty-state">
       <strong>No relays in this workspace.</strong>
       <p>Relay packets live in <code>${escapeHtml(RELAYS_ROOT)}/&lt;name&gt;/</code>. This workspace has none yet.</p>

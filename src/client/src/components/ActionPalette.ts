@@ -1,3 +1,4 @@
+import { localizedTemplate, t } from "../../../shared/i18n";
 import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { AppAction } from "../actions";
@@ -17,11 +18,11 @@ export class ActionPalette extends LitElement {
 
   override render() {
     const actions = this.filteredActions();
-    return html`
+    return localizedTemplate("ActionPalette.template.6b24d700", html)`
       <modal-surface
         .onClose=${() => this.onCancel?.()}
         .initialFocus=${"input"}
-        .label=${"Action palette"}
+        .label=${t("ActionPalette.action_palette.13cea0f6")}
         @keydown=${(event: KeyboardEvent) => { this.handleKeyDown(event); }}
       >
         <header>
@@ -38,7 +39,7 @@ export class ActionPalette extends LitElement {
           <button title="Close" aria-label="Close" @click=${() => this.onCancel?.()}>×</button>
         </header>
         <div class="options">
-          ${actions.length === 0 ? html`<div class="empty">No actions found.</div>` : actions.map((action, index) => html`
+          ${actions.length === 0 ? localizedTemplate("ActionPalette.no_actions_found.9d04ad76", html)`<div class="empty">No actions found.</div>` : actions.map((action, index) => html`
             <button
               class=${`${index === this.selectedIndex ? "selected" : ""} ${action.enabled === false ? "disabled" : ""}`}
               ?disabled=${action.enabled === false}

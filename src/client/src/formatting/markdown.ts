@@ -1,3 +1,4 @@
+import { localizedText, t } from "../../../shared/i18n";
 import { marked, type Renderer } from "marked";
 import { DEFAULT_CODE_BLOCK_POLICY, type CodeBlockPolicy } from "./codeBlockPolicy";
 import { replaceLocalMarkdownImages } from "./markdownImages";
@@ -19,10 +20,10 @@ function markdownRenderer(codeBlocks: CodeBlockPolicy): Renderer {
     const language = token.lang?.trim().split(/\s/u)[0] ?? "";
     const label = language === "" ? "" : `<span class="code-block-label">${escapeHtml(language)}</span>`;
     const copy = codeBlocks.copy
-      ? '<button type="button" class="code-copy-button code-block-copy" title="Copy code block" aria-label="Copy code block"><span aria-hidden="true">⧉</span></button>'
+      ? t("markdown.template.0489bc0d")
       : "";
     // Generate the normal-flow header before mounting; never reparent source DOM.
-    const header = label === "" && copy === "" ? "" : `<div class="code-block-header" role="group" aria-label="Code block controls">${label}${copy}</div>`;
+    const header = label === "" && copy === "" ? "" : localizedText("markdown.template.30f22a99")`<div class="code-block-header" role="group" aria-label="Code block controls">${label}${copy}</div>`;
     return `<div class="code-block-wrapper code-block-frame">${header}${block}</div>\n`;
   };
   return renderer;

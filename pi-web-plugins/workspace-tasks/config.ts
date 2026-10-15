@@ -1,3 +1,4 @@
+import { localizedText, t } from "./i18n.js";
 export const TASKS_CONFIG_PATH = ".pi-web/tasks.json";
 export const TASKS_CONFIG_VERSION = 1;
 
@@ -26,24 +27,24 @@ export function parseTasksConfigText(text: string): ParseTasksConfigResult {
   try {
     parsed = JSON.parse(text);
   } catch (error) {
-    return { ok: false, error: `Invalid JSON: ${error instanceof Error ? error.message : String(error)}` };
+    return { ok: false, error: localizedText("config.invalid_json.ed35f616")`Invalid JSON: ${error instanceof Error ? error.message : String(error)}` };
   }
   return parseTasksConfig(parsed);
 }
 
 export function parseTasksConfig(value: unknown): ParseTasksConfigResult {
-  if (!isRecord(value)) return invalid("Config must be an object");
-  if (value["version"] !== TASKS_CONFIG_VERSION) return invalid("Config version must be 1");
+  if (!isRecord(value)) return invalid(t("config.config_must_be_an_object.a502c2a1"));
+  if (value["version"] !== TASKS_CONFIG_VERSION) return invalid(t("config.config_version_must_be.c9ea4630"));
 
   const tasks = value["tasks"];
-  if (!Array.isArray(tasks)) return invalid("Config tasks must be an array");
+  if (!Array.isArray(tasks)) return invalid(t("config.config_tasks_must_be_an_array.aa8a6700"));
 
   const ids = new Set<string>();
   const parsedTasks: WorkspaceTask[] = [];
   for (const [index, task] of tasks.entries()) {
     const parsedTask = parseTask(task, index);
     if (!parsedTask.ok) return parsedTask;
-    if (ids.has(parsedTask.task.id)) return invalid(`Duplicate task id: ${parsedTask.task.id}`);
+    if (ids.has(parsedTask.task.id)) return invalid(localizedText("config.duplicate_task_id.7608c8c0")`Duplicate task id: ${parsedTask.task.id}`);
     ids.add(parsedTask.task.id);
     parsedTasks.push(parsedTask.task);
   }
@@ -56,12 +57,12 @@ type ParseTaskResult =
   | { ok: false; error: string };
 
 function parseTask(value: unknown, index: number): ParseTaskResult {
-  const label = `Task ${String(index + 1)}`;
-  if (!isRecord(value)) return invalid(`${label} must be an object`);
+  const label = localizedText("config.task.b1aad192")`Task ${String(index + 1)}`;
+  if (!isRecord(value)) return invalid(localizedText("config.must_be_an_object.b75bb5f5")`${label} must be an object`);
 
   const id = requireNonEmptyString(value, "id", label);
   if (!id.ok) return id;
-  if (!taskIdPattern.test(id.value)) return invalid(`${label} id must match ${taskIdPattern.source}`);
+  if (!taskIdPattern.test(id.value)) return invalid(localizedText("config.id_must_match.6cba10a1")`${label} id must match ${taskIdPattern.source}`);
 
   const title = requireNonEmptyString(value, "title", label);
   if (!title.ok) return title;
@@ -76,7 +77,7 @@ function parseTask(value: unknown, index: number): ParseTaskResult {
   if (!group.ok) return group;
 
   const confirm = value["confirm"];
-  if (confirm !== undefined && typeof confirm !== "boolean") return invalid(`${label} confirm must be a boolean`);
+  if (confirm !== undefined && typeof confirm !== "boolean") return invalid(localizedText("config.confirm_must_be_a_boolean.234a294d")`${label} confirm must be a boolean`);
 
   return {
     ok: true,
@@ -101,14 +102,14 @@ type OptionalStringFieldResult =
 
 function requireNonEmptyString(record: Record<string, unknown>, key: string, label: string): StringFieldResult {
   const value = record[key];
-  if (typeof value !== "string" || value.trim() === "") return invalid(`${label} ${key} must be a non-empty string`);
+  if (typeof value !== "string" || value.trim() === "") return invalid(localizedText("config.must_be_a_non_empty_string.d06daa97")`${label} ${key} must be a non-empty string`);
   return { ok: true, value };
 }
 
 function optionalNonEmptyString(record: Record<string, unknown>, key: string, label: string): OptionalStringFieldResult {
   const value = record[key];
   if (value === undefined) return { ok: true, value: undefined };
-  if (typeof value !== "string" || value.trim() === "") return invalid(`${label} ${key} must be a non-empty string when provided`);
+  if (typeof value !== "string" || value.trim() === "") return invalid(localizedText("config.must_be_a_non_empty_string_when.d54ea958")`${label} ${key} must be a non-empty string when provided`);
   return { ok: true, value };
 }
 

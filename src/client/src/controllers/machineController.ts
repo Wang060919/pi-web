@@ -1,3 +1,4 @@
+import { t } from "../../../shared/i18n";
 import { api, type Machine, type MachineHealth, type MachineRuntime } from "../api";
 import { resetWorkspaceScopedState } from "../appState";
 import { BrowserErrorReporter, machineBrowserErrorScope } from "../browserErrors";
@@ -100,7 +101,7 @@ export class MachineController {
   async deleteMachine(machine: Machine | undefined = this.getState().selectedMachine, options: { selectFallback?: boolean } = {}): Promise<Machine | undefined> {
     if (machine === undefined) return undefined;
     if (machine.kind === "local") {
-      this.browserErrors.report(machineBrowserErrorScope(machine.id), "The local machine cannot be removed.");
+      this.browserErrors.report(machineBrowserErrorScope(machine.id), t("machineController.the_local_machine_cannot_be_removed.428d15ed"));
       return undefined;
     }
     try {

@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, html, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import type { Workspace } from "../api";
@@ -64,8 +65,8 @@ export class WorkspacePanel extends LitElement {
   override render() {
     const workspace = this.workspace;
     if (workspace === undefined && this.panels.length === 0) return this.renderEmptyState(this.error !== "" ? { title: this.error } : this.emptyState ?? {
-      title: "Select a workspace",
-      body: "Choose a workspace to use its tools.",
+      title: t("WorkspacePanel.select_a_workspace.d637af8c"),
+      body: t("WorkspacePanel.choose_a_workspace_to_use_its_tools.1c580998"),
     }, true);
     const visiblePanels = this.panels;
     // An unresolved route may leave a valid remembered tool, but its content is not displayed.
@@ -95,7 +96,7 @@ export class WorkspacePanel extends LitElement {
         </header>
       `}
       ${this.error !== "" ? this.renderEmptyState({ title: this.error }) : selectedPanel === undefined ? this.renderEmptyState({
-        title: this.tool === undefined ? "No workspace tools available" : `Workspace panel unavailable: ${this.tool}`,
+        title: this.tool === undefined ? t("WorkspacePanel.no_workspace_tools_available.153e2257") : localizedText("WorkspacePanel.workspace_panel_unavailable.b6a37e5c")`Workspace panel unavailable: ${this.tool}`,
       }) : html`
         <div class="panel-content">
           ${selectedPanel.render()}
@@ -130,7 +131,7 @@ export class WorkspacePanel extends LitElement {
   }
 
   private renderNavigationButton(hiddenActiveDestination = false) {
-    return this.onShowNavigation === undefined ? null : html`<button type="button" class=${`navigation-menu-button${hiddenActiveDestination ? " selected" : ""}`} title="Navigation" aria-label="Navigation" aria-haspopup="dialog" @click=${this.onShowNavigation}>${renderNavigationMenuIcon()}</button>`;
+    return this.onShowNavigation === undefined ? null : localizedTemplate("WorkspacePanel.template.d62c5933", html)`<button type="button" class=${`navigation-menu-button${hiddenActiveDestination ? " selected" : ""}`} title="Navigation" aria-label="Navigation" aria-haspopup="dialog" @click=${this.onShowNavigation}>${renderNavigationMenuIcon()}</button>`;
   }
 
   private renderEmptyState(state: WorkspacePanelEmptyState, showNavigation = false): TemplateResult {

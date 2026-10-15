@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -132,24 +133,24 @@ export class WorkspaceList extends LitElement implements KeyboardNavigableSectio
   }
 
   private renderHeading() {
-    if (!this.collapsible) return html`<span>Workspaces</span>`;
-    const selectedSummary = this.selected === undefined ? "No workspace selected" : `${this.selected.label}${this.selected.isMain ? " · main" : ""} · ${this.selected.path}`;
+    if (!this.collapsible) return localizedTemplate("WorkspaceList.workspaces.0d24eed9", html)`<span>Workspaces</span>`;
+    const selectedSummary = this.selected === undefined ? t("WorkspaceList.no_workspace_selected.a700f4d9") : `${this.selected.label}${this.selected.isMain ? t("WorkspaceList.main.5cd3eab9") : ""} · ${this.selected.path}`;
     const selectedTitle = this.selected?.path ?? selectedSummary;
-    return html`<button class="section-toggle" aria-expanded=${String(!this.collapsed)} @click=${() => { this.onToggleCollapsed?.(); }}><span class="section-title"><span class="section-name">${this.collapsed ? "▸" : "▾"} Workspaces</span>${this.collapsed ? html`<small class="section-selected" title=${selectedTitle}>${selectedSummary}</small>` : null}</span><small class="section-count">${this.workspaces.length}</small></button>`;
+    return localizedTemplate("WorkspaceList.workspaces.b7a9e786", html)`<button class="section-toggle" aria-expanded=${String(!this.collapsed)} @click=${() => { this.onToggleCollapsed?.(); }}><span class="section-title"><span class="section-name">${this.collapsed ? "▸" : "▾"} Workspaces</span>${this.collapsed ? html`<small class="section-selected" title=${selectedTitle}>${selectedSummary}</small>` : null}</span><small class="section-count">${this.workspaces.length}</small></button>`;
   }
 
   private renderActivity(workspace: Workspace): TemplateResult | undefined {
     const flags = this.statusSnapshot?.workspaces[workspace.id];
     const kind = statusActivityKind(flags);
-    const unreadLabel = hasStatusUnread(flags) ? "Unread sessions in this workspace" : undefined;
-    return renderActionActivityIndicator(kind, kind === "terminal" ? "Workspace terminal active" : "Workspace active", unreadLabel);
+    const unreadLabel = hasStatusUnread(flags) ? t("WorkspaceList.unread_sessions_in_this_workspace.bd44b166") : undefined;
+    return renderActionActivityIndicator(kind, kind === "terminal" ? t("WorkspaceList.workspace_terminal_active.93fbb211") : t("WorkspaceList.workspace_active.2710797b"), unreadLabel);
   }
 
   private renderWorkspaceMain(label: string, items: WorkspaceLabelItem[], workspace: Workspace): TemplateResult {
     return html`
       <span class="workspace-primary">
         <span class="workspace-primary-label">${label}</span>
-        ${this.isDeleting(workspace) ? html`<span class="workspace-status">Deleting…</span>` : null}
+        ${this.isDeleting(workspace) ? localizedTemplate("WorkspaceList.deleting.063f4525", html)`<span class="workspace-status">Deleting…</span>` : null}
       </span>
       ${items.length === 0 ? null : html`
         <small class="workspace-secondary">
@@ -163,12 +164,12 @@ export class WorkspaceList extends LitElement implements KeyboardNavigableSectio
   private renderWorkspaceMenu(label: string, items: WorkspaceLabelItem[], workspace: Workspace, index: number): TemplateResult {
     const open = this.openMenuWorkspaceId === workspace.id;
     const menuId = workspaceMenuId(workspace.id);
-    return html`
+    return localizedTemplate("WorkspaceList.template.dd405b57", html)`
       <div class="action-menu">
         <button
           class="action-menu-toggle"
           title="Workspace actions and details"
-          aria-label=${`Actions and details for ${label}`}
+          aria-label=${localizedText("WorkspaceList.actions_and_details_for.8fd26615")`Actions and details for ${label}`}
           aria-expanded=${String(open)}
           aria-controls=${menuId}
           @click=${(event: MouseEvent) => { event.stopPropagation(); this.toggleMenu(workspace.id, event.currentTarget); }}
@@ -185,16 +186,16 @@ export class WorkspaceList extends LitElement implements KeyboardNavigableSectio
 
   private renderWorkspaceActions(workspace: Workspace, index: number): TemplateResult {
     const deleting = this.isDeleting(workspace);
-    const actionLabel = workspace.removal?.actionLabel ?? "Remove workspace";
+    const actionLabel = workspace.removal?.actionLabel ?? t("WorkspaceList.remove_workspace.17d6940c");
     return html`
       <div class="workspace-menu-actions">
-        ${this.onMove === undefined ? null : html`
+        ${this.onMove === undefined ? null : localizedTemplate("WorkspaceList.move_up_move_down.853b8385", html)`
           <button data-move ?disabled=${index === 0} @click=${() => { this.onMove?.(workspace, -1); }}>Move up</button>
           <button data-move ?disabled=${index === this.workspaces.length - 1} @click=${() => { this.onMove?.(workspace, 1); }}>Move down</button>
         `}
         ${this.renderTrustToggle(workspace)}
         ${canDeleteWorkspace(workspace) ? html`
-          <button class="danger" title=${deleting ? "Workspace removal in progress" : actionLabel} ?disabled=${deleting} @click=${() => { this.delete(workspace); }}>${deleting ? "Removing…" : actionLabel}</button>
+          <button class="danger" title=${deleting ? t("WorkspaceList.workspace_removal_in_progress.b74ad6b2") : actionLabel} ?disabled=${deleting} @click=${() => { this.delete(workspace); }}>${deleting ? t("WorkspaceList.removing.7dd36f48") : actionLabel}</button>
         ` : null}
       </div>
     `;
@@ -206,7 +207,7 @@ export class WorkspaceList extends LitElement implements KeyboardNavigableSectio
     const inputId = `${workspaceMenuId(workspace.id)}-trusted`;
     const helpId = `${inputId}-help`;
     const errorId = `${inputId}-error`;
-    return html`
+    return localizedTemplate("WorkspaceList.trusted_learn_about_project_trust.d49e8c96", html)`
       <div class="workspace-menu-trust">
         <label class="action-menu-checkbox" for=${inputId}>
           <span>Trusted${busy ? "…" : ""}</span>
@@ -263,17 +264,17 @@ export class WorkspaceList extends LitElement implements KeyboardNavigableSectio
   }
 
   private renderWorkspaceDetails(label: string, items: WorkspaceLabelItem[], workspace: Workspace): TemplateResult {
-    return html`
+    return localizedTemplate("WorkspaceList.workspace_path.4a7a4072", html)`
       <dl class="workspace-menu-details">
         <div class="workspace-detail-row">
           <dt>Workspace</dt>
-          <dd>${label}${this.renderDetailCopyButton(`${workspace.id}:label`, workspace.label, "Copy workspace label")}</dd>
+          <dd>${label}${this.renderDetailCopyButton(`${workspace.id}:label`, workspace.label, t("WorkspaceList.copy_workspace_label.163c795e"))}</dd>
         </div>
         <div class="workspace-detail-row">
           <dt>Path</dt>
-          <dd title=${workspace.path}>${workspace.path}${this.renderDetailCopyButton(`${workspace.id}:path`, workspace.path, "Copy path")}</dd>
+          <dd title=${workspace.path}>${workspace.path}${this.renderDetailCopyButton(`${workspace.id}:path`, workspace.path, t("WorkspaceList.copy_path.9a38e7ae"))}</dd>
         </div>
-        ${items.length === 0 ? null : html`
+        ${items.length === 0 ? null : localizedTemplate("WorkspaceList.details.12a50c56", html)`
           <div class="workspace-detail-row">
             <dt>Details</dt>
             <dd><span class="workspace-label">${renderWorkspaceLabelInlineItems(items)}</span></dd>
@@ -285,7 +286,7 @@ export class WorkspaceList extends LitElement implements KeyboardNavigableSectio
 
   private renderDetailCopyButton(key: string, value: string, action: string): TemplateResult {
     const copied = this.copiedDetailKey === key;
-    const label = copied ? "Copied" : action;
+    const label = copied ? t("WorkspaceList.copied.9209bdc9") : action;
     return html`
       <button type="button" class="detail-copy" title=${label} aria-label=${label} @click=${() => { void this.copyDetail(key, value); }}>
         <span aria-hidden="true">${copied ? "✓" : "⧉"}</span>
@@ -346,7 +347,7 @@ export class WorkspaceList extends LitElement implements KeyboardNavigableSectio
 }
 
 function workspacePrimaryLabel(workspace: Workspace): string {
-  return `${workspace.label}${workspace.isMain ? " · main" : ""}`;
+  return `${workspace.label}${workspace.isMain ? t("WorkspaceList.main.4174485e") : ""}`;
 }
 
 function workspaceMenuId(workspaceId: string): string {

@@ -1,3 +1,4 @@
+import { localizedTemplate, t } from "../../../shared/i18n";
 import { LitElement, css, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import "./ModalSurface";
@@ -83,11 +84,11 @@ export class MachineDialog extends LitElement {
     const hasUrl = this.url.trim() !== "";
     const urlError = hasUrl ? machineBaseUrlValidationMessage(this.url) : undefined;
     const canSubmit = this.validInput() !== undefined && !this.submitting;
-    return html`
+    return localizedTemplate("MachineDialog.add_machine_remote_pi_web_url_cancel.98f8e499", html)`
       <modal-surface
         .onClose=${() => this.onCancel?.()}
         .initialFocus=${"input[name='baseUrl']"}
-        .label=${"Add machine"}
+        .label=${t("MachineDialog.add_machine.6948403c")}
         @keydown=${(event: KeyboardEvent) => { this.handleKeyDown(event); }}
       >
         <form @submit=${(event: SubmitEvent) => { this.handleSubmit(event); }}>
@@ -101,8 +102,8 @@ export class MachineDialog extends LitElement {
               Remote PI WEB URL
               <input name="baseUrl" type="url" .value=${this.url} @input=${(event: InputEvent) => { this.handleUrlInput(event); }} placeholder="http://dev-box.local:8504" autocomplete="url" inputmode="url" />
             </label>
-            <small class=${urlError === undefined ? "hint" : "field-error"}>${urlError ?? "Enter the reachable base URL first, including http:// or https://."}</small>
-            ${hasUrl ? html`
+            <small class=${urlError === undefined ? "hint" : "field-error"}>${urlError ?? t("MachineDialog.enter_the_reachable_base_url_first_including.be6854e0")}</small>
+            ${hasUrl ? localizedTemplate("MachineDialog.machine_name_suggested_from_the_url_edit.82f62b17", html)`
               <label>
                 Machine name
                 <input name="name" type="text" .value=${this.name} @input=${(event: InputEvent) => { this.handleNameInput(event); }} placeholder=${this.previousSuggestedName || "Dev Box"} autocomplete="off" />
@@ -113,11 +114,11 @@ export class MachineDialog extends LitElement {
                 <input name="token" type="password" .value=${this.token} @input=${(event: InputEvent) => { this.handleTokenInput(event); }} placeholder="Leave blank if the remote machine does not require one" autocomplete="off" />
               </label>
               <small class="hint">Paste only the token value; PI WEB sends it as an Authorization: Bearer header.</small>
-            ` : html`<p class="hint intro">After you enter a URL, PI WEB will suggest a machine name and let you add an optional bearer token.</p>`}
+            ` : localizedTemplate("MachineDialog.after_you_enter_a_url_pi_web.054607d3", html)`<p class="hint intro">After you enter a URL, PI WEB will suggest a machine name and let you add an optional bearer token.</p>`}
           </div>
           <footer>
             <button type="button" @click=${() => { this.onCancel?.(); }}>Cancel</button>
-            <button class="primary" type="submit" ?disabled=${!canSubmit}>${this.submitting ? "Adding…" : "Add machine"}</button>
+            <button class="primary" type="submit" ?disabled=${!canSubmit}>${this.submitting ? t("MachineDialog.adding.c805a348") : t("MachineDialog.add_machine.0d4dd2e1")}</button>
           </footer>
         </form>
       </modal-surface>
@@ -158,16 +159,16 @@ export function suggestedMachineNameFromUrl(value: string): string {
 
 export function machineBaseUrlValidationMessage(value: string): string | undefined {
   const raw = value.trim();
-  if (raw === "") return "Remote PI WEB URL is required.";
+  if (raw === "") return t("MachineDialog.remote_pi_web_url_is_required.1ae4b3e9");
   let url: URL;
   try {
     url = new URL(raw);
   } catch {
-    return "Enter a valid URL including http:// or https://.";
+    return t("MachineDialog.enter_a_valid_url_including_http_or.71421261");
   }
-  if (url.protocol !== "http:" && url.protocol !== "https:") return "Use an http:// or https:// URL.";
-  if (url.username !== "" || url.password !== "") return "Do not include credentials in the machine URL.";
-  if (url.search !== "" || url.hash !== "") return "Do not include a query string or fragment.";
+  if (url.protocol !== "http:" && url.protocol !== "https:") return t("MachineDialog.use_an_http_or_https_url.6ec092db");
+  if (url.username !== "" || url.password !== "") return t("MachineDialog.do_not_include_credentials_in_the_machine.2b21059c");
+  if (url.search !== "" || url.hash !== "") return t("MachineDialog.do_not_include_a_query_string_or.3d5c06a3");
   return undefined;
 }
 

@@ -1,3 +1,4 @@
+import { localizedTemplate, localizedText, t } from "../../../../shared/i18n";
 import { css, html, LitElement, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { PiPackageInfo, PiPackageInstallableSuggestion, PiPackageScope, PiPackagesResponse } from "../../api";
@@ -25,12 +26,12 @@ export class SettingsPackagesPanel extends LitElement {
     const target = this.packageTarget;
     const targetLabel = piPackageTargetLabel(target);
     const showPackageControls = this.packagesResponse !== undefined;
-    return html`
+    return localizedTemplate("SettingsPackagesPanel.template.9fa20443", html)`
       <settings-panel-frame
         heading="Pi packages"
         .description=${packagesDescription(targetLabel)}
         actionLabel="Reload"
-        actionTitle=${`Reload Pi packages from ${targetLabel}`}
+        actionTitle=${localizedText("SettingsPackagesPanel.reload_pi_packages_from.7b3b31a4")`Reload Pi packages from ${targetLabel}`}
         .actionDisabled=${this.loading || this.isOperating}
         .notices=${this.panelNotices(showPackageControls)}
         .onAction=${this.onReload}
@@ -49,7 +50,7 @@ export class SettingsPackagesPanel extends LitElement {
     if (showTrustedCodeWarning) {
       notices.push({
         type: "security",
-        content: html`<strong>Trusted code warning:</strong> Pi packages and PI WEB plugins can run with your user permissions. Install packages and enable plugins only from sources you trust.`,
+        content: localizedTemplate("SettingsPackagesPanel.trusted_code_warning_pi_packages_and_pi.5710492b", html)`<strong>Trusted code warning:</strong> Pi packages and PI WEB plugins can run with your user permissions. Install packages and enable plugins only from sources you trust.`,
       });
     }
     return notices;
@@ -57,7 +58,7 @@ export class SettingsPackagesPanel extends LitElement {
 
   private renderPanelContent(packages: PiPackageInfo[], target: PiPackageTargetContext, targetLabel: string): TemplateResult | null {
     if (this.packagesResponse === undefined) {
-      return html`<div class="loading-card">${this.loading ? `Loading Pi packages from ${targetLabel}…` : `Pi package list unavailable for ${targetLabel}. Use Reload to try again.`}</div>`;
+      return html`<div class="loading-card">${this.loading ? localizedText("SettingsPackagesPanel.loading_pi_packages_from.04424eb4")`Loading Pi packages from ${targetLabel}…` : localizedText("SettingsPackagesPanel.pi_package_list_unavailable_for_use_reload.6bf36a30")`Pi package list unavailable for ${targetLabel}. Use Reload to try again.`}</div>`;
     }
     return html`
       ${this.renderInstallableKnownPackages(targetLabel)}
@@ -69,7 +70,7 @@ export class SettingsPackagesPanel extends LitElement {
   private renderInstallableKnownPackages(targetLabel: string): TemplateResult | null {
     const suggestions = this.packagesResponse?.installableKnownPackages ?? [];
     if (suggestions.length === 0) return null;
-    return html`
+    return localizedTemplate("SettingsPackagesPanel.available_packages_pi_web_ships_these_packages.e3e311f2", html)`
       <section class="known-package-section" aria-label="Available known Pi packages">
         <h3>Available packages</h3>
         <p>PI WEB ships these packages so you can install them on ${targetLabel} with one click, with no path to type — including one you previously removed.</p>
@@ -88,18 +89,18 @@ export class SettingsPackagesPanel extends LitElement {
           <strong>${suggestion.label}</strong>
           <small>${suggestion.description}</small>
         </div>
-        <button title=${`Install ${suggestion.label}`} ?disabled=${this.isOperating} @click=${() => { void this.installKnownPackage(suggestion.source); }}>${installing ? "Installing…" : "Install"}</button>
+        <button title=${localizedText("SettingsPackagesPanel.install.5095b1dd")`Install ${suggestion.label}`} ?disabled=${this.isOperating} @click=${() => { void this.installKnownPackage(suggestion.source); }}>${installing ? t("SettingsPackagesPanel.installing.c23468fe") : t("SettingsPackagesPanel.install.721a3484")}</button>
       </article>
     `;
   }
 
   private renderInstallForm(targetLabel: string): TemplateResult {
-    return html`
+    return localizedTemplate("SettingsPackagesPanel.pi_package_source_installs_run_on_and.21dfd425", html)`
       <form class="install-card" @submit=${(event: Event) => { void this.installPackage(event); }}>
         <label for="package-source">Pi package source</label>
         <div class="install-row">
           <input id="package-source" .value=${this.installSource} ?disabled=${this.isOperating} placeholder="npm:@scope/package, git URL, or local path" @input=${(event: Event) => { this.updateInstallSource(event); }}>
-          <button type="submit" title="Install this Pi package" ?disabled=${this.isOperating}>${isPiPackageOperationPending(this.operation, "install") ? "Installing…" : "Install"}</button>
+          <button type="submit" title="Install this Pi package" ?disabled=${this.isOperating}>${isPiPackageOperationPending(this.operation, "install") ? t("SettingsPackagesPanel.installing.af47a3a9") : t("SettingsPackagesPanel.install.048406ac")}</button>
         </div>
         ${this.validationMessage === "" ? null : html`<div class="field-error">${this.validationMessage}</div>`}
         <small>Installs run on ${targetLabel} and use Pi's default package location, equivalent to <code>pi install &lt;source&gt;</code>. PI WEB does not ask you to choose an install location.</small>
@@ -111,8 +112,8 @@ export class SettingsPackagesPanel extends LitElement {
     const targetLabel = piPackageTargetLabel(target);
     const updateAllReason = updateAllPiPackagesDisabledReason(packages);
     const showUpdateAllReason = updateAllReason !== undefined && packages.length > 0;
-    const updateAllTitle = updateAllReason ?? "Update all user-scope Pi packages";
-    return html`
+    const updateAllTitle = updateAllReason ?? t("SettingsPackagesPanel.update_all_user_scope_pi_packages.a7665c2c");
+    return localizedTemplate("SettingsPackagesPanel.configured_pi_packages_this_list_comes_from.4b7eab35", html)`
       <section class="package-section" aria-label="Configured Pi packages">
         <div class="package-toolbar">
           <div>
@@ -120,19 +121,19 @@ export class SettingsPackagesPanel extends LitElement {
             <p>This list comes from Pi's package manager settings on ${targetLabel}.</p>
           </div>
           <button class="secondary" title=${updateAllTitle} ?disabled=${this.isOperating || updateAllReason !== undefined} @click=${() => { void this.updatePackage(); }}>
-            ${isPiPackageOperationPending(this.operation, "update-all") ? "Updating…" : "Update all"}
+            ${isPiPackageOperationPending(this.operation, "update-all") ? t("SettingsPackagesPanel.updating.fac83246") : t("SettingsPackagesPanel.update_all.9fc9f09c")}
           </button>
         </div>
         ${showUpdateAllReason ? html`<div class="action-note">${updateAllReason}</div>` : null}
-        ${this.loading && packages.length > 0 ? html`<div class="action-note">Refreshing Pi packages from ${targetLabel}…</div>` : null}
+        ${this.loading && packages.length > 0 ? localizedTemplate("SettingsPackagesPanel.refreshing_pi_packages_from.f1f7229f", html)`<div class="action-note">Refreshing Pi packages from ${targetLabel}…</div>` : null}
         ${this.renderPackageListContent(packages, targetLabel)}
       </section>
     `;
   }
 
   private renderPackageListContent(packages: PiPackageInfo[], targetLabel: string): TemplateResult {
-    if (this.loading && packages.length === 0) return html`<div class="loading-card">Loading Pi packages from ${targetLabel}…</div>`;
-    if (packages.length === 0) return html`<div class="loading-card">No Pi packages configured in Pi settings on ${targetLabel} yet.</div>`;
+    if (this.loading && packages.length === 0) return localizedTemplate("SettingsPackagesPanel.loading_pi_packages_from.00c247b0", html)`<div class="loading-card">Loading Pi packages from ${targetLabel}…</div>`;
+    if (packages.length === 0) return localizedTemplate("SettingsPackagesPanel.no_pi_packages_configured_in_pi_settings.eccbe322", html)`<div class="loading-card">No Pi packages configured in Pi settings on ${targetLabel} yet.</div>`;
     return html`
       <div class="package-list">
         ${packages.map((packageInfo) => this.renderPackage(packageInfo))}
@@ -144,7 +145,7 @@ export class SettingsPackagesPanel extends LitElement {
     const updateReason = piPackageUpdateDisabledReason(packageInfo);
     const updating = isPiPackageOperationPending(this.operation, "update", packageInfo.source);
     const removing = isPiPackageOperationPending(this.operation, "remove", packageInfo.source);
-    return html`
+    return localizedTemplate("SettingsPackagesPanel.installed_path.ded8fe20", html)`
       <article class=${`package-card${packageInfo.filtered ? " filtered" : ""}`}>
         <div class="package-main">
           <strong>${packageInfo.source}</strong>
@@ -153,8 +154,8 @@ export class SettingsPackagesPanel extends LitElement {
           ${updateReason === undefined ? null : html`<small class="action-note">${updateReason}</small>`}
         </div>
         <div class="package-actions">
-          <button class="secondary" title=${updateReason ?? "Update this Pi package"} ?disabled=${this.isOperating || updateReason !== undefined} @click=${() => { void this.updatePackage(packageInfo.source); }}>${updating ? "Updating…" : "Update"}</button>
-          <button class="danger" title="Remove this Pi package" ?disabled=${this.isOperating} @click=${() => { void this.removePackage(packageInfo); }}>${removing ? "Removing…" : "Remove"}</button>
+          <button class="secondary" title=${updateReason ?? t("SettingsPackagesPanel.update_this_pi_package.34b8ae89")} ?disabled=${this.isOperating || updateReason !== undefined} @click=${() => { void this.updatePackage(packageInfo.source); }}>${updating ? t("SettingsPackagesPanel.updating.e56e835f") : t("SettingsPackagesPanel.update.871c1e71")}</button>
+          <button class="danger" title="Remove this Pi package" ?disabled=${this.isOperating} @click=${() => { void this.removePackage(packageInfo); }}>${removing ? t("SettingsPackagesPanel.removing.548bbe92") : t("SettingsPackagesPanel.remove.0d3698eb")}</button>
         </div>
       </article>
     `;
@@ -257,5 +258,5 @@ export class SettingsPackagesPanel extends LitElement {
 }
 
 function packagesDescription(targetLabel: string): TemplateResult {
-  return html`Managing Pi packages on <strong>${targetLabel}</strong>. Install, remove, and update packages managed by Pi on the selected machine. Pi packages can provide extensions, skills, prompt templates, themes, context/system prompt files, and PI WEB browser plugins.`;
+  return localizedTemplate("SettingsPackagesPanel.managing_pi_packages_on_install_remove_and.b5f79914", html)`Managing Pi packages on <strong>${targetLabel}</strong>. Install, remove, and update packages managed by Pi on the selected machine. Pi packages can provide extensions, skills, prompt templates, themes, context/system prompt files, and PI WEB browser plugins.`;
 }

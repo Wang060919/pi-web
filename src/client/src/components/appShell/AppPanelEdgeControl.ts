@@ -1,3 +1,4 @@
+import { localizedText, t } from "../../../../shared/i18n";
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { clampPanelWidth, panelResizeConstraints, panelWidthFromDrag, panelWidthFromKeyboard, type PanelResizeConstraints, type ResizablePanelSide } from "../../appShell/panelResizeController";
@@ -25,9 +26,9 @@ export class AppPanelEdgeControl extends LitElement {
   @property({ type: Number }) minWidth?: number;
   @property({ type: Number }) maxWidth?: number;
   @property() controls = "";
-  @property() resizeLabel = "Resize panel";
-  @property() expandLabel = "Expand panel";
-  @property() collapseLabel = "Collapse panel";
+  @property() resizeLabel = t("AppPanelEdgeControl.resize_panel.591a2c55");
+  @property() expandLabel = t("AppPanelEdgeControl.expand_panel.ed3b46db");
+  @property() collapseLabel = t("AppPanelEdgeControl.collapse_panel.1b6c19aa");
   @property({ attribute: false }) onToggle?: () => void;
   @property({ attribute: false }) onResizeStart?: () => number | undefined;
   @property({ attribute: false }) onResize?: (width: number) => void;
@@ -67,7 +68,7 @@ export class AppPanelEdgeControl extends LitElement {
         role="separator"
         tabindex="0"
         aria-label=${this.resizeLabel}
-        title=${`${this.resizeLabel}. Double-click or double-tap to reset.`}
+        title=${localizedText("AppPanelEdgeControl.double_click_or_double_tap_to_reset.5f010e5a")`${this.resizeLabel}. Double-click or double-tap to reset.`}
         aria-controls=${this.controls}
         aria-orientation="vertical"
         aria-valuemin=${String(constraints.minWidth)}

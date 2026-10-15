@@ -1,3 +1,4 @@
+import { localizedText, t } from "./i18n.js";
 import { marked } from "marked";
 
 const renderer = new marked.Renderer();
@@ -5,7 +6,7 @@ const renderer = new marked.Renderer();
 // Workspace file bytes are untrusted. Raw HTML must remain visible as text,
 // never become nodes that the application can execute or load resources from.
 renderer.html = ({ text }) => escapeHtml(text);
-renderer.image = ({ text }) => escapeHtml(text === "" ? "[Image omitted]" : `[Image omitted: ${text}]`);
+renderer.image = ({ text }) => escapeHtml(text === "" ? t("workspaceMarkdown.image_omitted.2990eedc") : localizedText("workspaceMarkdown.image_omitted.0d2a4b38")`[Image omitted: ${text}]`);
 renderer.checkbox = ({ checked }) => checked ? "[x] " : "[ ] ";
 
 const NO_ATTRIBUTES = new Set<string>();
@@ -129,7 +130,7 @@ function wrapTablesInScrollRegions(root: DocumentFragment): void {
     const wrapper = document.createElement("div");
     wrapper.className = TABLE_SCROLL_CLASS;
     wrapper.setAttribute("role", "region");
-    wrapper.setAttribute("aria-label", "Table");
+    wrapper.setAttribute("aria-label", t("workspaceMarkdown.table.30b0b0a6"));
     wrapper.setAttribute("tabindex", "0");
     table.before(wrapper);
     wrapper.append(table);

@@ -1,9 +1,10 @@
+import { localizedText, t } from "./i18n.js";
 import { TASKS_CONFIG_PATH, parseTasksConfigText, type WorkspaceTasksConfig } from "./config.js";
 
-export const tasksConfigMissingMessage = "No workspace tasks configured here.";
-export const tasksConfigMissingHint = `${TASKS_CONFIG_PATH} is optional. Create it in this workspace if you want custom tasks.`;
-export const tasksConfigUnavailableMessage = "Could not load workspace tasks.";
-export const tasksConfigRefreshHint = `Fix ${TASKS_CONFIG_PATH}, then click Refresh.`;
+export const tasksConfigMissingMessage = t("workspaceTasksClient.no_workspace_tasks_configured_here.09a35f90");
+export const tasksConfigMissingHint = localizedText("workspaceTasksClient.is_optional_create_it_in_this_workspace.892b9b71")`${TASKS_CONFIG_PATH} is optional. Create it in this workspace if you want custom tasks.`;
+export const tasksConfigUnavailableMessage = t("workspaceTasksClient.could_not_load_workspace_tasks.c4848149");
+export const tasksConfigRefreshHint = localizedText("workspaceTasksClient.fix_then_click_refresh.e0b17ea2")`Fix ${TASKS_CONFIG_PATH}, then click Refresh.`;
 
 const missingWorkspaceFileError = "Path does not exist";
 
@@ -28,11 +29,11 @@ export async function loadWorkspaceTasksConfig(files: WorkspaceTasksFileReader):
     file = await files.readFile(TASKS_CONFIG_PATH);
   } catch (error) {
     if (errorMessage(error) === missingWorkspaceFileError) return missing();
-    return unavailable(`Unable to read ${TASKS_CONFIG_PATH}: ${formatUnknownError(error)}`);
+    return unavailable(localizedText("workspaceTasksClient.unable_to_read.9272abf3")`Unable to read ${TASKS_CONFIG_PATH}: ${formatUnknownError(error)}`);
   }
 
-  if (file.binary) return unavailable(`${TASKS_CONFIG_PATH} must be a text file`);
-  if (file.truncated) return unavailable(`${TASKS_CONFIG_PATH} is too large and was truncated`);
+  if (file.binary) return unavailable(localizedText("workspaceTasksClient.must_be_a_text_file.93f312bf")`${TASKS_CONFIG_PATH} must be a text file`);
+  if (file.truncated) return unavailable(localizedText("workspaceTasksClient.is_too_large_and_was_truncated.cf746f11")`${TASKS_CONFIG_PATH} is too large and was truncated`);
 
   const result = parseTasksConfigText(file.content);
   if (!result.ok) return unavailable(result.error);

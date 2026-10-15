@@ -1,3 +1,4 @@
+import { localizedText, t } from "../../shared/i18n";
 import {
   SESSION_NOTIFICATION_LIMIT,
   SESSION_NOTIFICATION_MESSAGE_BYTES,
@@ -192,14 +193,14 @@ export function selectedNotificationView(inbox: SelectedSessionNotificationInbox
   };
 }
 
-export function notificationSeverityLabel(severity: SessionNotificationSeverity): "Info" | "Warning" | "Error" {
-  if (severity === "error") return "Error";
-  if (severity === "warning") return "Warning";
-  return "Info";
+export function notificationSeverityLabel(severity: SessionNotificationSeverity): string {
+  if (severity === "error") return t("sessionNotifications.error.0a26ce62");
+  if (severity === "warning") return t("sessionNotifications.warning.03a33f0e");
+  return t("sessionNotifications.info.cbbe95c6");
 }
 
 export function notificationAnnouncementLabel(announcement: Pick<SessionNotificationAnnouncement, "severity">): string {
-  return `${notificationSeverityLabel(announcement.severity)} notification received.`;
+  return localizedText("sessionNotifications.notification_received.69014d66")`${notificationSeverityLabel(announcement.severity)} notification received.`;
 }
 
 export function notificationInboxTotalCount(inbox: Pick<SelectedSessionNotificationView, "retainedCount" | "discardedCount">): number {
@@ -207,16 +208,16 @@ export function notificationInboxTotalCount(inbox: Pick<SelectedSessionNotificat
 }
 
 export function notificationTrayHeading(inbox: Pick<SelectedSessionNotificationView, "retainedCount" | "discardedCount">): string {
-  return `Notifications (${String(notificationInboxTotalCount(inbox))})`;
+  return localizedText("sessionNotifications.notifications.79a0e626")`Notifications (${String(notificationInboxTotalCount(inbox))})`;
 }
 
 export function notificationDismissLabel(notification: Pick<SessionNotification, "message" | "severity">): string {
   const message = notification.message.replace(/\s+/gu, " ").trim();
-  if (message === "") return `Dismiss ${notificationSeverityLabel(notification.severity).toLowerCase()} notification`;
+  if (message === "") return localizedText("sessionNotifications.dismiss_notification.6a5f88f3")`Dismiss ${notificationSeverityLabel(notification.severity).toLowerCase()} notification`;
   const maxCharacters = 80;
   const characters = Array.from(message);
   const summary = characters.length <= maxCharacters ? message : `${characters.slice(0, maxCharacters - 1).join("").trimEnd()}…`;
-  return `Dismiss notification: ${summary}`;
+  return localizedText("sessionNotifications.dismiss_notification.9cbba796")`Dismiss notification: ${summary}`;
 }
 
 export type NotificationFocusTarget = { kind: "notification"; notificationId: string } | { kind: "header" };
@@ -247,13 +248,13 @@ export function setNotificationTrayCollapsed(collapsedTargetKeys: ReadonlySet<st
 }
 
 export function notificationInboxOverflowLabel(discardedCount: number): string {
-  return `${String(discardedCount)} older ${discardedCount === 1 ? "notification" : "notifications"} not shown.`;
+  return localizedText("sessionNotifications.older_not_shown.bcc856ea")`${String(discardedCount)} older ${discardedCount === 1 ? "notification" : "notifications"} not shown.`;
 }
 
 export function notificationMessageTruncationLabel(notification: Pick<SessionNotification, "truncated">): string | undefined {
   if (!notification.truncated) return undefined;
   const kibibytes = SESSION_NOTIFICATION_MESSAGE_BYTES / 1024;
-  return `Message truncated at ${String(kibibytes)} KiB.`;
+  return localizedText("sessionNotifications.message_truncated_at_kib.20e3e6e1")`Message truncated at ${String(kibibytes)} KiB.`;
 }
 
 export function notificationTargetsEqual(left: SessionNotificationTarget, right: SessionNotificationTarget): boolean {

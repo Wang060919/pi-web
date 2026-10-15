@@ -1,3 +1,4 @@
+import { localizedText, t } from "../../../shared/i18n";
 import { api as defaultApi, type AskUserSubmission, type CommandResult, type ExtensionDialogAnswer, type ExtensionDialogCloseReason, type ExtensionDialogCloseResponse, type ExtensionDialogOutcome, type MessagePage, type PendingExtensionDialog, type PromptAttachment, type QueuedSessionMessage, type SessionActivity, type SessionBulkFailure, type SessionCleanupExecuteResponse, type SessionInfo, type SessionModelCatalogEntry, type SessionModelScopeMode, type SessionRef, type SessionStatus, type SessionStreamSnapshot, type SessionTreeForkResult, type SessionTreeNavigateResult, type SessionTreeSnapshot, type SessionTreeSummaryChoice, type Workspace } from "../api";
 import type { AppState, ClosedExtensionDialog } from "../appState";
 import { NetworkRequestError } from "../api/http";
@@ -493,7 +494,7 @@ export class SessionController {
     const pending = this.pendingSessionStarts.get(session.id);
     if (pending === undefined || pending.discarded) {
       const errorOwner = pending === undefined ? this.captureSessionErrorOwner(session) : this.captureSessionErrorOwner(session, pending.originWorkspace);
-      this.reportSessionError(session, session.machineId, "The backend session is not ready for queued sends. Copy your message before discarding this failed start.", errorOwner);
+      this.reportSessionError(session, session.machineId, t("sessionController.the_backend_session_is_not_ready_for.43638954"), errorOwner);
       return;
     }
     const queued: QueuedPendingSessionSend = { ...input, id: `pending-send-${String(++this.pendingQueuedSendSeq)}` };
@@ -575,7 +576,7 @@ export class SessionController {
     try {
       const result = await this.api.runCommand(session, text, machineId);
       if (options.applyResult && this.isSelectedSessionIdentity(session.id, machineId)) await this.applyCommandResult(result, expected);
-      else if (result.type === "select" || result.type === "tree") this.reportSessionError(session, machineId, `Queued command “${text}” needs input; open the session and run it again.`, errorOwner);
+      else if (result.type === "select" || result.type === "tree") this.reportSessionError(session, machineId, localizedText("sessionController.queued_command_needs_input_open_the_session.a65fe2d5")`Queued command “${text}” needs input; open the session and run it again.`, errorOwner);
       this.markCachedNewSessionPersisted(session);
       return true;
     } catch (error) {
@@ -625,8 +626,8 @@ export class SessionController {
     let result: CommandResult;
     try {
       result = await this.api.runCommand(session, "/tree", machineId);
-      if (result.type !== "tree") throw new Error("message" in result ? result.message : "Session history is unavailable.");
-      if (!result.tree.nodes.some((node) => node.id === entryId)) throw new Error("This message is no longer available in session history.");
+      if (result.type !== "tree") throw new Error("message" in result ? result.message : t("sessionController.session_history_is_unavailable.cdc07df3"));
+      if (!result.tree.nodes.some((node) => node.id === entryId)) throw new Error(t("sessionController.this_message_is_no_longer_available_in.c67cfaba"));
     } catch (error) {
       this.reportSessionError(session, machineId, error, errorOwner);
       throw error;
@@ -644,7 +645,7 @@ export class SessionController {
     const state = this.getState();
     const session = state.selectedSession;
     if (session === undefined || tree === undefined || session.archived === true || isClientPendingStartSessionInfo(session)) {
-      throw new Error("The session tree navigator is no longer available");
+      throw new Error(t("sessionController.the_session_tree_navigator_is_no_longer.b6a6ea71"));
     }
 
     const machineId = selectedMachineId(state);
@@ -707,7 +708,7 @@ export class SessionController {
     const state = this.getState();
     const session = state.selectedSession;
     if (session === undefined || tree === undefined || session.archived === true || isClientPendingStartSessionInfo(session)) {
-      throw new Error("The session tree navigator is no longer available");
+      throw new Error(t("sessionController.the_session_tree_navigator_is_no_longer.3380b396"));
     }
 
     const machineId = selectedMachineId(state);
@@ -912,7 +913,7 @@ export class SessionController {
       }
       this.applyBulkSessionFailures("Archive", failures, machineId, originWorkspace, fallbackSession, errorOwner);
     } catch (error) {
-      this.reportWorkspaceOrSessionError(originWorkspace, fallbackSession, machineId, `Archive failed: ${errorMessage(error)}`, errorOwner);
+      this.reportWorkspaceOrSessionError(originWorkspace, fallbackSession, machineId, localizedText("sessionController.archive_failed.c1c6e651")`Archive failed: ${errorMessage(error)}`, errorOwner);
     }
   }
 
@@ -941,7 +942,7 @@ export class SessionController {
       }
       this.applyBulkSessionFailures("Delete", failures, machineId, originWorkspace, fallbackSession, errorOwner);
     } catch (error) {
-      this.reportWorkspaceOrSessionError(originWorkspace, fallbackSession, machineId, `Delete failed: ${errorMessage(error)}`, errorOwner);
+      this.reportWorkspaceOrSessionError(originWorkspace, fallbackSession, machineId, localizedText("sessionController.delete_failed.e2f7b5bf")`Delete failed: ${errorMessage(error)}`, errorOwner);
     }
   }
 
@@ -1024,7 +1025,7 @@ export class SessionController {
     } catch (error) {
       if (options?.recoverNetwork === true && !isCurrent()) return;
       if (error instanceof NetworkRequestError) {
-        this.browserErrors.report(scope, "The session list could not be refreshed. Check your connection and retry.", "workspace-sessions-refresh");
+        this.browserErrors.report(scope, t("sessionController.the_session_list_could_not_be_refreshed.c4d22cb1"), "workspace-sessions-refresh");
       } else {
         this.reportWorkspaceError(workspace, machineId, error);
       }
@@ -1472,7 +1473,7 @@ export class SessionController {
       if (error instanceof NetworkRequestError) {
         this.browserErrors.report(
           sessionBrowserErrorScope(target.machineId, target.session.id, target.errorOwner),
-          "The conversation could not be refreshed. Check your connection and retry.",
+          t("sessionController.the_conversation_could_not_be_refreshed_check.8a181d24"),
           "session-refresh",
         );
       } else {
@@ -1655,7 +1656,7 @@ export class SessionController {
       workspace,
       fallbackSession,
       machineId,
-      `${action} failed for ${String(failures.length)} session${failures.length === 1 ? "" : "s"}: ${failures.join("; ")}`,
+      localizedText("sessionController.failed_for_session.f1f825b1")`${action === "Archive" ? t("ui.session.action.archive") : t("ui.session.action.delete")} failed for ${String(failures.length)} session${failures.length === 1 ? "" : "s"}: ${failures.join("; ")}`,
       errorOwner,
     );
   }
@@ -1853,10 +1854,10 @@ export class SessionController {
           session,
           accepted || pending.pendingUrlPublished || !navigationIsCurrent(navigation)
             ? undefined
-            : "Session started, but its navigation changed before selection completed. Select it from the session list.",
+            : t("sessionController.session_started_but_its_navigation_changed_before.c9794a29"),
         );
       } catch (error) {
-        this.clearUnreconciledPendingSelection(pending, session, `Session started, but it could not be selected: ${errorMessage(error)}`);
+        this.clearUnreconciledPendingSelection(pending, session, localizedText("sessionController.session_started_but_it_could_not_be.f66fda44")`Session started, but it could not be selected: ${errorMessage(error)}`);
       }
       return;
     }
@@ -1868,13 +1869,13 @@ export class SessionController {
         return;
       }
       if (this.getState().selectedSession?.id !== session.id) {
-        this.clearUnreconciledPendingSelection(pending, session, "Session started, but its selection changed before navigation completed. Select it from the session list.");
+        this.clearUnreconciledPendingSelection(pending, session, t("sessionController.session_started_but_its_selection_changed_before.c4dc0a53"));
         return;
       }
       if (pending.pendingUrlPublished) this.updateUrl({ replace: true });
       else this.updateUrl();
     } catch (error) {
-      this.clearUnreconciledPendingSelection(pending, session, `Session started, but it could not be selected: ${errorMessage(error)}`);
+      this.clearUnreconciledPendingSelection(pending, session, localizedText("sessionController.session_started_but_it_could_not_be.ab706ede")`Session started, but it could not be selected: ${errorMessage(error)}`);
     }
   }
 
@@ -1921,7 +1922,7 @@ export class SessionController {
       return;
     }
     const message = errorMessage(error);
-    const failureMessage = `Failed to start session: ${message}`;
+    const failureMessage = localizedText("sessionController.failed_to_start_session.9d1c37e6")`Failed to start session: ${message}`;
     if (!isCurrentPendingStart) {
       // The temporary row belongs to the workspace that started it, even after
       // navigation reset the workspace-scoped session list. Report the late
@@ -2487,18 +2488,18 @@ function creatingPendingSessionActivity(sessionId: string, queuedCount = 0): Ses
   return {
     sessionId,
     phase: "active",
-    label: "Creating session",
-    detail: queuedCount > 0 ? `${String(queuedCount)} queued ${queuedCount === 1 ? "message" : "messages"} will send when the backend session is ready` : "Waiting for the backend session to be ready",
+    label: t("sessionController.creating_session.a02c5a14"),
+    detail: queuedCount > 0 ? localizedText("sessionController.queued_will_send_when_the_backend_session.4b699284")`${String(queuedCount)} queued ${queuedCount === 1 ? "message" : "messages"} will send when the backend session is ready` : t("sessionController.waiting_for_the_backend_session_to_be.5f25a8bc"),
     at: new Date().toISOString(),
   };
 }
 
 function failedPendingSessionActivity(sessionId: string, message: string, queuedCount = 0): SessionActivity {
-  const queuedDetail = queuedCount > 0 ? ` · ${String(queuedCount)} queued ${queuedCount === 1 ? "message" : "messages"} kept below` : "";
+  const queuedDetail = queuedCount > 0 ? localizedText("sessionController.queued_kept_below.ccab7fdb")` · ${String(queuedCount)} queued ${queuedCount === 1 ? "message" : "messages"} kept below` : "";
   return {
     sessionId,
     phase: "error",
-    label: "Session creation failed",
+    label: t("sessionController.session_creation_failed.0a01a527"),
     detail: `${message}${queuedDetail}`,
     at: new Date().toISOString(),
   };
@@ -2526,11 +2527,11 @@ function queuedAttachmentSummary(attachments: PromptAttachment[] | undefined): s
   if (attachments === undefined || attachments.length === 0) return undefined;
   const names = attachments.map((attachment) => attachment.name?.trim()).filter((name): name is string => name !== undefined && name !== "");
   const count = attachments.length;
-  const label = `${String(count)} ${count === 1 ? "attachment" : "attachments"}`;
-  if (names.length === 0) return `[${label} queued]`;
+  const label = localizedText("sessionController.template.081560b5")`${String(count)} ${count === 1 ? "attachment" : "attachments"}`;
+  if (names.length === 0) return localizedText("sessionController.queued.39dbdd22")`[${label} queued]`;
   const shownNames = names.slice(0, 3).join(", ");
-  const suffix = names.length > 3 ? `, +${String(names.length - 3)} more` : "";
-  return `[${label} queued: ${shownNames}${suffix}]`;
+  const suffix = names.length > 3 ? localizedText("sessionController.more.c558263c")`, +${String(names.length - 3)} more` : "";
+  return localizedText("sessionController.queued.0a507d46")`[${label} queued: ${shownNames}${suffix}]`;
 }
 
 function uniqueSessionsById(sessions: readonly SessionInfo[]): SessionInfo[] {

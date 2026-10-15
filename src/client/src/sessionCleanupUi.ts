@@ -1,3 +1,4 @@
+import { localizedText, t } from "../../shared/i18n";
 import type { SessionCleanupPreviewResponse, SessionCleanupRequest } from "./api";
 
 export interface SessionCleanupDraft {
@@ -19,7 +20,7 @@ export const DEFAULT_SESSION_CLEANUP_DRAFT: SessionCleanupDraft = {
 };
 
 export function validateSessionCleanupDraft(draft: SessionCleanupDraft): SessionCleanupDraftValidation {
-  if (!draft.archiveIdleEnabled && !draft.deleteArchivedEnabled) return { ok: false, error: "Enable at least one cleanup action." };
+  if (!draft.archiveIdleEnabled && !draft.deleteArchivedEnabled) return { ok: false, error: t("sessionCleanupUi.enable_at_least_one_cleanup_action.8cb29151") };
 
   const request: SessionCleanupRequest = {
     archiveIdleDays: null,
@@ -27,13 +28,13 @@ export function validateSessionCleanupDraft(draft: SessionCleanupDraft): Session
   };
 
   if (draft.archiveIdleEnabled) {
-    const archiveIdleDays = parseDayThreshold(draft.archiveIdleDays, "Archive idle sessions after");
+    const archiveIdleDays = parseDayThreshold(draft.archiveIdleDays, t("sessionCleanupUi.archive_idle_sessions_after.92b2a096"));
     if (typeof archiveIdleDays === "string") return { ok: false, error: archiveIdleDays };
     request.archiveIdleDays = archiveIdleDays;
   }
 
   if (draft.deleteArchivedEnabled) {
-    const deleteArchivedDays = parseDayThreshold(draft.deleteArchivedDays, "Delete archived sessions after");
+    const deleteArchivedDays = parseDayThreshold(draft.deleteArchivedDays, t("sessionCleanupUi.delete_archived_sessions_after.065bc56a"));
     if (typeof deleteArchivedDays === "string") return { ok: false, error: deleteArchivedDays };
     request.deleteArchivedDays = deleteArchivedDays;
   }
@@ -96,16 +97,16 @@ export function sessionCleanupConfirmationMessage(preview: Pick<SessionCleanupPr
   const archiveCount = preview.totals.archiveCount;
   const deleteCount = preview.totals.deleteCount;
   const parts: string[] = [];
-  if (archiveCount > 0) parts.push(`archive ${String(archiveCount)} idle ${archiveCount === 1 ? "session" : "sessions"}`);
-  if (deleteCount > 0) parts.push(`permanently delete ${String(deleteCount)} archived ${deleteCount === 1 ? "session" : "sessions"}`);
-  const action = parts.length === 0 ? "run cleanup" : parts.join(" and ");
-  return `Run cleanup and ${action}?\n\nPermanent deletion only applies to archived sessions and cannot be undone.`;
+  if (archiveCount > 0) parts.push(localizedText("sessionCleanupUi.archive_idle.b3d9ebc8")`archive ${String(archiveCount)} idle ${archiveCount === 1 ? "session" : "sessions"}`);
+  if (deleteCount > 0) parts.push(localizedText("sessionCleanupUi.permanently_delete_archived.6cc7f8f1")`permanently delete ${String(deleteCount)} archived ${deleteCount === 1 ? "session" : "sessions"}`);
+  const action = parts.length === 0 ? t("sessionCleanupUi.run_cleanup.098962bc") : parts.join(t("sessionCleanupUi.and.bc628534"));
+  return localizedText("sessionCleanupUi.run_cleanup_and_permanent_deletion_only_applies.9b2e421b")`Run cleanup and ${action}?\n\nPermanent deletion only applies to archived sessions and cannot be undone.`;
 }
 
 function parseDayThreshold(value: string, label: string): number | string {
   const trimmed = value.trim();
-  if (trimmed === "") return `${label} must be set.`;
+  if (trimmed === "") return localizedText("sessionCleanupUi.must_be_set.663d9951")`${label} must be set.`;
   const parsed = Number(trimmed);
-  if (!Number.isInteger(parsed) || parsed < 0) return `${label} must be a non-negative whole number of days.`;
+  if (!Number.isInteger(parsed) || parsed < 0) return localizedText("sessionCleanupUi.must_be_a_non_negative_whole_number.db9638d9")`${label} must be a non-negative whole number of days.`;
   return parsed;
 }

@@ -1,3 +1,4 @@
+import { roleDisplayLabel, localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -87,8 +88,8 @@ export interface QueuedMessageSection {
 
 export function chatQueuedMessageSections(clientQueued: QueuedSessionMessage[], serverQueued: QueuedSessionMessage[]): QueuedMessageSection[] {
   return [
-    clientQueued.length === 0 ? undefined : { source: "client", heading: "Queued until session starts", detail: "Will send once the backend session is ready", messages: clientQueued },
-    serverQueued.length === 0 ? undefined : { source: "server", heading: "Queued messages", detail: `${String(serverQueued.length)} pending`, messages: serverQueued },
+    clientQueued.length === 0 ? undefined : { source: "client", heading: t("ChatView.queued_until_session_starts.5b54250c"), detail: t("ChatView.will_send_once_the_backend_session_is.e6be2b4e"), messages: clientQueued },
+    serverQueued.length === 0 ? undefined : { source: "server", heading: t("ChatView.queued_messages.904505cc"), detail: localizedText("ChatView.pending.b2266fa7")`${String(serverQueued.length)} pending`, messages: serverQueued },
   ].filter((section): section is QueuedMessageSection => section !== undefined);
 }
 
@@ -101,7 +102,7 @@ export function chatImagePartSource(part: ChatImagePart, session?: SessionRef, m
 
 /** The message-header label used when a tool message renders as an image output. */
 export function chatToolOutputLabel(toolName?: string): string {
-  return toolName === undefined || toolName === "" ? "tool output" : `${toolName} output`;
+  return toolName === undefined || toolName === "" ? t("ChatView.tool_output.81a5fb0b") : localizedText("ChatView.output.d2396e67")`${toolName} output`;
 }
 
 function chatLineIdentity(index: number, message?: ChatLine): string {
@@ -141,7 +142,7 @@ export function chatMessageGroupClassName(defaultOpen: boolean): string {
 
 /** The disclosure summary label for an event group, distinguishing the live tail. */
 export function chatMessageGroupLabel(defaultOpen: boolean): string {
-  return defaultOpen ? "live events" : "events";
+  return defaultOpen ? t("ChatView.live_events.324b38f3") : t("ChatView.events.a9f87569");
 }
 
 /** Whether a queued-message section shows the server clear-queue action. */
@@ -176,7 +177,7 @@ export function chatMessageMetadataLabel(message: ChatLine): string {
   const time = timestamp === undefined ? undefined : formatMessageTimestamp(timestamp);
   const model = chatMessageModelLabel(message);
   const parts = [time, model, message.meta?.thinkingLevel].filter((part): part is string => part !== undefined && part !== "");
-  return parts.length === 0 ? "No Pi message metadata available" : parts.join(" · ");
+  return parts.length === 0 ? t("ChatView.no_pi_message_metadata_available.11cd8ccc") : parts.join(" · ");
 }
 
 function formatMessageTimestamp(timestamp: string): string | undefined {
@@ -463,7 +464,7 @@ export class ChatView extends LitElement {
       };
     }));
     const following = this.behaviors.followTail && this.followingLive;
-    return html`
+    return localizedTemplate("ChatView.template.0c3846b0", html)`
       ${this.renderTopNotices()}
       ${this.renderNotificationLiveRegions()}
       <div class=${this.behaviors.visualEffects ? "chat-wrap" : "chat-wrap plain"}>
@@ -494,9 +495,9 @@ export class ChatView extends LitElement {
         <nav class="chat-jumps" aria-label="Chat navigation">
           <button type="button" title="Jump to top" aria-label="Jump to top" @click=${this.handleJumpTop}>↑</button>
           <button type="button" class=${following ? "following" : ""}
-            title=${!this.behaviors.followTail ? "Jump to end" : following ? "Following live — jump to end" : "Jump to end and follow live"}
+            title=${!this.behaviors.followTail ? t("ChatView.jump_to_end.c37e7d58") : following ? t("ChatView.following_live_jump_to_end.9520bc45") : t("ChatView.jump_to_end_and_follow_live.db38db8e")}
             aria-label="Jump to end" aria-describedby="chat-follow-state" @click=${this.handleJumpEnd}>↓</button>
-          <span id="chat-follow-state" class="visually-hidden">${!this.behaviors.followTail ? "Automatic following disabled" : following ? "Following live" : "Live following paused"}</span>
+          <span id="chat-follow-state" class="visually-hidden">${!this.behaviors.followTail ? t("ChatView.automatic_following_disabled.0de38a22") : following ? t("ChatView.following_live.b062bdb4") : t("ChatView.live_following_paused.ecda395d")}</span>
         </nav>
       </div>
       ${this.renderImageZoom()}
@@ -519,8 +520,8 @@ export class ChatView extends LitElement {
     const totalCount = notificationInboxTotalCount(inbox);
     if (totalCount === 0 && !hasPendingOverlay && !retainsFocusTarget) return null;
     const collapsed = notificationTrayIsCollapsed(this.collapsedNotificationTargetKeys, inbox);
-    const toggleLabel = collapsed ? "Expand notifications" : "Collapse notifications";
-    return html`
+    const toggleLabel = collapsed ? t("ChatView.expand_notifications.6f42f8f6") : t("ChatView.collapse_notifications.48fb5653");
+    return localizedTemplate("ChatView.clear.d121edb1", html)`
       <section class=${`notification-tray${collapsed ? " collapsed" : ""}`} role="region" aria-labelledby="session-notifications-heading" @focusout=${(event: FocusEvent) => { this.releaseEmptyNotificationTray(event); }}>
         <header class="notification-header" data-notification-focus="header" tabindex="-1">
           <strong class="notification-heading" id="session-notifications-heading">${notificationTrayHeading(inbox)}</strong>
@@ -551,7 +552,7 @@ export class ChatView extends LitElement {
           ${inbox.notifications.map((notification) => {
             const label = notificationSeverityLabel(notification.severity);
             const truncationLabel = notificationMessageTruncationLabel(notification);
-            return html`
+            return localizedTemplate("ChatView.template.3a3f9435", html)`
               <article class=${`notification-row ${notification.severity}`} data-notification-id=${notification.id} tabindex="-1">
                 <div class="notification-metadata">
                   <strong class="notification-severity">${label}</strong>
@@ -646,7 +647,7 @@ export class ChatView extends LitElement {
     if (!this.warningsVisible || rows.length === 0) return null;
     return html`
       <aside class="session-warnings" role="alert" aria-live="polite">
-        ${this.onToggleWarnings === undefined ? null : html`
+        ${this.onToggleWarnings === undefined ? null : localizedTemplate("ChatView.minimise.bec3fbef", html)`
           <div class="session-warnings-controls">
             <button
               type="button"
@@ -674,7 +675,7 @@ export class ChatView extends LitElement {
               <p class="session-warning-message">${row.message}</p>
               ${row.path === undefined ? null : html`<p class="session-warning-path">${row.path}</p>`}
             </div>
-            ${dismissId === undefined ? null : html`
+            ${dismissId === undefined ? null : localizedTemplate("ChatView.template.f44ad199", html)`
               <button
                 type="button"
                 class="session-warning-dismiss"
@@ -693,7 +694,7 @@ export class ChatView extends LitElement {
   private renderImageZoom() {
     return html`
       <dialog class="image-zoom" @click=${this.onImageZoomDialogClick} @close=${this.closeImageZoom} @cancel=${this.closeImageZoom}>
-        ${this.zoomedImage === undefined ? null : html`
+        ${this.zoomedImage === undefined ? null : localizedTemplate("ChatView.template.c235a861", html)`
           <button type="button" class="image-zoom-close" aria-label="Close image" @click=${this.closeImageZoom}>×</button>
           <img class="image-zoom-full" src=${this.zoomedImage.src} alt=${this.zoomedImage.alt} />
         `}
@@ -723,7 +724,7 @@ export class ChatView extends LitElement {
 
   private renderActivityDock() {
     if (this.isSendingPrompt) {
-      return html`
+      return localizedTemplate("ChatView.sending_your_message.b690fb4f", html)`
         <div class="activity-dock active" aria-live="polite">
           <span class="dot"></span>
           <span class="activity-text">Sending your message…</span>
@@ -750,7 +751,7 @@ export class ChatView extends LitElement {
   private renderQueuedMessageList(section: QueuedMessageSection) {
     const canClear = chatQueuedSectionShowsClearAction(section, this.onClearServerQueue !== undefined);
     const actionsUnavailable = section.source === "server" ? this.status?.queueMessageActionsUnavailable : undefined;
-    const unavailableReason = actionsUnavailable === undefined ? undefined : actionsUnavailable === "" ? "Individual queue controls are unavailable with this runtime." : actionsUnavailable;
+    const unavailableReason = actionsUnavailable === undefined ? undefined : actionsUnavailable === "" ? t("ChatView.individual_queue_controls_are_unavailable_with_this.71571b82") : actionsUnavailable;
     const actionsDisabled = this.queuedMessageActionPending || actionsUnavailable !== undefined;
     return html`
       <aside class="queued-messages" aria-live="polite">
@@ -759,28 +760,28 @@ export class ChatView extends LitElement {
             <strong>${section.heading}</strong>
             <small>${section.detail}</small>
           </div>
-          ${canClear ? html`
+          ${canClear ? localizedTemplate("ChatView.template.7fc930d1", html)`
             <button type="button" class="queued-clear-button" ?disabled=${this.queuedMessageActionPending} aria-label="Clear queue" title="Clear queued messages without stopping active work" @click=${this.handleClearServerQueue}>${renderTrashIcon()}</button>
           ` : null}
         </div>
         ${unavailableReason === undefined ? nothing : html`<small role="status">${unavailableReason}</small>`}
-        ${section.messages.map((message, index) => html`
+        ${section.messages.map((message, index) => localizedTemplate("ChatView.template.e0249d26", html)`
           <div class="queued-message">
             <div class="queued-message-header">
               <div class="queued-message-meta">
-                <span class="queued-kind">${message.kind === "steer" ? "Steer" : "Queue"} ${String(section.messages.slice(0, index + 1).filter((entry) => entry.kind === message.kind).length)}</span>
-                ${queuedMessageAttachmentLabel(message) === undefined ? nothing : html`
+                <span class="queued-kind">${message.kind === "steer" ? t("ChatView.steer.ca8342d8") : t("ChatView.queue.b93d6e9f")} ${String(section.messages.slice(0, index + 1).filter((entry) => entry.kind === message.kind).length)}</span>
+                ${queuedMessageAttachmentLabel(message) === undefined ? nothing : localizedTemplate("ChatView.template.4b41b982", html)`
                   <span class="queued-attachments" title="Attachments included with this queued message"><span aria-hidden="true">📎</span> ${queuedMessageAttachmentLabel(message)}</span>
                 `}
               </div>
               <div class="queued-message-actions">
                 <button type="button" class="queued-action" aria-label="Copy queued message" title="Copy message" @click=${async () => {
-                  this.queuedCopyFeedback = await writeClipboardText(message.text) ? "Copied" : "Could not copy message";
+                  this.queuedCopyFeedback = await writeClipboardText(message.text) ? t("ChatView.copied.490135e8") : t("ChatView.could_not_copy_message.00b88cb1");
                 }}>${renderCopyIcon()}</button>
-                ${section.source !== "server" || this.onQueuedMessageAction === undefined ? nothing : html`
-                  <button type="button" class="queued-action" ?disabled=${actionsDisabled} title=${unavailableReason ?? (message.kind === "steer" ? "Move to the end of the follow-up queue" : "Move to the end of the steering queue")} aria-label=${message.kind === "steer" ? "Switch to Queue" : "Switch to Steer"} @click=${() => { this.actOnQueuedMessage("toggle", index, section.messages); }}>${message.kind === "steer" ? renderQueueIcon() : renderSteerIcon()}</button>
-                  <button type="button" class="queued-action" ?disabled=${actionsDisabled} aria-label="Recall queued message" title=${unavailableReason ?? "Recall this message's text and clear later queued messages"} @click=${() => { this.actOnQueuedMessage("edit", index, section.messages); }}>${renderGoBackIcon()}</button>
-                  <button type="button" class="queued-action" ?disabled=${actionsDisabled} aria-label="Remove queued message" title=${unavailableReason ?? "Remove only this message"} @click=${() => { this.actOnQueuedMessage("remove", index, section.messages); }}>${renderTrashIcon()}</button>
+                ${section.source !== "server" || this.onQueuedMessageAction === undefined ? nothing : localizedTemplate("ChatView.template.29b9a192", html)`
+                  <button type="button" class="queued-action" ?disabled=${actionsDisabled} title=${unavailableReason ?? (message.kind === "steer" ? t("ChatView.move_to_the_end_of_the_follow.1e709cf7") : t("ChatView.move_to_the_end_of_the_steering.074a4cf7"))} aria-label=${message.kind === "steer" ? t("ChatView.switch_to_queue.5cd3b8f2") : t("ChatView.switch_to_steer.4a0b2429")} @click=${() => { this.actOnQueuedMessage("toggle", index, section.messages); }}>${message.kind === "steer" ? renderQueueIcon() : renderSteerIcon()}</button>
+                  <button type="button" class="queued-action" ?disabled=${actionsDisabled} aria-label="Recall queued message" title=${unavailableReason ?? t("ChatView.recall_this_message_s_text_and_clear.adbff4bc")} @click=${() => { this.actOnQueuedMessage("edit", index, section.messages); }}>${renderGoBackIcon()}</button>
+                  <button type="button" class="queued-action" ?disabled=${actionsDisabled} aria-label="Remove queued message" title=${unavailableReason ?? t("ChatView.remove_only_this_message.5e747f11")} @click=${() => { this.actOnQueuedMessage("remove", index, section.messages); }}>${renderTrashIcon()}</button>
                 `}
               </div>
             </div>
@@ -800,16 +801,16 @@ export class ChatView extends LitElement {
     const text = this.status?.sessionId === this.sessionId ? this.status.suggestedInput : undefined;
     if (text === undefined || this.onUseSuggestedInput === undefined
       || this.suggestedInputPending || this.suppressedSuggestedInput === text) return null;
-    return html`
+    return localizedTemplate("ChatView.suggested_input_replaces_your_current_draft_nothing.1d449cdb", html)`
       <aside class="suggested-input">
         <div class="suggested-input-header">
           <strong>Suggested input</strong>
-          ${this.onDismissSuggestedInput === undefined ? null : html`
+          ${this.onDismissSuggestedInput === undefined ? null : localizedTemplate("ChatView.template.928ca7f8", html)`
             <button type="button" class="suggested-input-dismiss" aria-label="Dismiss suggested input" title="Dismiss suggested input in this browser"
               @click=${() => { this.onDismissSuggestedInput?.(this.machineId, this.sessionId, text); }}>×</button>
           `}
         </div>
-        <p class="suggested-input-text" dir="auto">${text === "" ? "Empty input" : text}</p>
+        <p class="suggested-input-text" dir="auto">${text === "" ? t("ChatView.empty_input.902c5033") : text}</p>
         <small>Replaces your current draft. Nothing is sent.</small>
         <button type="button" class="suggested-input-use" @click=${() => { this.onUseSuggestedInput?.(this.machineId, this.sessionId); }}>Use suggested input</button>
       </aside>
@@ -840,7 +841,7 @@ export class ChatView extends LitElement {
           .onCancel=${this.onCancelDialog}
         ></extension-dialog-card>
         ${queuedCount > 0
-          ? html`<p class="queued-dialogs" role="status">${String(queuedCount)} more extension ${queuedCount === 1 ? "dialog" : "dialogs"} queued</p>`
+          ? localizedTemplate("ChatView.more_extension_queued.9f0718e6", html)`<p class="queued-dialogs" role="status">${String(queuedCount)} more extension ${queuedCount === 1 ? "dialog" : "dialogs"} queued</p>`
           : null}
       `}
     `;
@@ -848,11 +849,11 @@ export class ChatView extends LitElement {
 
   private renderSessionActivity() {
     if (!this.isCompacting) return null;
-    return html`
+    return localizedTemplate("ChatView.compacting_history_the_agent_is_summarizing_earlier.96ff51f8", html)`
       <aside class="session-activity compacting" aria-live="polite">
         <strong>Compacting history…</strong>
         <span>The agent is summarizing earlier context. New prompts will be queued until compaction finishes.</span>
-        ${this.pendingMessageCount > 0 ? html`<small>${this.pendingMessageCount} queued ${this.pendingMessageCount === 1 ? "message" : "messages"}</small>` : null}
+        ${this.pendingMessageCount > 0 ? localizedTemplate("ChatView.queued.ee85bfd1", html)`<small>${this.pendingMessageCount} queued ${this.pendingMessageCount === 1 ? "message" : "messages"}</small>` : null}
       </aside>
     `;
   }
@@ -876,15 +877,15 @@ export class ChatView extends LitElement {
 
   private renderHistoryBoundary() {
     const range = this.historyRangeLabel();
-    if (this.loadingMore) return html`<div class="history-boundary"><span>Loading earlier messages…</span>${range}</div>`;
-    if (this.hasMore) return html`
+    if (this.loadingMore) return localizedTemplate("ChatView.loading_earlier_messages.7cd28bec", html)`<div class="history-boundary"><span>Loading earlier messages…</span>${range}</div>`;
+    if (this.hasMore) return localizedTemplate("ChatView.load_earlier_messages.5bea8e73", html)`
       <div class="history-boundary">
         <button type="button" class="history-load-button" ?disabled=${this.loadMoreRequested} @click=${() => { this.requestLoadMore(); }}>Load earlier messages</button>
-        ${this.behaviors.automaticHistory ? html`<span>Scroll up to load earlier messages</span>` : null}
+        ${this.behaviors.automaticHistory ? localizedTemplate("ChatView.scroll_up_to_load_earlier_messages.ab9a8e61", html)`<span>Scroll up to load earlier messages</span>` : null}
         ${range}
       </div>
     `;
-    if (this.messages.length) return html`<div class="history-boundary"><span>Beginning of session</span>${range}</div>`;
+    if (this.messages.length) return localizedTemplate("ChatView.beginning_of_session.2244d192", html)`<div class="history-boundary"><span>Beginning of session</span>${range}</div>`;
     return null;
   }
 
@@ -893,7 +894,7 @@ export class ChatView extends LitElement {
     const from = this.messageStart + 1;
     const to = this.loadedRawMessageEnd();
     const total = Math.max(this.messageTotal, to);
-    return html`<small>Showing messages ${from}–${to} of ${total}</small>`;
+    return localizedTemplate("ChatView.showing_messages_of.187d4d56", html)`<small>Showing messages ${from}–${to} of ${total}</small>`;
   }
 
   private loadedRawMessageEnd(): number {
@@ -957,7 +958,7 @@ export class ChatView extends LitElement {
     `;
   }
 
-  private renderMessageHeader(message: ChatLine, key: string, index: number, entryActionHeaders: ReadonlySet<ChatLine>, label: string = message.role) {
+  private renderMessageHeader(message: ChatLine, key: string, index: number, entryActionHeaders: ReadonlySet<ChatLine>, label: string = roleDisplayLabel(message.role)) {
     const meta = this.messageMetaLabel(message);
     const expanded = this.expandedMetaKey === key;
     return html`
@@ -977,7 +978,7 @@ export class ChatView extends LitElement {
         .filter(({ action }) => action.target === "display" ? this.onDisplayedMessageAction !== undefined : this.onMessageAction !== undefined);
     if (actions.length === 0) return null;
     const feedback = this.messageActionFeedback;
-    return html`
+    return localizedTemplate("ChatView.template.795c3fae", html)`
       <div class="msg-actions" aria-label="Message actions">
         ${actions.map(({ action, enabled, ariaLabel }) => {
           const presentation = feedback?.machineId === this.machineId && feedback.sessionId === this.sessionId && feedback.key === key && feedback.actionId === action.id
@@ -1060,18 +1061,18 @@ export class ChatView extends LitElement {
     if (part.type === "text" || part.type === "thinking") {
       const text = part.displayText ?? part.text;
       if (text === "") return null;
-      if (part.type === "thinking") return html`<details class="part"><summary>thinking</summary><formatted-text .imagesEnabled=${this.behaviors.loadImages} .codeBlocks=${this.behaviors.codeBlocks} .intentKey=${intentKey} .contentRendering=${this.contentRendering} .machineId=${this.machineId} .workspaceContext=${this.workspaceContext} .text=${text}></formatted-text></details>`;
+      if (part.type === "thinking") return localizedTemplate("ChatView.thinking.acdb2bf0", html)`<details class="part"><summary>thinking</summary><formatted-text .imagesEnabled=${this.behaviors.loadImages} .codeBlocks=${this.behaviors.codeBlocks} .intentKey=${intentKey} .contentRendering=${this.contentRendering} .machineId=${this.machineId} .workspaceContext=${this.workspaceContext} .text=${text}></formatted-text></details>`;
       if (message.role === "bash") return html`<pre class="part shell-output">${text}</pre>`;
       return html`<formatted-text .imagesEnabled=${this.behaviors.loadImages} .codeBlocks=${this.behaviors.codeBlocks} .intentKey=${intentKey} class="part" .contentRendering=${this.contentRendering} .machineId=${this.machineId} .workspaceContext=${this.workspaceContext} .text=${text}></formatted-text>`;
     }
-    if (part.type === "skillInvocation") return html`
+    if (part.type === "skillInvocation") return localizedTemplate("ChatView.skill.a1debad5", html)`
       <details class="part skill-invocation">
         <summary><b>[skill]</b> ${part.name}</summary>
         <small>${part.location}</small>
         <formatted-text .imagesEnabled=${this.behaviors.loadImages} .codeBlocks=${this.behaviors.codeBlocks} .intentKey=${intentKey} .contentRendering=${this.contentRendering} .machineId=${this.machineId} .workspaceContext=${this.workspaceContext} .text=${part.content}></formatted-text>
       </details>
     `;
-    if (part.type === "skillRead") return html`
+    if (part.type === "skillRead") return localizedTemplate("ChatView.loaded_read.3e594809", html)`
       <div class="part skill-read">
         <strong>Loaded ${part.name}</strong>
         <small>read ${part.path}</small>
