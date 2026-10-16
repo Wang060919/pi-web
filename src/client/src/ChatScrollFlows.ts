@@ -473,6 +473,25 @@ export class ChatScrollFlows {
     this.jump(false);
   }
 
+  jumpToAnchor(target: HTMLElement): void {
+    if (this.disposed) return;
+    const scroller = this.host.getScroller();
+    if (scroller === undefined || !scroller.contains(target) || scroller.clientHeight <= 0) return;
+    const targetRect = target.getBoundingClientRect();
+    const scrollerTop = scroller.getBoundingClientRect().top;
+    if (!Number.isFinite(targetRect.top) || !Number.isFinite(targetRect.bottom)
+      || !Number.isFinite(scrollerTop) || targetRect.bottom <= targetRect.top) return;
+
+    this.position.reset();
+    this.prepend.cancel();
+    this.tail.pause();
+    const maxTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    scroller.scrollTop = Math.max(0, Math.min(scroller.scrollTop + targetRect.top - scrollerTop - 16, maxTop));
+    // Selecting history remains a reading action even when its target is at the bottom.
+    this.tail.recordScrollBaseline();
+    this.position.scheduleSave();
+  }
+
   private jump(end: boolean): void {
     if (this.disposed) return;
     this.position.reset();

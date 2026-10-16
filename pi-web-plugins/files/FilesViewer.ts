@@ -338,33 +338,36 @@ export class WorkspaceFileViewer extends LitElement {
   static override styles = [
     formattedTextStyles(),
     css`
-      :host { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: auto; color: var(--pi-text); font: 14px system-ui, sans-serif; }
-      .viewer-header { position: sticky; top: 0; z-index: 1; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px; border-bottom: 1px solid var(--pi-border-muted); background: var(--pi-bg); }
-      .viewer-header strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      :host { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: auto; color: var(--pi-text); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+      .viewer-header { position: sticky; top: 0; z-index: 1; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; border-bottom: 0; background: var(--pi-bg); }
+      .viewer-header strong { font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .viewer-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
-      select { max-width: 100%; border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface); color: var(--pi-text); padding: 3px 8px; font: 12px system-ui, sans-serif; }
+      select { max-width: 100%; border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface); color: var(--pi-text); padding: 3px 8px; font: var(--pi-control-font-size, 16px)/1.42857 var(--pi-font-family, system-ui, sans-serif); }
       select:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 1px; }
       small { color: var(--pi-muted); }
-      .viewer-action, .download-link { flex: 0 0 auto; border: 1px solid var(--pi-border-muted); border-radius: 6px; background: var(--pi-surface); color: var(--pi-text); text-decoration: none; white-space: nowrap; }
-      .viewer-action { padding: 3px 8px; font-size: 12px; }
-      .viewer-action:hover, .download-link:hover { border-color: var(--pi-border); background: var(--pi-bg); }
+      .viewer-action, .download-link { flex: 0 0 auto; min-height: 30px; box-sizing: border-box; display: inline-flex; align-items: center; border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); text-decoration: none; white-space: nowrap; }
+      .viewer-action { padding: 3px 8px; font: inherit; }
+      .viewer-action:hover, .download-link:hover { background: var(--pi-surface-hover); }
       .viewer-mode { flex: 0 0 auto; display: flex; justify-content: flex-end; gap: 4px; }
-      .viewer-mode button, .preview-state button { border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface); color: var(--pi-text); padding: 4px 9px; cursor: pointer; font: inherit; }
+      .viewer-mode button, .preview-state button { min-height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 4px 9px; cursor: pointer; font: inherit; }
       .viewer-mode button { font-size: 12px; padding: 3px 8px; }
-      .viewer-mode button:hover { background: var(--pi-bg); }
-      .viewer-mode button[aria-pressed="true"] { border-color: var(--pi-accent); background: var(--pi-selection-bg); }
+      .viewer-mode button:hover, .preview-state button:hover { background: var(--pi-surface-hover); }
+      .viewer-mode button[aria-pressed="true"] { background: var(--pi-selection-bg); font-weight: 500; }
       .viewer-mode button:focus-visible, .preview-state button:focus-visible, a:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 1px; }
       pi-web-files-code-viewer { flex: 1 1 auto; min-height: 0; }
       .markdown-preview { flex: 1 1 auto; min-height: 0; box-sizing: border-box; overflow: auto; padding: 16px; }
-      .preview-note { flex: 0 0 auto; margin: 0; border-bottom: 1px solid var(--pi-border-muted); background: var(--pi-surface); color: var(--pi-muted); padding: 7px 10px; font-size: 12px; }
+      .preview-note { flex: 0 0 auto; margin: 0; border-bottom: 1px solid var(--pi-border-muted); background: var(--pi-surface); color: var(--pi-muted); padding: 7px 10px; font-size: 12px; line-height: 16px; }
       .image-preview { flex: 1 1 auto; min-height: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 16px; }
-      .image-preview img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; border: 1px solid var(--pi-border-muted); border-radius: 8px; background-color: var(--pi-surface); background-image: linear-gradient(45deg, color-mix(in srgb, var(--pi-border-muted) 45%, transparent) 25%, transparent 25%), linear-gradient(-45deg, color-mix(in srgb, var(--pi-border-muted) 45%, transparent) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--pi-border-muted) 45%, transparent) 75%), linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--pi-border-muted) 45%, transparent) 75%); background-position: 0 0, 0 8px, 8px -8px, -8px 0; background-size: 16px 16px; box-shadow: 0 8px 24px var(--pi-shadow-soft); }
+      .image-preview img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; border: 0; border-radius: 8px; background-color: var(--pi-surface); background-image: linear-gradient(45deg, color-mix(in srgb, var(--pi-border-muted) 45%, transparent) 25%, transparent 25%), linear-gradient(-45deg, color-mix(in srgb, var(--pi-border-muted) 45%, transparent) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--pi-border-muted) 45%, transparent) 75%), linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--pi-border-muted) 45%, transparent) 75%); background-position: 0 0, 0 8px, 8px -8px, -8px 0; background-size: 16px 16px; }
       .file-frame-preview { flex: 1 1 auto; min-height: 0; width: 100%; border: none; background: var(--pi-surface); }
       .viewer-status { box-sizing: border-box; margin: auto; max-width: 100%; color: var(--pi-muted); padding: 18px; text-align: center; overflow-wrap: anywhere; }
       .preview-state { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; box-sizing: border-box; padding: 24px; color: var(--pi-muted); text-align: center; }
       .preview-state strong { color: var(--pi-text); }
       .preview-state p { margin: 0; }
-      .download-link { display: inline-block; padding: 8px 16px; font-size: 13px; }
+      .download-link { padding: 8px 16px; font-size: 13px; background: var(--pi-surface); }
+      @media (max-width: 640px), (pointer: coarse) {
+        .viewer-mode button, .viewer-action, .download-link, .preview-state button, select { min-height: 44px; }
+      }
       @media (max-width: 640px) {
         .viewer-header { align-items: flex-start; flex-direction: column; }
         .viewer-actions { width: 100%; flex-wrap: wrap; }
@@ -463,17 +466,17 @@ function formatScaledFileSize(value: number): string {
 function formattedTextStyles(): ReturnType<typeof css> {
   return css`
   :host { display: block; }
-  .formatted { white-space: normal; overflow-wrap: anywhere; line-height: 1.45; text-align: start; unicode-bidi: plaintext; }
-  p, ul, ol, pre, blockquote, .table-scroll { margin: 0 0 10px; }
+  .formatted { white-space: normal; overflow-wrap: anywhere; font-size: 14px; line-height: 20px; text-align: start; unicode-bidi: plaintext; }
+  p, ul, ol, pre, blockquote, .table-scroll { margin: 0 0 8px; }
   :is(p, ul, ol, pre, blockquote, .table-scroll):last-child { margin-bottom: 0; }
   ul, ol { padding-left: 22px; }
   li + li { margin-top: 3px; }
-  code { border: 1px solid var(--pi-border); border-radius: 4px; background: var(--pi-bg); padding: 1px 4px; font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; direction: ltr; text-align: left; unicode-bidi: isolate; }
-  pre { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); padding: 10px; overflow-x: auto; overflow-y: hidden; direction: ltr; text-align: left; unicode-bidi: isolate; }
+  code { border: 0; border-radius: 4px; background: var(--pi-surface); padding: 1px 4px; font: 12px/1.46 var(--pi-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); direction: ltr; text-align: left; unicode-bidi: isolate; }
+  pre { border: 0; border-radius: 8px; background: var(--pi-surface); padding: 10px; overflow-x: auto; overflow-y: hidden; direction: ltr; text-align: left; unicode-bidi: isolate; }
   pre code { border: 0; padding: 0; background: transparent; }
   blockquote { border-left: 3px solid var(--pi-border); padding-left: 10px; color: var(--pi-muted); }
   a { color: var(--pi-accent); }
-  h1, h2, h3, h4 { margin: 14px 0 8px; line-height: 1.2; }
+  h1, h2, h3, h4 { margin: 14px 0 8px; font-weight: 500; line-height: 1.3; }
   h1:first-child, h2:first-child, h3:first-child, h4:first-child { margin-top: 0; }
   h1 { font-size: 20px; }
   h2 { font-size: 17px; }

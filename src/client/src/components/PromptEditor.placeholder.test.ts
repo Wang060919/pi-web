@@ -23,7 +23,7 @@ it("keeps the empty prompt hint out of editable text and restores it after clear
     expect(view.contentDOM.textContent).toBe("");
     const hint = view.contentDOM.querySelector(".prompt-placeholder");
     expect(hint?.getAttribute("data-placeholder")).toBe(view.contentDOM.getAttribute("aria-placeholder"));
-    expect(hint?.getAttribute("data-placeholder")).toContain("# for models");
+    expect(hint?.getAttribute("data-placeholder")).toBe("Message pi…");
     expect(hint?.closest(".cm-placeholder")?.getAttribute("aria-hidden")).toBe("true");
   };
   assertEmptyHint();

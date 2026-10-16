@@ -282,31 +282,37 @@ function taskFromConfigState(state: ConfigState | undefined, taskId: string | nu
 function taskStyles(): string {
   return `
     <style>
-      :host { display: contents; }
-      .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--pi-border-muted); }
+      :host { display: contents; color: var(--pi-text); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+      .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 0; }
+      .toolbar strong, .task-copy > strong { font-weight: 500; }
       .toolbar-tasks { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
       .viewer { box-sizing: border-box; min-height: 0; overflow: auto; padding: 12px; }
       .tasks-viewer { display: grid; align-content: start; gap: 12px; }
       .tasks { display: grid; gap: 14px; }
       .task-group { display: grid; gap: 10px; }
-      .task-group h3 { margin: 4px 0 0; color: var(--pi-text-secondary); font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
-      .task-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; border: 1px solid var(--pi-border); border-radius: 10px; background: var(--pi-surface); padding: 12px; }
+      .task-group h3 { margin: 4px 0 0; color: var(--pi-text-secondary); font-size: 12px; line-height: 16px; font-weight: 500; }
+      .task-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; border: 0; border-radius: 10px; background: var(--pi-surface); padding: 12px; }
       .task-copy { display: grid; min-width: 0; gap: 5px; }
       .task-copy span, .muted { color: var(--pi-muted); }
-      code, pre { border: 1px solid var(--pi-border-muted); border-radius: 6px; background: var(--pi-bg); color: var(--pi-text-secondary); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      code, pre { border: 0; border-radius: 6px; background: var(--pi-bg); color: var(--pi-text-secondary); font: 12px/1.46 var(--pi-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); }
       code { overflow: auto; padding: 5px 7px; white-space: nowrap; }
       pre { margin: 8px 0 0; overflow: auto; padding: 8px; white-space: pre-wrap; }
-      button { border: 1px solid var(--pi-accent-border); border-radius: 7px; background: var(--pi-accent); color: var(--pi-bg); cursor: pointer; padding: 6px 10px; font: inherit; }
-      button.secondary { border-color: var(--pi-border); background: var(--pi-surface); color: var(--pi-text); }
+      button { min-height: 30px; border: 0; border-radius: 6px; background: var(--pi-selection-bg); color: var(--pi-text); cursor: pointer; padding: 6px 10px; font: inherit; }
+      button.secondary { background: transparent; }
+      button:not(:disabled):hover { background: var(--pi-surface-hover); }
+      button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
       button:disabled { cursor: wait; opacity: 0.65; }
-      .empty-state { border: 1px dashed var(--pi-border-muted); border-radius: 8px; color: var(--pi-muted); padding: 12px; }
+      .empty-state { border: 0; border-radius: 8px; color: var(--pi-muted); padding: 12px; }
       .empty-state p { margin: 6px 0 0; }
       .panel-status { margin: 12px 12px 0; }
-      .status { border: 1px solid var(--pi-border); border-radius: 8px; padding: 10px; }
-      .status.info { border-color: var(--pi-accent-border); background: var(--pi-bg-overlay-soft); }
-      .status.success { border-color: var(--pi-success-border); background: var(--pi-success-surface); color: var(--pi-success); }
-      .status.error { border-color: var(--pi-danger); color: var(--pi-danger); }
+      .status { border: 0; border-radius: 8px; padding: 10px; }
+      .status.info { background: var(--pi-surface); }
+      .status.success { border: 1px solid var(--pi-success-border); background: var(--pi-success-surface); color: var(--pi-success); }
+      .status.error { border: 1px solid var(--pi-danger); color: var(--pi-danger); }
       .empty { padding: 16px; color: var(--pi-muted); }
+      @media (max-width: 640px), (pointer: coarse) {
+        button { min-height: 44px; }
+      }
       @media (max-width: 760px) {
         .task-card { grid-template-columns: 1fr; }
         .task-card button { justify-self: start; }

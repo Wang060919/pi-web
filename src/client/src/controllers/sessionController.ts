@@ -1210,16 +1210,28 @@ export class SessionController {
     }
   }
 
-  async setModel(provider: string, modelId: string) {
-    const session = this.getState().selectedSession;
-    if (!session || session.archived === true) return;
-    const machineId = selectedMachineId(this.getState());
+  async setModel(provider: string, modelId: string): Promise<boolean> {
+    const state = this.getState();
+    const session = state.selectedSession;
+    if (!session || session.archived === true || provider === "" || modelId === "") return false;
+    const machineId = selectedMachineId(state);
+    const selectionSeq = this.selectionSeq;
+    const previousProvider = state.status?.model?.provider;
+    const previousModelId = state.status?.model?.id;
     const errorOwner = this.captureSessionErrorOwner(session);
     try {
-      this.applyStatus(await this.api.setModel(session, provider, modelId, machineId));
+      const status = await this.api.setModel(session, provider, modelId, machineId);
+      const currentModel = this.getState().status?.model;
+      const unchangedModel = currentModel?.provider === previousProvider && currentModel?.id === previousModelId;
+      // The status socket may publish this successful switch before HTTP returns.
+      const alreadyAppliedModel = status.model !== undefined && currentModel?.provider === status.model.provider && currentModel?.id === status.model.id;
+      if (!this.isCurrentSessionSelection(session.id, machineId, selectionSeq) || (!unchangedModel && !alreadyAppliedModel)) return false;
+      this.applyStatus(status);
       await this.refreshAvailableThinkingLevels();
+      return true;
     } catch (error) {
       this.reportSessionError(session, machineId, error, errorOwner);
+      return false;
     }
   }
 
@@ -1251,25 +1263,42 @@ export class SessionController {
 
   /** Refresh the available thinking levels for the selected session's model. */
   async refreshAvailableThinkingLevels() {
-    const session = this.getState().selectedSession;
+    const state = this.getState();
+    const session = state.selectedSession;
     if (!session || session.archived === true) {
-      if (this.getState().availableThinkingLevels.length > 0) this.setState({ availableThinkingLevels: [] });
+      if (state.availableThinkingLevels.length > 0) this.setState({ availableThinkingLevels: [] });
       return;
     }
+    const machineId = selectedMachineId(state);
+    const selectionSeq = this.selectionSeq;
+    const provider = state.status?.model?.provider;
+    const modelId = state.status?.model?.id;
     const levels = await this.listThinkingLevels();
-    if (this.getState().selectedSession?.id !== session.id) return;
+    const currentModel = this.getState().status?.model;
+    if (!this.isCurrentSessionSelection(session.id, machineId, selectionSeq)
+      || currentModel?.provider !== provider || currentModel?.id !== modelId) return;
     this.setState({ availableThinkingLevels: levels });
   }
 
-  async setThinkingLevel(level: string) {
-    const session = this.getState().selectedSession;
-    if (!session || session.archived === true) return;
-    const machineId = selectedMachineId(this.getState());
+  async setThinkingLevel(level: string): Promise<boolean> {
+    const state = this.getState();
+    const session = state.selectedSession;
+    if (!session || session.archived === true) return false;
+    const machineId = selectedMachineId(state);
+    const selectionSeq = this.selectionSeq;
+    const provider = state.status?.model?.provider;
+    const modelId = state.status?.model?.id;
     const errorOwner = this.captureSessionErrorOwner(session);
     try {
-      this.applyStatus(await this.api.setThinkingLevel(session, level, machineId));
+      const status = await this.api.setThinkingLevel(session, level, machineId);
+      const currentModel = this.getState().status?.model;
+      if (!this.isCurrentSessionSelection(session.id, machineId, selectionSeq)
+        || currentModel?.provider !== provider || currentModel?.id !== modelId) return false;
+      this.applyStatus(status);
+      return true;
     } catch (error) {
       this.reportSessionError(session, machineId, error, errorOwner);
+      return false;
     }
   }
 

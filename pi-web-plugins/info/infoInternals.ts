@@ -213,13 +213,14 @@ function renderWorkspaceSection(html: HtmlTemplateTag, workspace: Workspace): Te
 export function renderInfoPanel(html: HtmlTemplateTag, context: ApplicationPanelContext): TemplateResult {
   return localizedTemplate("infoInternals.viewer_info_status_flex_auto_min_height.0971f282", html)`
     <style>
-      .viewer.info-status { flex: 1 1 auto; min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; padding: 12px; overflow-y: auto; overflow-x: hidden; }
+      .viewer.info-status { flex: 1 1 auto; min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; padding: 12px; font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); overflow-y: auto; overflow-x: hidden; }
       .viewer.info-status section { flex: 0 0 auto; min-width: 0; display: grid; gap: 8px; align-content: start; }
       .viewer.info-status p { margin: 0; }
-      .info-row { display: grid; grid-template-columns: minmax(90px, auto) minmax(0, 1fr); gap: 3px 10px; border-bottom: 1px solid var(--pi-border-muted); padding: 6px 0; overflow-wrap: anywhere; }
-      .info-row small { grid-column: 1 / -1; color: var(--pi-muted); }
-      .info-component { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; border-bottom: 1px solid var(--pi-border-muted); padding: 6px 0; }
-      .info-component small { grid-column: 1 / -1; color: var(--pi-muted); overflow-wrap: anywhere; }
+      .toolbar strong, .viewer.info-status section > strong, .info-component strong { font-weight: 500; }
+      .info-row { display: grid; grid-template-columns: minmax(90px, auto) minmax(0, 1fr); gap: 3px 10px; border-bottom: 0; padding: 6px 0; overflow-wrap: anywhere; }
+      .info-row small { grid-column: 1 / -1; color: var(--pi-muted); font-size: 12px; line-height: 16px; }
+      .info-component { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; border-bottom: 0; padding: 6px 0; }
+      .info-component small { grid-column: 1 / -1; color: var(--pi-muted); font-size: 12px; line-height: 16px; overflow-wrap: anywhere; }
       .info-health-ok { color: var(--pi-success); }
       .info-health-attention { color: var(--pi-warning); }
     </style>

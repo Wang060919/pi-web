@@ -197,24 +197,34 @@ export class ProjectDialog extends LitElement {
   }
 
   static override styles = css`
-    :host { position: fixed; inset: 0; z-index: 30; color: var(--pi-text); font: 14px system-ui, sans-serif; }
+    :host { position: fixed; inset: 0; z-index: 30; color: var(--pi-text); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     modal-surface { --modal-surface-place-items: start center; --modal-surface-backdrop-padding: min(12dvh, 90px) 0 max(20px, env(safe-area-inset-bottom)); --modal-surface-width: min(720px, calc(100vw - 40px)); --modal-surface-max-height: min(700px, 100%); }
-    header, footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px; border-bottom: 1px solid var(--pi-border); }
-    footer { border-top: 1px solid var(--pi-border); border-bottom: 0; justify-content: end; }
+    header, footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px; border-bottom: 0; }
+    footer { border-top: 0; border-bottom: 0; justify-content: end; }
     .body { display: grid; gap: 12px; padding: 12px; min-height: 0; overflow: auto; }
     label { display: grid; gap: 6px; color: var(--pi-muted); }
-    input[type="text"], input:not([type]) { box-sizing: border-box; width: 100%; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); padding: 9px; font: var(--pi-control-font-size, 16px) var(--pi-control-monospace-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); }
+    input[type="text"], input:not([type]) { box-sizing: border-box; width: 100%; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); padding: 9px; font: var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-monospace-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); }
     .check { display: flex; grid-template-columns: auto 1fr; align-items: center; color: var(--pi-text); }
-    .suggestions { min-height: 90px; max-height: 320px; overflow: auto; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); }
-    .suggestions button { display: block; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 0; border-bottom: 1px solid var(--pi-border); border-radius: 0; background: transparent; color: var(--pi-text); padding: 8px 10px; text-align: left; font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .suggestions { min-height: 90px; max-height: 320px; overflow: auto; border: 0; border-radius: 8px; background: var(--pi-surface); padding: 4px; }
+    .suggestions button { display: block; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 0; border-bottom: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 8px 10px; text-align: left; font: 12px/17.5px var(--pi-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); }
     .suggestions button.selected, .suggestions button:hover { background: var(--pi-selection-bg); }
     .hint { padding: 12px; color: var(--pi-muted); }
     .trust-error { color: var(--pi-danger, #c0392b); }
-    .trust-hint { color: var(--pi-muted); line-height: 1.3; }
+    .trust-hint { color: var(--pi-muted); font-size: 12px; line-height: 16px; }
     .trust-hint a { color: var(--pi-accent); }
-    button { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); padding: 7px 9px; cursor: pointer; }
-    header button { border: 0; background: transparent; color: var(--pi-muted); font-size: 22px; padding: 0 8px; }
-    .primary { border-color: var(--pi-success-border); background: var(--pi-success-border); }
+    button { border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 7px 9px; font: inherit; cursor: pointer; }
+    header button { min-width: 30px; min-height: 30px; line-height: 20px; border: 0; background: transparent; color: var(--pi-muted); font-size: 22px; padding: 0 8px; }
+    .primary { background: var(--pi-selection-bg); font-weight: 500; }
     button:disabled { opacity: .5; cursor: not-allowed; }
+    button:not(:disabled):hover { background: var(--pi-surface-hover); }
+    button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
+    strong { font-weight: 500; }
+    small { font-size: 12px; line-height: 16px; }
+    @media (max-width: 680px), (pointer: coarse) {
+      button { min-height: 44px; }
+      header button { min-width: 44px; }
+    }
+    header strong { font-size: 14px; line-height: 20px; }
+    input:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 1px; }
   `;
 }

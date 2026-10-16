@@ -526,12 +526,13 @@ function renderErrorState(message: string, detail: string): string {
 function relaysStyles(): string {
   return `
     <style>
-      :host { display: contents; }
+      :host { display: contents; color: var(--pi-text); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
       /* Toolbar and tab strip are panel chrome: they must never flex-shrink
          (the app container is a fixed-height flex column; with shrink enabled
          the viewer's huge content basis starves them down to a sliver once a
          tall document renders). The viewer absorbs all shrinking instead. */
-      .toolbar { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--pi-border-muted); }
+      .toolbar { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 0; }
+      .toolbar strong { font-weight: 500; }
       .toolbar[hidden], .document-tabs[hidden] { display: none; }
       .toolbar-actions { display: inline-flex; align-items: center; flex-wrap: nowrap; justify-content: flex-end; gap: 8px; min-width: 0; }
       .relay-name { min-width: 0; color: var(--pi-text-secondary); overflow-wrap: anywhere; }
@@ -542,39 +543,38 @@ function relaysStyles(): string {
       /* Grid children default to min-width: auto; without these caps a wide code
          block or table would silently stretch the whole viewer track. */
       .viewer > * { box-sizing: border-box; min-width: 0; max-width: 100%; }
-      button, select { border: 1px solid var(--pi-border); border-radius: 7px; background: var(--pi-surface); color: var(--pi-text); font: inherit; }
-      button { cursor: pointer; padding: 6px 10px; }
+      button, select { border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); font: inherit; }
+      button { min-height: 30px; cursor: pointer; padding: 6px 10px; }
+      button:not(:disabled):hover { background: var(--pi-surface-hover); }
+      button:focus-visible, select:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
       button.icon-button { flex: 0 0 auto; display: inline-grid; place-items: center; width: 30px; height: 30px; padding: 0; }
       button.icon-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
-      select { min-width: 0; max-width: 240px; padding: 5px 6px; }
+      select { min-width: 0; max-width: 240px; border: 1px solid var(--pi-border); background: var(--pi-surface); padding: 5px 6px; font: var(--pi-control-font-size, 16px)/1.42857 var(--pi-font-family, system-ui, sans-serif); }
       .document-tab { flex: 0 0 auto; white-space: nowrap; font-size: 12px; padding: 4px 10px; }
-      .document-tab.active { border-color: var(--pi-accent-border); background: var(--pi-accent); color: var(--pi-bg); }
-      /* An expanded folder wraps its chip and children in one rounded group so
-         nested tabs read as contained by their folder; nested groups stack.
-         No inner padding: the wrapper's border lines sit flush on the button
-         row (a continuous edge), and the -1px vertical margins cancel the
-         border's height so expanding never grows the strip or its neighbors. */
-      .directory-group { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; min-width: 0; border: 1px solid var(--pi-border-muted); border-radius: 10px; background: var(--pi-bg-overlay-soft); padding: 0; margin: -1px 0; }
+      .document-tab.active, .document-tab.active:not(:disabled):hover { background: var(--pi-selection-bg); color: var(--pi-text); font-weight: 500; }
+      /* A neutral surface groups an expanded folder and its children without
+         adding another outline around nested document tabs. */
+      .directory-group { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; min-width: 0; border: 0; border-radius: 8px; background: var(--pi-surface); padding: 0; margin: 0; }
       /* Folder chips interleave with file tabs; the chevron rotates while expanded. */
       .directory-tab { display: inline-flex; align-items: center; gap: 5px; }
       .directory-tab .chevron { flex: 0 0 auto; width: 9px; height: 9px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.12s ease; }
       .directory-tab[aria-expanded="true"] .chevron { transform: rotate(90deg); }
       /* The selection survives a folder collapse: the nearest collapsed ancestor
          highlights instead, without taking the fill reserved for the open document. */
-      .directory-tab.contains-active { border-color: var(--pi-accent-border); color: var(--pi-accent); }
-      .directory-tab.contains-active::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--pi-accent); }
-      code, pre { border: 1px solid var(--pi-border-muted); border-radius: 6px; background: var(--pi-bg); color: var(--pi-text-secondary); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .directory-tab.contains-active { color: var(--pi-text); font-weight: 500; }
+      .directory-tab.contains-active::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--pi-text-secondary); }
+      code, pre { border: 0; border-radius: 6px; background: var(--pi-surface); color: var(--pi-text-secondary); font: 12px/1.46 var(--pi-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); }
       code { padding: 2px 5px; }
       pre { margin: 0; overflow: auto; padding: 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
-      .document.markdown { line-height: 1.5; overflow-wrap: anywhere; }
-      .document.markdown p, .document.markdown ul, .document.markdown ol, .document.markdown pre, .document.markdown blockquote, .document.markdown .table-scroll { margin: 0 0 10px; }
+      .document.markdown { font-size: 14px; line-height: 20px; overflow-wrap: anywhere; }
+      .document.markdown p, .document.markdown ul, .document.markdown ol, .document.markdown pre, .document.markdown blockquote, .document.markdown .table-scroll { margin: 0 0 8px; }
       .document.markdown > :last-child { margin-bottom: 0; }
-      .document.markdown h1, .document.markdown h2, .document.markdown h3, .document.markdown h4 { line-height: 1.25; margin: 14px 0 8px; }
+      .document.markdown h1, .document.markdown h2, .document.markdown h3, .document.markdown h4 { font-weight: 500; line-height: 1.3; margin: 14px 0 8px; }
       .document.markdown h1:first-child, .document.markdown h2:first-child, .document.markdown h3:first-child, .document.markdown h4:first-child { margin-top: 0; }
-      .document.markdown h1 { font-size: 18px; }
-      .document.markdown h2 { font-size: 16px; }
-      .document.markdown h3 { font-size: 14px; }
-      .document.markdown h4 { font-size: 13px; }
+      .document.markdown h1 { font-size: 20px; }
+      .document.markdown h2 { font-size: 17px; }
+      .document.markdown h3 { font-size: 15px; }
+      .document.markdown h4 { font-size: 14px; }
       .document.markdown ul, .document.markdown ol { padding-left: 22px; }
       .document.markdown li + li { margin-top: 3px; }
       .document.markdown pre { white-space: pre; overflow-wrap: normal; }
@@ -589,12 +589,16 @@ function relaysStyles(): string {
       .document.markdown th, .document.markdown td { border: 1px solid var(--pi-border-muted); padding: 4px 8px; }
       .status pre { margin-top: 8px; }
       .muted { color: var(--pi-muted); }
-      .empty-state { border: 1px dashed var(--pi-border-muted); border-radius: 8px; color: var(--pi-muted); padding: 12px; }
+      .empty-state { border: 0; border-radius: 8px; color: var(--pi-muted); padding: 12px; }
       .empty-state p { margin: 6px 0 0; }
-      .status { border: 1px solid var(--pi-border); border-radius: 8px; padding: 10px; }
-      .status.info { border-color: var(--pi-accent-border); background: var(--pi-bg-overlay-soft); }
-      .status.error { border-color: var(--pi-danger); color: var(--pi-danger); }
+      .status { border: 0; border-radius: 8px; padding: 10px; }
+      .status.info { background: var(--pi-surface); }
+      .status.error { border: 1px solid var(--pi-danger); color: var(--pi-danger); }
       .empty { padding: 16px; color: var(--pi-muted); }
+      @media (max-width: 640px), (pointer: coarse) {
+        button, select { min-height: 44px; }
+        button.icon-button { width: 44px; height: 44px; }
+      }
     </style>
   `;
 }

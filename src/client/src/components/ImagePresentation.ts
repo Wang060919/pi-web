@@ -75,9 +75,10 @@ export class ImagePresentation extends LitElement {
   static override styles = css`
     :host { display: block; max-width: 100%; min-width: 0; }
     .frame { max-width: 100%; }
-    button { font: inherit; color: inherit; background: var(--pi-surface); border: 1px solid var(--pi-border, #888); border-radius: 4px; padding: .3em .65em; cursor: pointer; }
+    button { font: inherit; color: inherit; background: var(--pi-surface); border: 0; border-radius: 8px; padding: .3em .65em; cursor: pointer; }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
-    .placeholder { box-sizing: border-box; display: grid; align-content: center; justify-items: center; gap: .5em; width: 320px; max-width: 100%; min-height: 110px; padding: 1em; border: 1px dashed var(--pi-border, #888); border-radius: 4px; background: var(--pi-surface); text-align: center; }
+    .placeholder { box-sizing: border-box; display: grid; align-content: center; justify-items: center; gap: .5em; width: 320px; max-width: 100%; min-height: 110px; padding: 1em; border: 0; border-radius: 8px; background: var(--pi-surface); text-align: center; }
+    .placeholder:not(:disabled):hover { background: var(--pi-surface-hover); }
     .placeholder:disabled { cursor: default; }
     code { display: block; max-width: 100%; margin: 0; overflow-wrap: anywhere; color: var(--pi-text-secondary); font-size: .85em; }
     .image-button { display: block; max-width: 100%; padding: 0; border: 0; background: transparent; cursor: zoom-in; }

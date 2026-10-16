@@ -72,3 +72,37 @@ it("leaves explicit new-tab links native", async () => {
   expect(dispatchClick(view, anchor)).toBe(false);
   expect(listener).not.toHaveBeenCalled();
 });
+
+it("offers explicit assistant file references as cards through the existing preview event", async () => {
+  const { view } = await setup("output/report%20one.md");
+  expect(view.renderRoot.querySelector(".file-cards")).toBeNull();
+  view.fileCards = true;
+  await view.updateComplete;
+  const card = view.renderRoot.querySelector<HTMLAnchorElement>(".file-card");
+  if (card === null) throw new Error("File card missing");
+  expect(card.textContent).toContain("report one.md");
+  expect(card.textContent).toContain("MD");
+  expect(new URL(card.href).searchParams.get("path")).toBe("output/report one.md");
+  const open = vi.fn((event: Event) => { event.preventDefault(); });
+  view.addEventListener("workspace-file-open", open);
+  expect(dispatchClick(view, card)).toBe(true);
+  expect(open.mock.calls[0]?.[0]).toMatchObject({ detail: { ...view.workspaceContext, path: "output/report one.md" } });
+
+  view.workspaceContext = undefined;
+  await view.updateComplete;
+  expect(view.renderRoot.querySelector(".file-cards")).toBeNull();
+});
+
+it("keeps a card's download fallback and modified clicks native", async () => {
+  const { view } = await setup();
+  view.fileCards = true;
+  await view.updateComplete;
+  const card = view.renderRoot.querySelector<HTMLAnchorElement>(".file-card");
+  if (card === null) throw new Error("File card missing");
+  expect(dispatchClick(view, card)).toBe(false);
+  expect(card.href).toContain("download=1");
+  const open = vi.fn();
+  view.addEventListener("workspace-file-open", open);
+  expect(dispatchClick(view, card, { ctrlKey: true })).toBe(false);
+  expect(open).not.toHaveBeenCalled();
+});

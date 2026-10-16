@@ -91,6 +91,46 @@ describe("composable normal chat", () => {
     expect(localStorage.getItem(groupStorageKey(view.sessionId))).not.toBeNull();
   });
 
+  it("keeps failures visible in a collapsed process summary and removes repeated assistant labels", async () => {
+    const view = await mount();
+    view.messages = [
+      { entryId: "thought", role: "assistant", parts: [{ type: "thinking", text: "Find the file" }] },
+      { entryId: "failed-tool", role: "tool", parts: [{ type: "toolExecution", toolName: "read", summary: "missing.ts", status: "error", resultText: "File not found" }] },
+      { entryId: "pending-tool", role: "tool", parts: [{ type: "toolExecution", toolName: "bash", summary: "Interrupted check", status: "pending" }] },
+      { entryId: "reply", role: "assistant", parts: [{ type: "text", text: "The file was not found" }] },
+    ];
+    await view.updateComplete;
+    const group = required(view.renderRoot, ".event-group");
+    if (!(group instanceof HTMLDetailsElement)) throw new Error("Expected native details");
+    expect(group.open).toBe(false);
+    expect(required(group, "summary .group-summary-text").textContent).toBe("2 tool calls · 1 thinking step");
+    expect(required(group, "summary .group-state.error").textContent).toBe("1 failed");
+    expect(required(group, "summary .group-state.unfinished").textContent).toBe("1 unfinished");
+    expect(group.classList.contains("has-errors")).toBe(true);
+    const header = required(group, ".group-msg.assistant > .msg-header");
+    expect(header.querySelector(".label")).toBeNull();
+    expect(header.querySelector(".msg-meta")).not.toBeNull();
+    expect(required(view.renderRoot, "article.msg.assistant > .msg-header .label").textContent).toBe("assistant");
+  });
+
+  it("names running work without reopening a manually collapsed live process", async () => {
+    const view = await mount();
+    view.activity = { sessionId: view.sessionId, phase: "active", label: "Running", at: "2026-10-16T00:00:00.000Z" };
+    view.messages = [{ entryId: "running-tool", role: "tool", parts: [{ type: "toolExecution", toolName: "bash", summary: "Run checks", status: "running" }] }];
+    await view.updateComplete;
+    const group = required(view.renderRoot, ".event-group");
+    if (!(group instanceof HTMLDetailsElement)) throw new Error("Expected native details");
+    expect(group.open).toBe(true);
+    expect(required(group, "summary .label").textContent).toBe("Running");
+    expect(required(group, "summary .group-running-tool").textContent).toBe("bash");
+    group.open = false;
+    group.dispatchEvent(new Event("toggle"));
+    view.messages = [{ entryId: "running-tool", role: "tool", parts: [{ type: "toolExecution", toolName: "bash", summary: "Run updated checks", status: "running" }] }];
+    await view.updateComplete;
+    expect(required(view.renderRoot, ".event-group")).toBe(group);
+    expect(group.open).toBe(false);
+  });
+
   it.each([true, false])("follows native group and nested toggles without rerendering (remember choices: %s)", async (rememberDisclosures) => {
     const view = await mount({ ...DEFAULT_CHAT_BEHAVIORS, rememberDisclosures });
     const { metrics, write } = controlledChatViewport(view);

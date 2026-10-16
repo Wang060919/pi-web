@@ -4,9 +4,10 @@ import { customElement, property, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import type { CommandOption, SessionModelCatalogEntry, SessionModelScopeMode } from "../api";
 import { keyboardEventOriginatesFromNativeActivationControl } from "./keyboardEventTarget";
-import "./ModalSurface";
+import { ModalSurface } from "./ModalSurface";
 import { defaultPin, defaultPinHelp, defaultPinStyles } from "./DefaultPin";
 import { scrollWhenSelected } from "./scrollWhenSelected";
+import { ThinkingPicker } from "./ThinkingPicker";
 
 /**
  * Scope the model dialog lists: `enabled` is the session's pickable model list
@@ -101,6 +102,10 @@ interface ModelPickerRow {
   entry?: SessionModelCatalogEntry | undefined;
 }
 
+type ModelPickHandler = ((value: string) => void) | ((value: string) => Promise<boolean>);
+
+export type ModelThinkingControls = Pick<ThinkingPicker, "options" | "selectedValue" | "defaultValue" | "defaultsLoading" | "onPick" | "onSetDefault">;
+
 /**
  * The session model selection dialog. Enabled mode keeps the classic
  * searchable pick list; All models mode lists the machine's full catalog with
@@ -117,8 +122,11 @@ export class ModelPicker extends LitElement {
   /** All-mode rows, including enabled state and (on current servers) each model's natural catalog index. Workspace overrides mark rows `editable: false`. */
   @property({ attribute: false }) catalog: SessionModelCatalogEntry[] = [];
   @property({ attribute: false }) selectedValue?: string;
-  @property({ attribute: false }) onPick?: (value: string) => void;
+  @property({ attribute: false }) onPick?: ModelPickHandler;
   @property({ attribute: false }) onCancel?: () => void;
+  @property({ type: Boolean }) popoverMode = false;
+  @property({ attribute: false }) anchor?: HTMLElement | undefined;
+  @property({ attribute: false }) thinking?: ModelThinkingControls;
   /**
    * Requests a change to one model's membership in pi's enabled-models scope.
    * Resolves once the host has applied the fresh catalog (or reported the
@@ -133,6 +141,10 @@ export class ModelPicker extends LitElement {
   @property({ attribute: false }) onSetDefault?: (value: string) => Promise<unknown>;
   @property({ type: Boolean }) defaultsLoading = false;
   @state() private defaultPending = false;
+  @state() private pickPending = false;
+  @state() private pickError: string | undefined = undefined;
+  @state() private defaultError: string | undefined = undefined;
+  @state() private thinkingPending = false;
   @state() private mode: ModelPickerMode = "enabled";
   @state() private selectedIndex = 0;
   @state() private query = "";
@@ -143,7 +155,20 @@ export class ModelPicker extends LitElement {
   private catalogScrollTopBeforeUpdate: number | undefined;
   private focusAfterToggle: HTMLElement | undefined;
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    window.addEventListener("resize", this.updateAnchorPosition);
+    window.addEventListener("scroll", this.updateAnchorPosition, true);
+  }
+
+  override disconnectedCallback(): void {
+    window.removeEventListener("resize", this.updateAnchorPosition);
+    window.removeEventListener("scroll", this.updateAnchorPosition, true);
+    super.disconnectedCallback();
+  }
+
   override render() {
+    if (this.isCompact) return this.renderPopover();
     const rows = this.visibleRows();
     return localizedTemplate("ModelPicker.template.3fc1af0e", html)`
       <modal-surface
@@ -187,6 +212,7 @@ export class ModelPicker extends LitElement {
 
   override firstUpdated() {
     this.anchorSelectionToSelectedValue();
+    this.updateAnchorPosition();
   }
 
   protected override willUpdate(changed: PropertyValues<this>): void {
@@ -210,6 +236,7 @@ export class ModelPicker extends LitElement {
   }
 
   protected override updated(changed: PropertyValues<this>): void {
+    this.updateAnchorPosition();
     if (!changed.has("catalog") || this.catalogScrollTopBeforeUpdate === undefined) return;
     const options = this.shadowRoot?.querySelector<HTMLElement>(".options");
     if (options !== null && options !== undefined) options.scrollTop = this.catalogScrollTopBeforeUpdate;
@@ -218,6 +245,87 @@ export class ModelPicker extends LitElement {
 
   private get membershipChangePending(): boolean {
     return this.toggleAllPending || this.pendingToggles.size > 0;
+  }
+
+  private get isCompact(): boolean {
+    return this.popoverMode && this.mode === "enabled";
+  }
+
+  private get popoverBusy(): boolean {
+    return this.isCompact && (this.pickPending || this.defaultPending || this.thinkingPending);
+  }
+
+  private renderPopover(): TemplateResult {
+    const options = this.popoverOptions();
+    return html`
+      <modal-surface
+        class="popover-surface"
+        .onClose=${() => this.onCancel?.()}
+        .busy=${this.popoverBusy}
+        .initialFocus=${"input.search"}
+        .label=${this.title}
+        @keydown=${(event: KeyboardEvent) => { this.handleKeyDown(event); }}
+      >
+        <header class="popover-header">
+          <strong>${this.title}</strong>
+          <button class="popover-close" type="button" aria-label=${t("ui.modelPicker.close")} ?disabled=${this.popoverBusy} @click=${() => this.onCancel?.()}>×</button>
+        </header>
+        <div class="search-row">
+          <input class="search" aria-label=${t("ui.modelPicker.search")} placeholder=${t("ui.modelPicker.search")} .value=${this.query} ?disabled=${this.popoverBusy} @input=${(event: Event) => { this.handleSearchInput(event); }} @keydown=${(event: KeyboardEvent) => { this.handleSearchKeyDown(event); }}>
+        </div>
+        ${this.onSetDefault === undefined ? nothing : html`<p class="popover-default-help">${t("ui.modelPicker.defaultHelp")}</p>`}
+        <div class="popover-content">
+        <div class="options popover-options" role="region" aria-label=${t("ModelPicker.enabled_models.978d2308")} tabindex="0" aria-busy=${this.popoverBusy ? "true" : "false"}>
+          ${options.map((option, index) => {
+            const current = option.value === this.selectedValue;
+            const catalogEntry = this.catalog.find((entry) => modelCatalogEntryValue(entry) === option.value);
+            return html`
+              <div class="popover-row ${index === this.selectedIndex ? "selected" : ""}" data-model-value=${option.value} ${scrollWhenSelected(index === this.selectedIndex, option.value)}>
+                <button class="model-choice" type="button" ?disabled=${this.popoverBusy || this.membershipChangePending}
+                  title=${option.value} aria-current=${current ? "true" : nothing}
+                  @focus=${() => { this.selectedIndex = index; }} @click=${() => { this.requestPick(option.value); }}>
+                  <span class="model-copy"><strong>${option.label}</strong>${option.description === undefined || option.description === "" ? nothing : html`<small>${option.description}</small>`}</span>
+                  ${current ? html`<span class="current-check" role="img" aria-label=${t("ui.modelPicker.current")}>✓</span>` : html`<span class="current-check" aria-hidden="true"></span>`}
+                </button>
+                ${this.renderDefaultPin(option.value, option.label, catalogEntry?.enabled !== false)}
+              </div>
+            `;
+          })}
+          ${options.length === 0 ? html`<div class="empty">${t("ui.modelPicker.empty")}</div>` : nothing}
+        </div>
+        ${this.pickPending || this.defaultPending ? html`<p class="popover-message" role="status">${t(this.pickPending ? "ui.modelPicker.saving" : "ui.modelPicker.savingDefault")}</p>` : nothing}
+        ${this.pickError === undefined ? nothing : html`<p class="popover-message error" role="alert">${this.pickError}</p>`}
+        ${this.defaultError === undefined ? nothing : html`<p class="popover-message error" role="alert">${this.defaultError}</p>`}
+        ${this.thinking === undefined ? nothing : html`
+          <thinking-picker
+            .embedded=${true}
+            .disabled=${this.pickPending || this.defaultPending || this.membershipChangePending}
+            .options=${this.thinking.options}
+            .selectedValue=${this.thinking.selectedValue}
+            .defaultValue=${this.thinking.defaultValue}
+            .defaultsLoading=${this.thinking.defaultsLoading}
+            .onPick=${this.thinking.onPick}
+            .onSetDefault=${this.thinking.onSetDefault}
+            .onBusyChange=${(busy: boolean) => { this.thinkingPending = busy; }}
+          ></thinking-picker>
+        `}
+        </div>
+        <button class="manage-models" type="button" ?disabled=${this.popoverBusy || this.membershipChangePending} @click=${() => { this.selectMode("all"); }}>${t("ui.modelPicker.manage")}<span aria-hidden="true">›</span></button>
+      </modal-surface>
+    `;
+  }
+
+  private popoverOptions(): CommandOption[] {
+    const options = this.options.map((option) => {
+      const entry = this.catalog.find((row) => modelCatalogEntryValue(row) === option.value);
+      const separator = option.value.indexOf("/");
+      return {
+        ...option,
+        label: entry?.name ?? entry?.id ?? (separator < 0 ? option.label : option.value.slice(separator + 1)),
+        description: entry?.provider ?? option.description ?? (separator < 0 ? "" : option.value.slice(0, separator)),
+      };
+    });
+    return filterModelOptions(options, this.query);
   }
 
   private get modelScopeEditable(): boolean {
@@ -261,7 +369,7 @@ export class ModelPicker extends LitElement {
         aria-current=${index === this.selectedIndex ? "true" : nothing}
         ${scrollWhenSelected(index === this.selectedIndex, option.value)}
         @focus=${() => { this.selectedIndex = index; }}
-        @click=${() => this.onPick?.(option.value)}
+        @click=${() => { this.requestPick(option.value); }}
       >
         <span>${option.label}</span>
         ${option.description !== undefined && option.description !== "" ? html`<small>${option.description}</small>` : null}
@@ -272,21 +380,29 @@ export class ModelPicker extends LitElement {
 
   private renderDefaultPin(value: string, label: string, enabled: boolean) {
     return this.onSetDefault ? defaultPin(label, value === this.defaultValue,
-      !enabled || this.defaultsLoading || this.defaultPending || this.membershipChangePending,
+      !enabled || this.defaultsLoading || this.defaultPending || this.membershipChangePending || this.popoverBusy,
       () => { void this.setDefault(value); }) : nothing;
   }
 
   private async setDefault(value: string): Promise<void> {
-    if (!this.onSetDefault || this.defaultsLoading || this.defaultPending || this.membershipChangePending) return;
+    if (!this.onSetDefault || this.defaultsLoading || this.defaultPending || this.membershipChangePending || this.popoverBusy) return;
     if (this.catalog.find((entry) => modelCatalogEntryValue(entry) === value)?.enabled === false) return;
     this.defaultPending = true;
+    this.defaultError = undefined;
+    const reportInline = this.isCompact;
     try {
-      await this.onSetDefault(value);
+      if (await this.onSetDefault(value) === false && reportInline) this.defaultError = t("ui.modelPicker.defaultFailed");
     } catch (error: unknown) {
       // Hosts own user-facing errors; keep unexpected callback rejections observable.
-      console.warn(t("ModelPicker.failed_to_set_default_model.3d3541ef"), error);
+      if (reportInline) this.defaultError = t("ui.modelPicker.defaultFailed");
+      else console.warn(t("ModelPicker.failed_to_set_default_model.3d3541ef"), error);
     } finally {
       this.defaultPending = false;
+      if (reportInline && this.isConnected) {
+        await this.updateComplete;
+        const surface = this.renderRoot.querySelector("modal-surface");
+        if (surface instanceof ModalSurface) surface.focusDialog();
+      }
     }
   }
 
@@ -334,7 +450,7 @@ export class ModelPicker extends LitElement {
     if (this.mode === "all") {
       return modelCatalogView(this.catalog, this.query, this.catalogOrder).rows.map((entry) => ({ value: modelCatalogEntryValue(entry), entry }));
     }
-    return filterModelOptions(this.options, this.query).map((option) => ({ value: option.value }));
+    return (this.isCompact ? this.popoverOptions() : filterModelOptions(this.options, this.query)).map((option) => ({ value: option.value }));
   }
 
   private anchorSelectionToSelectedValue(): void {
@@ -347,22 +463,38 @@ export class ModelPicker extends LitElement {
   }
 
   private selectMode(mode: ModelPickerMode): void {
-    if (mode === this.mode) return;
+    if (mode === this.mode || this.popoverBusy) return;
+    this.pickError = undefined;
+    this.defaultError = undefined;
     this.mode = mode;
     this.anchorSelectionToSelectedValue();
   }
 
   private handleSearchInput(event: Event): void {
+    if (this.popoverBusy) return;
     if (event.target instanceof HTMLInputElement) {
       this.query = event.target.value;
       this.selectedIndex = 0;
+      this.pickError = undefined;
     }
+  }
+
+  private handleSearchKeyDown(event: KeyboardEvent): void {
+    // Some IMEs identify candidate confirmation only with the legacy 229 code.
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Keep that IME compatibility guard alongside isComposing.
+    if (event.isComposing || event.keyCode === 229) event.stopPropagation();
   }
 
   // Escape and backdrop presses are owned by the modal surface (routed to
   // `onCancel`). Search and list-container keys retain the broadened option
   // navigation idiom, while focused row controls keep their own semantics.
   private handleKeyDown(event: KeyboardEvent) {
+    // The embedded slider owns its arrow keys and native control activation.
+    if (event.composedPath().some((target) => target instanceof ThinkingPicker)) return;
+    if (this.popoverBusy) {
+      if (["ArrowDown", "ArrowUp", "Enter", " "].includes(event.key)) event.preventDefault();
+      return;
+    }
     const focusedCheckbox = event.composedPath().find((target): target is HTMLInputElement => target instanceof HTMLInputElement && target.type === "checkbox");
     if (focusedCheckbox !== undefined) {
       // Browsers do not consistently activate checkboxes with Enter. Support it
@@ -390,7 +522,7 @@ export class ModelPicker extends LitElement {
       event.preventDefault();
       const row = rows[this.selectedIndex];
       if (row?.entry !== undefined) this.requestEnabledToggle(row.entry);
-      else if (row !== undefined) this.onPick?.(row.value);
+      else if (row !== undefined) this.requestPick(row.value);
     } else if (event.key === " " && this.mode === "all") {
       // Space toggles the selected row only when it did not land on an input:
       // a focused checkbox toggles through its own click and the search input
@@ -460,33 +592,112 @@ export class ModelPicker extends LitElement {
     }
   }
 
+  private requestPick(value: string): void {
+    if (this.isCompact) void this.pickPopoverModel(value);
+    else void this.onPick?.(value);
+  }
+
+  private async pickPopoverModel(value: string): Promise<void> {
+    if (this.popoverBusy || this.membershipChangePending || this.onPick === undefined) return;
+    this.pickPending = true;
+    this.pickError = undefined;
+    try {
+      if (await this.onPick(value) === false) this.pickError = t("ui.modelPicker.saveFailed");
+    } catch {
+      this.pickError = t("ui.modelPicker.saveFailed");
+    } finally {
+      this.pickPending = false;
+      if (this.pickError !== undefined && this.isConnected) {
+        await this.updateComplete;
+        const surface = this.renderRoot.querySelector("modal-surface");
+        if (surface instanceof ModalSurface) surface.focusDialog();
+      }
+    }
+  }
+
+  private readonly updateAnchorPosition = (): void => {
+    const anchor = this.anchor;
+    if (!this.isCompact || anchor === undefined || !anchor.isConnected || window.innerWidth <= 640) {
+      this.removeAttribute("anchored");
+      return;
+    }
+    const rect = anchor.getBoundingClientRect();
+    const availableHeight = rect.top - 20;
+    if (availableHeight < 240 || rect.top > window.innerHeight) {
+      this.removeAttribute("anchored");
+      return;
+    }
+    const width = Math.min(320, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12));
+    this.style.setProperty("--model-picker-left", `${String(left)}px`);
+    this.style.setProperty("--model-picker-bottom", `${String(window.innerHeight - rect.top + 8)}px`);
+    this.style.setProperty("--model-picker-height", `${String(availableHeight)}px`);
+    this.setAttribute("anchored", "");
+  };
+
   static override styles = [css`
-    :host { position: fixed; inset: 0; z-index: 10; color: var(--pi-text); font: 14px system-ui, sans-serif; }
+    :host { position: fixed; inset: 0; z-index: 10; color: var(--pi-text); font: 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     modal-surface { --modal-surface-width: min(720px, calc(100vw - 40px)); --modal-surface-max-height: min(640px, calc(100% - 40px)); }
-    header { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--pi-border); }
-    .scope-toggle { display: flex; gap: 4px; margin: 10px 12px 0; padding: 3px; border: 1px solid var(--pi-border); border-radius: 8px; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 0; }
+    .scope-toggle { display: flex; gap: 4px; margin: 10px 12px 0; padding: 3px; border: 0; border-radius: 8px; background: var(--pi-surface); }
     .scope-toggle button { flex: 1; padding: 6px 10px; border-radius: 6px; color: var(--pi-muted); }
     .scope-toggle button[aria-pressed="true"] { background: var(--pi-selection-bg); color: var(--pi-text); }
-    .scope-notice { display: grid; gap: 3px; margin: 10px 12px 0; padding: 8px 10px; border: 1px solid var(--pi-border); border-radius: 8px; color: var(--pi-muted); }
+    .scope-notice { display: grid; gap: 3px; margin: 10px 12px 0; padding: 8px 10px; border: 0; border-radius: 8px; background: var(--pi-surface); color: var(--pi-muted); }
     .scope-notice strong { color: var(--pi-text); }
     .scope-notice code { font: inherit; color: var(--pi-text); }
     .options { min-height: 0; overflow: auto; outline: none; }
-    button { border: 0; background: transparent; color: var(--pi-text); cursor: pointer; }
+    button { border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); font: inherit; cursor: pointer; }
+    button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
+    .scope-toggle button:not([aria-pressed="true"]):not(:disabled):hover, header > button:not(:disabled):hover { background: var(--pi-surface-hover); }
     header button { font-size: 20px; color: var(--pi-muted); }
     .search-row { display: flex; align-items: center; gap: 8px; margin: 10px 12px; }
-    input.search { flex: 1; min-width: 0; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); font: var(--pi-control-font-size, 16px) var(--pi-control-font-family, system-ui, sans-serif); padding: 8px 10px; outline: none; }
+    input.search { flex: 1; min-width: 0; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); font: var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif); padding: 8px 10px; outline: none; }
     input.search:focus { border-color: var(--pi-accent); }
-    .toggle-all { flex: none; padding: 8px 10px; border: 1px solid var(--pi-border); border-radius: 8px; white-space: nowrap; }
+    .toggle-all { flex: none; padding: 8px 10px; border: 0; border-radius: 6px; background: var(--pi-surface); white-space: nowrap; }
     .toggle-all:hover:not(:disabled) { background: var(--pi-selection-bg); }
     .toggle-all:disabled { cursor: default; opacity: 0.55; }
     .scope-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-    .options > button { display: block; width: 100%; padding: 10px 12px; border-bottom: 1px solid var(--pi-border-muted); text-align: left; }
+    .options > button { display: block; width: 100%; padding: 10px 12px; border-bottom: 0; text-align: left; }
     .options > button.selected, .options > button:hover { background: var(--pi-selection-bg); }
-    .catalog-row { display: flex; align-items: center; border-bottom: 1px solid var(--pi-border-muted); }
+    .catalog-row { display: flex; align-items: center; margin: 2px 4px; border-radius: 6px; }
     .catalog-row.selected, .catalog-row:hover { background: var(--pi-selection-bg); }
     .catalog-row input[type="checkbox"] { margin: 0 0 0 12px; accent-color: var(--pi-accent); }
     .catalog-row .membership { flex: 1; min-width: 0; display: block; padding: 10px 12px; text-align: left; }
+    @media (pointer: coarse) { button { min-width: 44px; min-height: 44px; } }
     small { display: block; margin-top: 4px; color: var(--pi-muted); }
     .empty { padding: 24px; color: var(--pi-muted); text-align: center; }
-  `, defaultPinStyles];
+  `, defaultPinStyles, css`
+    .popover-surface { --pi-overlay: transparent; --modal-surface-width: min(320px, calc(100vw - 24px)); --modal-surface-max-height: calc(100dvh - 24px); --modal-surface-backdrop-padding: 12px; --modal-surface-radius: 10px; font-family: var(--pi-font-family, system-ui, sans-serif); }
+    :host([anchored]) .popover-surface { --modal-surface-place-items: end start; --modal-surface-backdrop-padding: 12px 12px var(--model-picker-bottom) var(--model-picker-left); --modal-surface-max-height: var(--model-picker-height); }
+    .popover-header { gap: 12px; padding: 12px 14px 2px; border: 0; }
+    .popover-header strong { font-size: 13px; font-weight: 500; }
+    .popover-close { display: grid; place-items: center; flex: none; width: 28px; height: 28px; padding: 0; border-radius: 6px; }
+    .popover-surface button:disabled { cursor: not-allowed; opacity: .5; }
+    .popover-surface button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
+    .popover-surface .search-row { margin: 8px 12px; }
+    .popover-surface input.search { padding: 8px 10px; border-color: var(--pi-border-muted); border-radius: 9px; background: var(--pi-surface); }
+    .popover-surface input.search:focus { border-color: var(--pi-accent); }
+    .popover-default-help { margin: 0; padding: 0 14px 6px; color: var(--pi-muted); font-size: 11px; line-height: 1.5; }
+    .popover-content { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; overflow-y: auto; }
+    .popover-options { flex: 1 1 auto; min-height: 58px; max-height: 360px; padding: 2px 6px 6px; }
+    thinking-picker { flex: none; border-top: 1px solid var(--pi-border-muted); }
+    .popover-row { display: flex; min-width: 0; align-items: center; margin: 2px 0; border-radius: 9px; }
+    .popover-row.selected, .popover-row:hover { background: var(--pi-selection-bg); }
+    .popover-row .model-choice { display: flex; flex: 1 1 0; min-width: 0; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 9px; font: inherit; text-align: left; }
+    .model-copy { display: block; flex: 1 1 0; min-width: 0; }
+    .model-copy strong { display: block; overflow: hidden; color: var(--pi-text); font-size: 13px; font-weight: 500; line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
+    .model-copy small { margin-top: 2px; overflow: hidden; font-size: 11px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+    .current-check { flex: none; width: 18px; color: var(--pi-accent); font-size: 15px; text-align: center; }
+    .popover-options button.default-pin { width: 32px; height: 32px; margin: 0 6px 0 0; }
+    .popover-options .default-pin svg { width: 16px; height: 16px; }
+    .popover-message { margin: 0; padding: 6px 14px 10px; color: var(--pi-muted); font-size: 12px; line-height: 1.5; }
+    .popover-message.error { color: var(--pi-danger); }
+    .manage-models { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 12px 14px; border-top: 1px solid var(--pi-border-muted); color: var(--pi-muted); font: 12px var(--pi-font-family, system-ui, sans-serif); text-align: left; }
+    .manage-models:not(:disabled):hover, .popover-close:not(:disabled):hover { background: var(--pi-selection-bg); }
+    .manage-models > span { font-size: 18px; line-height: 1; }
+    @media (max-width: 640px) {
+      .popover-surface, :host([anchored]) .popover-surface { --pi-overlay: inherit; --modal-surface-place-items: end stretch; --modal-surface-backdrop-padding: 0; --modal-surface-width: 100%; --modal-surface-max-height: min(560px, calc(100dvh - 12px)); --modal-surface-radius: 16px 16px 0 0; }
+      .manage-models { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+    }
+  `];
 }

@@ -118,23 +118,25 @@ function renderUpdatesPanel(html: HtmlTemplateTag, terminal: WorkspacePanelTermi
   const additional = additionalCommands(status, recommended);
   return localizedTemplate("pi-web-plugin.viewer_updates_status_flex_auto_min_height.4a083b3c", html)`
     <style>
-      .viewer.updates-status { flex: 1 1 auto; min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; padding: 12px; overflow-y: auto; overflow-x: hidden; }
+      .viewer.updates-status { flex: 1 1 auto; min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; padding: 12px; font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); overflow-y: auto; overflow-x: hidden; }
       .viewer.updates-status section { flex: 0 0 auto; min-width: 0; display: grid; gap: 8px; }
-      .updates-message { display: grid; gap: 5px; border: 1px solid var(--pi-border); border-radius: 8px; padding: 10px; background: var(--pi-surface); }
-      .updates-message.warning { border-color: var(--pi-warning-border); background: var(--pi-warning-surface); }
-      .updates-message.error { border-color: var(--pi-danger); }
+      .toolbar strong, .viewer.updates-status strong { font-weight: 500; }
+      .updates-message { display: grid; gap: 5px; border: 0; border-radius: 8px; padding: 10px; background: var(--pi-surface); }
+      .updates-message.warning { border: 1px solid var(--pi-warning-border); background: var(--pi-warning-surface); }
+      .updates-message.error { border: 1px solid var(--pi-danger); }
       .updates-message-title { display: flex; gap: 8px; align-items: baseline; }
-      .updates-message-title span { color: var(--pi-muted); font-size: 12px; text-transform: uppercase; }
-      .updates-version-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; border-bottom: 1px solid var(--pi-border-muted); padding: 6px 0; }
+      .updates-message-title span { color: var(--pi-muted); font-size: 12px; line-height: 16px; }
+      .updates-version-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; border-bottom: 0; padding: 6px 0; }
       .updates-version-row small { grid-column: 1 / -1; color: var(--pi-muted); }
       .updates-command { min-width: 0; display: grid; grid-template-columns: minmax(90px, auto) minmax(0, 1fr) auto; gap: 8px; align-items: center; }
-      .updates-command code { overflow: auto; border: 1px solid var(--pi-border-muted); border-radius: 6px; background: var(--pi-bg); padding: 5px 7px; white-space: nowrap; }
+      .updates-command code { overflow: auto; border: 0; border-radius: 6px; background: var(--pi-bg); padding: 5px 7px; font: 12px/1.46 var(--pi-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); white-space: nowrap; }
       .updates-command-actions { display: inline-flex; gap: 6px; }
-      .updates-command-actions button.primary { border-color: var(--pi-accent-border); color: var(--pi-text-bright); }
-      .updates-recommended { border: 1px solid var(--pi-accent-border); border-radius: 8px; padding: 10px; background: var(--pi-surface); }
+      .updates-command-actions button.primary { border: 0; background: var(--pi-selection-bg); color: var(--pi-text); }
+      .updates-command-actions button.primary:not(:disabled):hover { background: var(--pi-surface-hover); }
+      .updates-recommended { border: 0; border-radius: 8px; padding: 10px; background: var(--pi-surface); }
       .updates-recommended > strong { color: var(--pi-text-bright); }
       .updates-recommended .updates-message { border: none; background: none; padding: 0; }
-      .updates-meta { display: grid; gap: 2px; color: var(--pi-muted); font-size: 12px; }
+      .updates-meta { display: grid; gap: 2px; color: var(--pi-muted); font-size: 12px; line-height: 16px; }
       @media (max-width: 520px) {
         .updates-command { grid-template-columns: minmax(0, 1fr) auto; }
         .updates-command > span { grid-column: 1 / -1; }

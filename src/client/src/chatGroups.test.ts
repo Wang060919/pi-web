@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canonicalEntryActionHeaders, groupChatMessages, summarizeChatGroup, type ChatGroup } from "./chatGroups";
+import { canonicalEntryActionHeaders, groupChatMessages, type ChatGroup } from "./chatGroups";
 import type { ChatLine } from "./components/shared";
 
 const text = (role: ChatLine["role"], value: string): ChatLine => ({ role, parts: [{ type: "text", text: value }] });
@@ -218,18 +218,4 @@ it("keeps question requests top-level and headerless while hiding coalesced resu
   expect(groups.map((group) => group.kind)).toEqual(["group", "message", "message"]);
   expect(groups[1]).toEqual({ kind: "message", index: 1, message: question });
   expect(canonicalEntryActionHeaders(groups).size).toBe(0);
-});
-
-describe("summarizeChatGroup", () => {
-  it("summarizes special event groups", () => {
-    expect(summarizeChatGroup([{ ...text("assistant", "a"), source: "compaction" }])).toBe("1 history compaction summary");
-    expect(summarizeChatGroup([
-      { ...text("assistant", "a"), source: "branch_summary" },
-      { ...text("assistant", "b"), source: "branch_summary" },
-    ])).toBe("2 branch summaries");
-  });
-
-  it("summarizes mixed groups by role counts", () => {
-    expect(summarizeChatGroup([text("tool", "a"), text("system", "b"), text("tool", "c")])).toBe("3 events · 2 tool · 1 system");
-  });
 });

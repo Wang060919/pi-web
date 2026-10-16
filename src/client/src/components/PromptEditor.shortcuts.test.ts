@@ -3,10 +3,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { COMPOSER_SEND_DESKTOP, COMPOSER_SEND_MOBILE } from "../composerShortcuts";
 import { PromptEditor } from "./PromptEditor";
 import { api } from "../api";
+import { clearStagedAttachments, saveStagedAttachments } from "../promptAttachmentStaging";
 
 afterEach(() => {
   document.body.replaceChildren();
   localStorage.clear();
+  clearStagedAttachments("local:composer-attachments");
   vi.restoreAllMocks();
 });
 
@@ -63,7 +65,7 @@ describe("composer send behavior", () => {
     editor.defaultStreamingBehavior = preference;
     editor.canSteer = true;
     await editor.updateComplete;
-    expect([...editor.renderRoot.querySelectorAll<HTMLButtonElement>(".actions button")].map((button) => button.getAttribute("aria-label"))).toEqual(["Queue message", "Steer current response", "Stop current work"]);
+    expect([...editor.renderRoot.querySelectorAll<HTMLButtonElement>(".composer-buttons button")].map((button) => button.getAttribute("aria-label"))).toEqual(["Queue message", "Steer current response", "Stop current work"]);
     const steer = editor.shadowRoot?.querySelector<HTMLButtonElement>(".steer-button");
     steer?.click();
     expect(editor.onSend).toHaveBeenCalledOnce();
@@ -72,7 +74,129 @@ describe("composer send behavior", () => {
     editor.defaultStreamingBehavior = preference === "steer" ? "followUp" : "steer";
     await editor.updateComplete;
     expect(editor.renderRoot.querySelector(".default-send-action")?.getAttribute("aria-label")).toBe(preference === "steer" ? "Queue message" : "Steer current response");
-    expect([...editor.renderRoot.querySelectorAll<HTMLButtonElement>(".actions button")].map((button) => button.getAttribute("aria-label"))).toEqual(["Queue message", "Steer current response", "Stop current work"]);
+    expect([...editor.renderRoot.querySelectorAll<HTMLButtonElement>(".composer-buttons button")].map((button) => button.getAttribute("aria-label"))).toEqual(["Queue message", "Steer current response", "Stop current work"]);
+  });
+
+  it("explains pending submission while keeping stop available and the draft intact", async () => {
+    const editor = await mount("mod+enter");
+    editor.canSteer = true;
+    editor.canStop = true;
+    editor.sending = true;
+    editor.onStop = vi.fn();
+    await editor.updateComplete;
+
+    expect(editor.renderRoot.querySelector("footer")?.getAttribute("aria-busy")).toBe("true");
+    expect(editor.renderRoot.querySelector('[role="status"]')?.textContent).toBe("Sending…");
+    expect(editor.renderRoot.querySelector<HTMLButtonElement>(".send-button")?.disabled).toBe(true);
+    expect(editor.renderRoot.querySelector<HTMLButtonElement>(".steer-button")?.disabled).toBe(true);
+    const stop = editor.renderRoot.querySelector<HTMLButtonElement>(".stop-button");
+    expect(stop?.disabled).toBe(false);
+    stop?.click();
+    press(editor, "Enter", { ctrlKey: true });
+    expect(editor.onStop).toHaveBeenCalledOnce();
+    expect(editor.onSend).not.toHaveBeenCalled();
+    expect(editor.view?.state.doc.toString()).toBe("Hello");
+
+    editor.sending = false;
+    editor.isCompacting = true;
+    await editor.updateComplete;
+    expect(editor.renderRoot.querySelector("footer")?.getAttribute("aria-busy")).toBe("false");
+    expect(editor.renderRoot.querySelector('[role="status"]')?.textContent).toContain("next message will be queued");
+    expect(editor.renderRoot.querySelector(".send-button .composer-action-label")?.textContent).toBe("Queue");
+    expect(editor.renderRoot.querySelector(".steer-button")).toBeNull();
+  });
+
+  it("does not describe shell commands as queued while history compacts", async () => {
+    const editor = await mount("mod+enter");
+    editor.replaceText("!pwd");
+    editor.isCompacting = true;
+    await editor.updateComplete;
+
+    expect(editor.renderRoot.querySelector("footer")?.classList.contains("shell-mode")).toBe(true);
+    expect(editor.renderRoot.querySelector(".mode-hint")?.textContent).toContain("Shell command");
+    expect(editor.renderRoot.querySelector('[role="status"]')).toBeNull();
+
+    editor.sending = true;
+    await editor.updateComplete;
+    expect(editor.renderRoot.querySelector('[role="status"]')?.textContent).toBe("Sending…");
+  });
+
+  it("keeps the complete model identity available and model controls wired", async () => {
+    const editor = await mount("mod+enter");
+    const provider = "long-provider-name";
+    const model = "a-long-model-name-with-a-large-context-window-and-version";
+    editor.status = {
+      sessionId: "composer-model", model: { provider, id: model },
+      isStreaming: false, isCompacting: false, isBashRunning: false,
+      pendingMessageCount: 0, queuedMessages: [],
+      tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 }, cost: 0,
+    };
+    editor.onSelectModel = vi.fn();
+    await editor.updateComplete;
+
+    const label = editor.renderRoot.querySelector(".model-label");
+    expect(label?.textContent).toBe(model);
+    expect(label?.getAttribute("title")).toBe(`${provider}/${model}`);
+    expect(editor.renderRoot.querySelector(".select-thinking")).toBeNull();
+    editor.renderRoot.querySelector<HTMLButtonElement>(".select-model")?.click();
+    expect(editor.onSelectModel).toHaveBeenCalledOnce();
+  });
+
+  it("updates the independent thinking control from status without replacing the editor", async () => {
+    const editor = await mount("mod+enter");
+    const status = {
+      sessionId: "composer-thinking", model: { provider: "openai", id: "gpt-5" }, thinkingLevel: "low",
+      isStreaming: false, isCompacting: false, isBashRunning: false,
+      pendingMessageCount: 0, queuedMessages: [],
+      tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 }, cost: 0,
+    };
+    editor.status = status;
+    editor.cwd = "/projects/pi-web";
+    editor.onSelectThinking = vi.fn();
+    editor.onSelectMachine = vi.fn();
+    editor.onSelectWorkspace = vi.fn();
+    await editor.updateComplete;
+    const content = editor.view?.contentDOM;
+    expect(editor.renderRoot.querySelector(".thinking-label")?.textContent).toBe("low");
+    editor.status = { ...status, thinkingLevel: "high" };
+    await editor.updateComplete;
+    const thinking = editor.renderRoot.querySelector<HTMLButtonElement>(".select-thinking");
+    expect(thinking?.getAttribute("aria-label")).toBe("Thinking strength: high");
+    expect(editor.thinkingAnchor).toBe(thinking);
+    thinking?.click();
+    expect(editor.onSelectThinking).toHaveBeenCalledOnce();
+    expect(editor.view?.contentDOM).toBe(content);
+    expect(editor.view?.state.doc.toString()).toBe("Hello");
+    expect(editor.renderRoot.querySelector(".folder-chip")?.getAttribute("title")).toBe("/projects/pi-web");
+    expect(editor.renderRoot.querySelector(".folder-chip span")?.textContent).toBe("pi-web");
+    editor.renderRoot.querySelector<HTMLButtonElement>(".machine-chip")?.click();
+    editor.renderRoot.querySelector<HTMLButtonElement>(".folder-chip")?.click();
+    expect(editor.onSelectMachine).toHaveBeenCalledOnce();
+    expect(editor.onSelectWorkspace).toHaveBeenCalledOnce();
+  });
+
+  it("keeps staged attachment names and delivery controls accessible as attachments are removed", async () => {
+    const attachments = Array.from({ length: 4 }, (_, index) => ({
+      id: `attachment-${String(index)}`, kind: "file" as const,
+      name: `long-project-analysis-document-${String(index)}.txt`, mimeType: "text/plain", data: "aGVsbG8=", size: 5,
+    }));
+    saveStagedAttachments("local:composer-attachments", attachments);
+    const editor = new PromptEditor();
+    editor.sessionId = "composer-attachments";
+    editor.onSend = vi.fn();
+    document.body.append(editor);
+    await editor.updateComplete;
+
+    expect(editor.renderRoot.querySelector(".attachment-count")?.textContent).toBe("Attachments · 4");
+    expect([...editor.renderRoot.querySelectorAll(".attachment-chip")].map((chip) => chip.getAttribute("title"))).toEqual(attachments.map((attachment) => attachment.name));
+    const delivery = editor.renderRoot.querySelector<HTMLSelectElement>(".attachment-delivery select");
+    expect(delivery?.getAttribute("aria-label")).toBe("How attachments are delivered to the agent");
+    expect(delivery?.value).toBe("folder");
+    editor.renderRoot.querySelector<HTMLButtonElement>(".attachment-remove")?.click();
+    await editor.updateComplete;
+    expect(editor.renderRoot.querySelector(".attachment-count")?.textContent).toBe("Attachments · 3");
+    expect([...editor.renderRoot.querySelectorAll(".attachment-chip")].map((chip) => chip.getAttribute("title"))).toEqual(attachments.slice(1).map((attachment) => attachment.name));
+    expect(editor.onSend).not.toHaveBeenCalled();
   });
 });
 

@@ -149,12 +149,13 @@ describe("bundled Git browser plugin", () => {
     expect(container.textContent).toContain("unstaged");
     expect(container.querySelector(".git-panel")).not.toBeNull();
     expect(container.querySelector(".split")).toBeNull();
-    const styleRules = (container.querySelector("style")?.textContent ?? "")
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line.includes("{"));
-    expect(styleRules).toContainEqual(expect.stringContaining(".git-panel .git-row"));
-    expect(styleRules.every((rule) => rule.startsWith(".git-panel"))).toBe(true);
+    const styleRules = Array.from(container.querySelector("style")?.sheet?.cssRules ?? [])
+      .flatMap((rule) => rule instanceof CSSMediaRule ? Array.from(rule.cssRules) : [rule]);
+    expect(styleRules.length).toBeGreaterThan(0);
+    expect(styleRules.every((rule) => rule instanceof CSSStyleRule)).toBe(true);
+    const selectors = styleRules.flatMap((rule) => rule instanceof CSSStyleRule ? rule.selectorText.split(",").map((selector) => selector.trim()) : []);
+    expect(selectors).toContain(".git-panel .git-row");
+    expect(selectors.every((selector) => selector.startsWith(".git-panel"))).toBe(true);
     expect(container.querySelector('[role="table"][aria-label="Unified diff"]')).not.toBeNull();
     expect([...container.querySelectorAll(".inline-change")].map((entry) => entry.textContent)).toContain("new");
 

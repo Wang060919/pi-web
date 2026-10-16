@@ -198,12 +198,14 @@ export class SettingsPluginsPanel extends LitElement {
   }
 
   static override styles = css`
-    :host { display: block; }
+    :host { display: block; font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    small { font-size: 12px; line-height: 16px; }
+    strong { font-weight: 500; }
     input { font: inherit; }
     input:disabled { opacity: .55; cursor: not-allowed; }
-    .loading-card, .plugin-note, .plugin-card, .recovery { border: 1px solid var(--pi-border); border-radius: 10px; background: var(--pi-surface); padding: 12px; }
+    .loading-card, .plugin-note, .plugin-card, .recovery { border: 0; border-radius: 10px; background: var(--pi-surface); padding: 12px; }
     .loading-card, .plugin-note { color: var(--pi-muted); }
-    code { border: 1px solid var(--pi-border-muted); border-radius: 5px; background: var(--pi-bg); padding: 1px 4px; color: var(--pi-text); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+    code { border: 0; border-radius: 5px; background: var(--pi-bg); padding: 1px 4px; color: var(--pi-text); font: 12px/17.5px var(--pi-font-monospace, ui-monospace, monospace); overflow-wrap: anywhere; }
     .plugin-list { display: grid; gap: 10px; }
     .plugin-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; }
     .plugin-card.disabled { opacity: .8; }
@@ -213,19 +215,24 @@ export class SettingsPluginsPanel extends LitElement {
     .diagnostic { color: var(--pi-text) !important; }
     .command { line-height: 1.5; }
     .status-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
-    .status { border: 1px solid var(--pi-border-muted); border-radius: 999px; padding: 2px 7px; color: var(--pi-muted); font-size: 11px; line-height: 1.3; }
-    .status.success { border-color: var(--pi-success-border); color: var(--pi-success); background: var(--pi-success-surface); }
-    .status.warning { border-color: var(--pi-warning-border); color: var(--pi-text); background: var(--pi-warning-surface); }
-    .status.error { border-color: var(--pi-danger); color: var(--pi-danger); }
+    .status { border: 0; background: color-mix(in srgb, var(--pi-text) 8%, transparent); border-radius: 999px; padding: 2px 7px; color: var(--pi-muted); font-size: 12px; line-height: 16px; }
+    .status.success { color: var(--pi-success); background: var(--pi-success-surface); }
+    .status.warning { color: var(--pi-text); background: var(--pi-warning-surface); }
+    .status.error { color: var(--pi-danger); background: color-mix(in srgb, var(--pi-danger) 10%, var(--pi-surface)); }
     .toggle { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
     .toggle input { width: 18px; height: 18px; accent-color: var(--pi-accent); }
+    .toggle input:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
     .recovery { display: grid; gap: 7px; }
-    .recovery small { color: var(--pi-muted); line-height: 1.4; }
+    .recovery small { color: var(--pi-muted); line-height: 16px; }
     .recovery code { display: block; width: fit-content; max-width: 100%; }
 
     @media (max-width: 760px) {
       .plugin-card { grid-template-columns: minmax(0, 1fr); align-items: start; }
       .toggle { justify-self: start; }
+    }
+
+    @media (max-width: 760px), (pointer: coarse) {
+      .toggle { box-sizing: border-box; min-height: 44px; }
     }
   `;
 }

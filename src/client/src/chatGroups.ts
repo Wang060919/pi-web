@@ -73,17 +73,6 @@ export function canonicalEntryActionHeaders(groups: readonly ChatGroup[]): Reado
   return new Set(Array.from(entries.values(), ({ message }) => message));
 }
 
-export function summarizeChatGroup(messages: ChatLine[]): string {
-  if (messages.every((message) => message.source === "compaction")) return `${String(messages.length)} history compaction ${messages.length === 1 ? "summary" : "summaries"}`;
-  if (messages.every((message) => message.source === "branch_summary")) return `${String(messages.length)} branch ${messages.length === 1 ? "summary" : "summaries"}`;
-  const counts = messages.reduce<Record<string, number>>((acc, message) => {
-    acc[message.role] = (acc[message.role] ?? 0) + 1;
-    return acc;
-  }, {});
-  const details = Object.entries(counts).map(([role, count]) => `${String(count)} ${role}`).join(" · ");
-  return `${String(messages.length)} ${messages.length === 1 ? "event" : "events"}${details !== "" ? ` · ${details}` : ""}`;
-}
-
 function isToolImageMessage(message: ChatLine): boolean {
   return message.role === "tool" && message.parts.length > 0 && message.parts.every((part) => part.type === "image");
 }

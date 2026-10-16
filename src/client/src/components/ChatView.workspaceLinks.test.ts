@@ -28,6 +28,7 @@ it("passes workspace context to queued, text, thinking, skill and tool-result Ma
   async function hrefs() {
     const formatted = [...view.renderRoot.querySelectorAll<FormattedText>("formatted-text")];
     expect(formatted).toHaveLength(5);
+    expect(formatted.filter((element) => element.fileCards)).toHaveLength(1);
     await Promise.all(formatted.map((element) => element.updateComplete));
     return formatted.map((element) => element.renderRoot.querySelector("a")?.getAttribute("href"));
   }

@@ -1,9 +1,9 @@
 import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
-import { LitElement, html } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { LitElement, css, html, svg, nothing, type PropertyValues } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 import type { SessionStatus } from "../api";
-import { formatCost, formatTokenCount } from "../utils/format";
 import { renderSessionWarningIcon, statusBarStyles } from "./shared";
+import "./UsageDetails";
 
 export interface StatusBarWarningControlContent {
   countText: string;
@@ -21,10 +21,16 @@ export function statusBarWarningControlContent(count: number, expanded: boolean)
 
 @customElement("status-bar")
 export class StatusBar extends LitElement {
-  @property({ attribute: false }) status?: SessionStatus;
+  @property({ type: Boolean, reflect: true }) compact = false;
+  @property({ attribute: false }) status: SessionStatus | undefined = undefined;
   @property({ type: Number }) warningCount = 0;
   @property({ type: Boolean }) warningsExpanded = false;
   @property({ attribute: false }) onToggleWarnings?: () => void;
+  @state() private usageOpen = false;
+
+  protected override willUpdate(changed: PropertyValues<this>): void {
+    if (changed.has("status") && (this.status === undefined || changed.get("status")?.sessionId !== this.status.sessionId)) this.usageOpen = false;
+  }
 
   private readonly handleToggleWarnings = (): void => {
     this.onToggleWarnings?.();
@@ -33,13 +39,10 @@ export class StatusBar extends LitElement {
   override render() {
     const status = this.status;
     if (status === undefined) return localizedTemplate("StatusBar.no_session_status_yet.dc472689", html)`<div class="bar muted">No session status yet</div>`;
-    const context = status.contextUsage;
-    const contextText = context
-      ? context.percent == null
-        ? localizedText("StatusBar.context.a2728c17")`context ${formatTokenCount(context.contextWindow)}`
-        : `${context.percent.toFixed(1)}%/${formatTokenCount(context.contextWindow)}`
-      : t("StatusBar.context_unknown.34527476");
-    const tokens = status.tokens;
+    const percent = status.contextUsage?.percent;
+    const percentage = percent == null || !Number.isFinite(percent) ? undefined : percent;
+    const contextText = percentage === undefined ? t("StatusBar.context_unknown.34527476") : `${t("ui.usage.context")} ${percentage.toFixed(1)}%`;
+    const usageLabel = `${t("ui.usage.open")}: ${contextText}`;
     const warningControl = statusBarWarningControlContent(this.warningCount, this.warningsExpanded);
     return html`
       <div class="bar">
@@ -56,14 +59,44 @@ export class StatusBar extends LitElement {
             <span>${warningControl.countText}</span>
           </button>
         `}
-        <span>↑${formatTokenCount(tokens.input)}</span>
-        <span>↓${formatTokenCount(tokens.output)}</span>
-        <span class="context">${contextText}</span>
-        <span>${formatCost(status.cost)}</span>
+        <button
+          type="button"
+          class="usage-toggle"
+          title=${usageLabel}
+          aria-label=${usageLabel}
+          aria-haspopup="dialog"
+          aria-expanded=${String(this.usageOpen)}
+          @click=${() => { this.usageOpen = !this.usageOpen; }}
+        >
+          <svg class=${`context-ring${percentage !== undefined && percentage >= 90 ? " danger" : percentage !== undefined && percentage >= 70 ? " warning" : ""}`} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <circle class="context-ring-track" cx="12" cy="12" r="9"></circle>
+            ${percentage === undefined ? svg`<text class="context-ring-unknown" x="12" y="15.5" text-anchor="middle">?</text>` : svg`<circle class="context-ring-value" cx="12" cy="12" r="9" pathLength="100" stroke-dasharray=${`${String(Math.max(0, Math.min(100, percentage)))} 100`}></circle>`}
+          </svg>
+          <span class="context-text">${contextText}</span>
+        </button>
         ${status.pendingMessageCount > 0 ? localizedTemplate("StatusBar.queued.aa0b8a9a", html)`<span>${String(status.pendingMessageCount)} queued</span>` : null}
       </div>
+      ${this.usageOpen ? html`<usage-details .status=${status} .onClose=${() => { this.usageOpen = false; }}></usage-details>` : nothing}
     `;
   }
 
-  static override styles = statusBarStyles;
+  static override styles = [statusBarStyles, css`
+    .bar { gap: 10px; padding: 5px 12px; }
+    .bar > span { flex: 0 0 auto; color: var(--pi-warning); }
+    .usage-toggle { display: inline-flex; flex: 0 1 auto; align-items: center; gap: 6px; min-width: 0; padding: 3px 5px; border: 0; border-radius: 999px; background: transparent; color: var(--pi-muted); font: inherit; font-variant-numeric: tabular-nums; white-space: nowrap; cursor: pointer; }
+    .usage-toggle:hover { color: var(--pi-text); background: var(--pi-surface-hover); }
+    .usage-toggle:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
+    .context-ring { flex: 0 0 auto; width: 20px; height: 20px; color: var(--pi-accent); fill: none; stroke-width: 2.5; }
+    .context-ring-track { stroke: var(--pi-border); }
+    .context-ring-unknown { fill: var(--pi-muted); font: 10px var(--pi-font-family, system-ui, sans-serif); stroke: none; }
+    .context-ring-value { transform: rotate(-90deg); transform-origin: center; stroke: currentColor; stroke-linecap: round; }
+    .context-ring.warning { color: var(--pi-warning); }
+    .context-ring.danger { color: var(--pi-danger); }
+    :host([compact]) { display: inline-flex; min-width: 0; }
+    :host([compact]) .bar { gap: 4px; padding: 0; border: 0; background: transparent; }
+    :host([compact]) .context-text { display: none; }
+    :host([compact]) .usage-toggle { padding: 6px; }
+    :host([compact]) .context-ring { width: 15px; height: 15px; }
+
+  `];
 }

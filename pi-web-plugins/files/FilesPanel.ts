@@ -438,11 +438,13 @@ export class WorkspaceFilesPanel extends LitElement {
   }
 
   static override styles = css`
-    :host { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; color: var(--pi-text); background: var(--pi-bg); font: 13px system-ui, sans-serif; container-type: inline-size; }
+    :host { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; color: var(--pi-text); background: var(--pi-bg); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); container-type: inline-size; }
     .files-panel { position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-    .toolbar { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 8px; border-bottom: 1px solid var(--pi-border-muted); }
+    .toolbar { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-bottom: 0; }
+    .toolbar strong { font-weight: 500; }
     .toolbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-    button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--pi-border); border-radius: 7px; background: var(--pi-surface); color: var(--pi-text); padding: 5px 7px; cursor: pointer; }
+    button { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 5px 7px; font: inherit; cursor: pointer; }
+    button:not(:disabled):hover { background: var(--pi-surface-hover); }
     button:focus-visible, input:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 1px; }
     .muted { color: var(--pi-muted); }
     .stale { border: 1px solid var(--pi-warning-border); border-radius: 999px; color: var(--pi-warning); padding: 1px 6px; font-size: 12px; }
@@ -452,7 +454,8 @@ export class WorkspaceFilesPanel extends LitElement {
     .split { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: minmax(160px, 34%) minmax(0, 1fr); }
     .list { min-height: 0; overflow: auto; border-bottom: 1px solid var(--pi-border); padding: 6px; }
     .row { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 4px; width: 100%; border: 0; border-radius: 5px; background: transparent; text-align: left; padding: 4px 6px 4px calc(6px + var(--depth, 0) * 14px); }
-    .row:hover, .row.selected { background: var(--pi-selection-bg); }
+    .row:not(:disabled):hover { background: var(--pi-surface-hover); }
+    .row.selected, .row.selected:not(:disabled):hover { background: var(--pi-selection-bg); }
     .row span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .viewer { min-height: 0; overflow: auto; display: flex; flex-direction: column; }
     pi-web-files-viewer { flex: 1 1 auto; min-height: 0; }
@@ -463,10 +466,10 @@ export class WorkspaceFilesPanel extends LitElement {
     .drop-overlay span { color: var(--pi-muted); }
     .upload-progress { flex: 0 0 auto; display: grid; gap: 8px; padding: 8px; border-bottom: 1px solid var(--pi-border-muted); background: color-mix(in srgb, var(--pi-surface) 55%, transparent); }
     .upload-progress-header, .upload-batch-heading, .upload-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .upload-batch { display: grid; gap: 6px; border: 1px solid var(--pi-border-muted); border-radius: 8px; background: var(--pi-bg); padding: 8px; }
-    .upload-batch.error { border-color: var(--pi-danger); }
-    .upload-batch.cancelled { border-color: var(--pi-warning-border); }
-    .upload-batch.completed { border-color: var(--pi-success-border); }
+    .upload-batch { display: grid; gap: 6px; border: 0; border-radius: 8px; background: var(--pi-surface); padding: 8px; }
+    .upload-batch.error { border: 1px solid var(--pi-danger); }
+    .upload-batch.cancelled { border: 1px solid var(--pi-warning-border); }
+    .upload-batch.completed { border: 1px solid var(--pi-success-border); }
     .upload-batch-heading > div { min-width: 0; display: grid; gap: 2px; }
     .upload-batch-heading strong, .upload-batch-heading small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     progress { width: 100%; accent-color: var(--pi-accent); }
@@ -482,21 +485,24 @@ export class WorkspaceFilesPanel extends LitElement {
     dialog.upload-dialog { box-sizing: border-box; width: min(560px, calc(100% - 40px)); max-height: min(720px, calc(100% - 40px)); max-height: min(720px, calc(100dvh - 40px)); margin: auto; padding: 0; border: 1px solid var(--pi-border); border-radius: 14px; background: var(--pi-bg); color: var(--pi-text); box-shadow: 0 18px 70px var(--pi-shadow-strong); overflow: hidden; }
     dialog.upload-dialog[open] { display: flex; flex-direction: column; }
     dialog.upload-dialog::backdrop { background: var(--pi-overlay); }
-    .upload-dialog header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--pi-border-muted); }
-    .upload-dialog h2 { margin: 2px 0 0; font-size: 18px; line-height: 1.2; }
-    .eyebrow { color: var(--pi-muted); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+    .upload-dialog header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 0; }
+    .upload-dialog h2 { margin: 2px 0 0; font-size: 16px; line-height: 22px; font-weight: 500; }
+    .eyebrow { color: var(--pi-muted); font-size: 12px; line-height: 16px; }
     .close-button { font-size: 20px; line-height: 1; padding: 4px 9px; }
     form { box-sizing: border-box; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: auto; overscroll-behavior: contain; padding: 16px; }
     form > label { flex: 0 0 auto; display: grid; gap: 6px; }
-    form > label > span, .review-files > strong { font-weight: 600; }
-    form > label > input:not([type]) { box-sizing: border-box; width: 100%; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); padding: 8px 9px; font: var(--pi-control-font-size, 16px) var(--pi-control-font-family, system-ui, sans-serif); }
+    form > label > span, .review-files > strong { font-weight: 500; }
+    form > label > input:not([type]) { box-sizing: border-box; width: 100%; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); padding: 8px 9px; font: var(--pi-control-font-size, 16px)/1.42857 var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
     .dialog-options { flex: 0 0 auto; display: grid; gap: 8px; }
     .dialog-options label { display: flex; align-items: center; gap: 8px; }
-    .review-files { flex: 1 1 180px; display: grid; gap: 6px; min-height: 0; max-height: 180px; overflow: auto; border: 1px solid var(--pi-border-muted); border-radius: 8px; padding: 8px; }
+    .review-files { flex: 1 1 180px; display: grid; gap: 6px; min-height: 0; max-height: 180px; overflow: auto; border: 0; border-radius: 8px; background: var(--pi-surface); padding: 8px; }
     .review-file { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
     .review-file span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .dialog-error { flex: 0 0 auto; border: 1px solid var(--pi-danger); border-radius: 8px; background: color-mix(in srgb, var(--pi-danger) 10%, transparent); color: var(--pi-danger); padding: 9px; overflow-wrap: anywhere; }
     footer { flex: 0 0 auto; display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
+    @media (max-width: 640px), (pointer: coarse) {
+      button { min-height: 44px; }
+    }
   `;
 }
 

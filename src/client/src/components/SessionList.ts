@@ -759,9 +759,9 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
     .bulk-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; margin-left: auto; }
     .action-name, .section-selected { text-align: start; unicode-bidi: plaintext; }
     .action-name { display: block; max-height: none; line-height: normal; white-space: nowrap; text-overflow: ellipsis; }
-    .action-row.unread .action-name { color: var(--pi-text-bright); font-weight: 650; }
+    .action-row.unread .action-name { color: var(--pi-text-bright); font-weight: 600; }
     .plain-heading { min-width: 0; }
-    .session-secondary { display: flex; align-items: baseline; gap: 5px; min-width: 0; margin-top: 3px; }
+    .session-secondary { display: flex; align-items: baseline; gap: 5px; min-width: 0; margin-top: 2px; font-size: 11px; line-height: 16px; }
     .session-meta, .session-label-separator { flex: 0 0 auto; }
     .session-labels { min-width: 0; display: inline-flex; align-items: baseline; gap: 5px; max-width: 100%; overflow: hidden; white-space: nowrap; }
     .session-label-item, .session-label-render { min-width: 0; overflow: hidden; text-overflow: ellipsis; }

@@ -78,6 +78,7 @@ import "./PromptEditor";
 import type { PromptEditor } from "./PromptEditor";
 import "./StatusBar";
 import "./CommandPicker";
+import { thinkingDescription, thinkingDisplayLabel } from "../thinkingLevelPresentation";
 import "./ModelPicker";
 import "./ActionPalette";
 import "./AuthDialog";
@@ -151,6 +152,9 @@ export class PiWebApp extends LitElement {
   /** Page-scoped injection seam for independently composing chat behavior. */
   @property({ attribute: false }) chatBehaviors: ChatBehaviors = DEFAULT_CHAT_BEHAVIORS;
   @state() private state: AppState = initialAppState();
+  @state() private composerPicker: "model" | "thinking" = "model";
+  @state() private composerContextPicker: "machines" | "workspaces" | undefined = undefined;
+  private composerPickerRequestId = 0;
   private readonly browserErrors = new BrowserErrorReporter(() => this.state, (patch) => { this.setState(patch); });
   @query("chat-view") private chatView?: ChatView;
   @query("prompt-editor") private promptEditor?: PromptEditor;
@@ -591,8 +595,13 @@ export class PiWebApp extends LitElement {
       this.cancelWorkspaceDeletionRefresh();
       if (Object.keys(this.state.workspaceDeletionRuns).length > 0) this.state = { ...this.state, workspaceDeletionRuns: {} };
     }
-    if (modelValueFromStatus(previous.status) !== modelValueFromStatus(this.state.status) && this.state.modelDialog !== undefined) {
-      this.state = { ...this.state, modelDialog: undefined };
+    if (modelValueFromStatus(previous.status) !== modelValueFromStatus(this.state.status)
+      && (this.state.modelDialog !== undefined || this.state.thinkingDialog !== undefined)) {
+      this.state = { ...this.state, modelDialog: undefined, thinkingDialog: undefined };
+    }
+    const thinkingOrigin = this.state.thinkingDialog?.origin;
+    if (thinkingOrigin !== undefined && !this.modelDialogOriginIsCurrent(thinkingOrigin)) {
+      this.state = { ...this.state, modelDialog: undefined, thinkingDialog: undefined };
     }
     if (selectedChatIdentity(previous) !== selectedChatIdentity(this.state)) {
       this.committedChatIdentity = undefined;
@@ -3258,13 +3267,16 @@ export class PiWebApp extends LitElement {
       });
   }
 
-  private async openModelDialog() {
+  private async openModelDialog(picker: "model" | "thinking" = "model") {
+    const requestId = ++this.composerPickerRequestId;
     const session = this.state.selectedSession;
     if (session === undefined) return;
     const origin: ModelDialogOrigin = { machineId: selectedMachineId(this.state), sessionId: session.id, cwd: session.cwd };
-    const [{ models, catalog }, defaults] = await Promise.all([this.loadModelDialogData(), this.sessions.getSessionDefaults()]);
-    if (!this.modelDialogOriginIsCurrent(origin)) return;
+    const modelValue = this.currentModelValue();
+    const [{ models, catalog }, levels, defaults] = await Promise.all([this.loadModelDialogData(), this.sessions.listThinkingLevels(), this.sessions.getSessionDefaults()]);
+    if (requestId !== this.composerPickerRequestId || !this.modelDialogOriginIsCurrent(origin) || this.currentModelValue() !== modelValue) return;
     const selectedValue = this.currentModelValue();
+    this.composerPicker = picker;
     this.setState({
       modelDialog: {
         instanceId: ++this.modelDialogInstanceId,
@@ -3275,6 +3287,15 @@ export class PiWebApp extends LitElement {
         ...(selectedValue !== undefined ? { selectedValue } : {}),
         options: this.modelDialogOptions(models),
         catalog,
+      },
+      thinkingDialog: {
+        title: t("ui.thinkingPicker.title"),
+        origin,
+        ...(modelValue === undefined ? {} : { modelValue }),
+        defaultsLoading: defaults === undefined,
+        ...(defaults?.defaultThinkingLevel === undefined ? {} : { defaultValue: defaults.defaultThinkingLevel }),
+        selectedValue: this.state.status?.thinkingLevel ?? "off",
+        options: levels.map((level) => { const description = thinkingDescription(level); return { value: level, label: thinkingDisplayLabel(level), ...(description === undefined ? {} : { description }) }; }),
       },
     });
   }
@@ -3320,11 +3341,19 @@ export class PiWebApp extends LitElement {
     });
   }
 
-  private async pickModel(value: string) {
-    this.setState({ modelDialog: undefined });
+  private async pickModel(value: string): Promise<boolean> {
+    const dialog = this.currentModelDialog();
+    if (dialog?.options.some((option) => option.value === value) !== true) return false;
     const slash = value.indexOf("/");
-    if (slash <= 0) return;
-    await this.sessions.setModel(value.slice(0, slash), value.slice(slash + 1));
+    if (slash <= 0 || slash === value.length - 1) return false;
+    if (value === this.currentModelValue()) {
+      this.setState({ modelDialog: undefined, thinkingDialog: undefined });
+      return true;
+    }
+    const applied = await this.sessions.setModel(value.slice(0, slash), value.slice(slash + 1));
+    if (!applied) return false;
+    if (this.currentModelDialog()?.instanceId === dialog.instanceId) this.setState({ modelDialog: undefined, thinkingDialog: undefined });
+    return true;
   }
 
   private openThemeDialog(): void {
@@ -3365,49 +3394,85 @@ export class PiWebApp extends LitElement {
   }
 
   private async openThinkingDialog() {
-    const session = this.state.selectedSession;
-    if (session === undefined) return;
-    const origin: ModelDialogOrigin = { machineId: selectedMachineId(this.state), sessionId: session.id, cwd: session.cwd };
-    const [levels, defaults] = await Promise.all([this.sessions.listThinkingLevels(), this.sessions.getSessionDefaults()]);
-    if (!this.modelDialogOriginIsCurrent(origin)) return;
-    const current = this.state.status?.thinkingLevel ?? "off";
-    this.setState({
-      thinkingDialog: {
-        title: t("PiWebApp.select_thinking_level.4e50eb8c"),
-        origin,
-        defaultsLoading: defaults === undefined,
-        ...(defaults?.defaultThinkingLevel === undefined ? {} : { defaultValue: defaults.defaultThinkingLevel }),
-        selectedValue: current,
-        options: levels.map((level) => { const description = thinkingDescription(level); return { value: level, label: `${thinkingDisplayLabel(level)}${level === current ? t("PiWebApp.current.470b0064") : ""}`, ...(description === undefined ? {} : { description }) }; }),
-      },
-    });
+    await this.openModelDialog("thinking");
   }
 
-  private readonly handleSetDefaultModel = async (value: string): Promise<void> => {
+  private readonly closeComposerPicker = (): void => {
+    this.composerPickerRequestId += 1;
+    this.setState({ modelDialog: undefined, thinkingDialog: undefined });
+  };
+
+  private renderComposerContextPicker(): TemplateResult | null {
+    const picker = this.composerContextPicker;
+    if (picker === undefined) return null;
+    const options = picker === "machines"
+      ? this.state.machines.map((machine) => ({ value: machine.id, label: `${machine.name}${machine.id === selectedMachineId(this.state) ? " ✓" : ""}`, description: machine.baseUrl ?? t("ui.composer.local") }))
+      : this.state.workspaces.map((workspace) => ({ value: workspace.id, label: `${workspace.label}${workspace.id === this.state.selectedWorkspace?.id ? " ✓" : ""}`, description: workspace.path }));
+    return html`<command-picker
+      .title=${t(picker === "machines" ? "ui.composer.machinePicker" : "ui.navigation.workspacePicker")}
+      .selectedValue=${picker === "machines" ? selectedMachineId(this.state) : this.state.selectedWorkspace?.id}
+      .options=${options}
+      .onPick=${async (value: string) => {
+        if (this.composerContextPicker !== picker) return;
+        this.composerContextPicker = undefined;
+        if (picker === "machines") {
+          const machine = this.state.machines.find((item) => item.id === value);
+          if (machine !== undefined && machine.id !== selectedMachineId(this.state)) await this.navigationActions.selectMachine(machine);
+        } else {
+          const workspace = this.state.workspaces.find((item) => item.id === value);
+          if (workspace !== undefined && workspace.id !== this.state.selectedWorkspace?.id) await this.navigationActions.selectWorkspace(workspace);
+        }
+      }}
+      .onCancel=${() => { this.composerContextPicker = undefined; }}
+    ></command-picker>`;
+  }
+
+  private renderModelDialog(): TemplateResult | null {
+    const dialog = this.state.modelDialog;
+    if (dialog === undefined) return null;
+    const thinking = this.state.thinkingDialog;
+    if (this.composerPicker === "thinking" && thinking !== undefined) {
+      return html`<thinking-picker .title=${thinking.title} .anchor=${this.promptEditor?.thinkingAnchor} .options=${thinking.options} .selectedValue=${this.state.status?.thinkingLevel ?? thinking.selectedValue} .defaultValue=${thinking.defaultValue} .defaultsLoading=${thinking.defaultsLoading === true} .onPick=${(value: string) => this.pickThinking(value)} .onSetDefault=${this.handleSetDefaultThinking} .onCancel=${this.closeComposerPicker}></thinking-picker>`;
+    }
+    return html`<model-picker .title=${dialog.title} .popoverMode=${true} .anchor=${this.promptEditor?.modelAnchor} .options=${dialog.options} .catalog=${dialog.catalog} .defaultValue=${dialog.defaultValue} .defaultsLoading=${dialog.defaultsLoading === true} .onSetDefault=${this.handleSetDefaultModel} .selectedValue=${this.currentModelValue() ?? dialog.selectedValue} .onPick=${(value: string) => this.pickModel(value)} .onToggleEnabled=${this.handleToggleModelEnabled} .onSetScope=${this.handleSetModelScope} .onCancel=${this.closeComposerPicker}></model-picker>`;
+  }
+
+  private readonly handleSetDefaultModel = async (value: string): Promise<boolean> => {
     const dialog = this.currentModelDialog();
-    if (dialog === undefined) return;
+    if (dialog === undefined) return false;
     const separator = value.indexOf("/");
-    if (separator < 1) return;
+    if (separator < 1 || separator === value.length - 1) return false;
     const defaults = await this.sessions.setSessionDefaults({ provider: value.slice(0, separator), modelId: value.slice(separator + 1) });
     const current = this.currentModelDialog();
-    if (defaults === undefined || current?.instanceId !== dialog.instanceId) return;
+    if (defaults === undefined || current?.instanceId !== dialog.instanceId) return false;
     if (defaults.defaultProvider !== undefined && defaults.defaultModel !== undefined) {
       this.setState({ modelDialog: { ...current, defaultValue: `${defaults.defaultProvider}/${defaults.defaultModel}` } });
+      return true;
     }
+    return false;
   };
 
-  private readonly handleSetDefaultThinking = async (value: string): Promise<void> => {
+  private readonly handleSetDefaultThinking = async (value: string): Promise<boolean> => {
     const dialog = this.state.thinkingDialog;
-    if (dialog?.origin === undefined || !this.modelDialogOriginIsCurrent(dialog.origin)) return;
-    if (value !== "off" && value !== "minimal" && value !== "low" && value !== "medium" && value !== "high" && value !== "xhigh" && value !== "max") return;
+    if (dialog?.origin === undefined || !this.modelDialogOriginIsCurrent(dialog.origin)) return false;
+    if (value !== "off" && value !== "minimal" && value !== "low" && value !== "medium" && value !== "high" && value !== "xhigh" && value !== "max") return false;
     const defaults = await this.sessions.setSessionDefaults({ thinkingLevel: value });
-    if (defaults?.defaultThinkingLevel === undefined || this.state.thinkingDialog !== dialog || !this.modelDialogOriginIsCurrent(dialog.origin)) return;
+    if (defaults?.defaultThinkingLevel === undefined || this.state.thinkingDialog !== dialog || !this.modelDialogOriginIsCurrent(dialog.origin)) return false;
     this.setState({ thinkingDialog: { ...dialog, defaultValue: defaults.defaultThinkingLevel } });
+    return true;
   };
 
-  private async pickThinking(value: string) {
-    this.setState({ thinkingDialog: undefined });
-    if (value !== "") await this.sessions.setThinkingLevel(value);
+  private async pickThinking(value: string): Promise<boolean> {
+    const dialog = this.state.thinkingDialog;
+    if (dialog?.origin === undefined || !this.modelDialogOriginIsCurrent(dialog.origin)
+      || (dialog.modelValue !== undefined && dialog.modelValue !== this.currentModelValue())
+      || !dialog.options.some((option) => option.value === value)) return false;
+    const applied = await this.sessions.setThinkingLevel(value);
+    if (!applied || this.state.thinkingDialog !== dialog || !this.modelDialogOriginIsCurrent(dialog.origin)) return false;
+    const actual = this.state.status?.thinkingLevel;
+    if (actual === undefined) return false;
+    this.setState({ thinkingDialog: { ...dialog, selectedValue: actual } });
+    return true;
   }
 
   private async sendPrompt(text: string, streamingBehavior?: "steer" | "followUp", attachments?: import("../api").PromptAttachment[], delivery?: import("../../../shared/apiTypes").PromptAttachmentDelivery, folder?: string, chips: readonly StagedPromptChip[] = []): Promise<boolean> {
@@ -3509,6 +3574,20 @@ export class PiWebApp extends LitElement {
     this.requestUpdate();
   };
 
+  private readonly handleSelectComposerMachine = (): void => {
+    this.closeComposerPicker();
+    this.composerContextPicker = "machines";
+  };
+
+  private readonly handleSelectComposerWorkspace = (): void => {
+    this.closeComposerPicker();
+    this.composerContextPicker = "workspaces";
+  };
+
+  private readonly handleSelectThinking = (): void => {
+    void this.openThinkingDialog();
+  };
+
   private readonly handleSelectModel = (): void => {
     void this.openModelDialog();
   };
@@ -3564,10 +3643,6 @@ export class PiWebApp extends LitElement {
     // persisted scope consistent without another round trip.
     this.setState({ modelDialog: { ...dialog, catalog, options: this.modelDialogOptions(catalog.filter((entry) => entry.enabled)) } });
   }
-
-  private readonly handleSelectThinking = (): void => {
-    void this.openThinkingDialog();
-  };
 
   private readonly emptyClientQueue: NonNullable<AppState["clientQueuedSessionMessages"][string]> = [];
   private messageActionInputs = "";
@@ -3712,7 +3787,7 @@ export class PiWebApp extends LitElement {
   private renderStatusBar(state: AppState) {
     const warningCount = this.sessionWarningVisibility.warningCount;
     return html`
-      <status-bar .status=${state.status} .warningCount=${warningCount} .warningsExpanded=${warningCount > 0 && !this.sessionWarningVisibility.collapsed} .onToggleWarnings=${this.handleToggleWarnings}></status-bar>
+      <status-bar slot="status" .compact=${true} .status=${state.status} .warningCount=${warningCount} .warningsExpanded=${warningCount > 0 && !this.sessionWarningVisibility.collapsed} .onToggleWarnings=${this.handleToggleWarnings}></status-bar>
     `;
   }
 
@@ -3897,13 +3972,12 @@ export class PiWebApp extends LitElement {
           ${state.selectedSession ? html`
             ${this.renderChatView(state, state.selectedSession)}
             <div class="composer-area">
-              <prompt-editor ?inert=${activityNoticeVisible || this.isRevertingMessage(state)} .promptChips=${this.selectedPromptChips()} .onRemoveChip=${this.handleRemovePromptChip} .shortcuts=${this.shortcutConfig} .defaultStreamingBehavior=${this.defaultStreamingBehavior} .sessionId=${state.selectedSession.id} .cwd=${state.selectedWorkspace?.path} .machineId=${selectedMachineId(state)} .projectId=${state.selectedWorkspace?.projectId} .workspaceId=${state.selectedWorkspace?.id} .attachmentsFolder=${workspaceEffectiveAttachmentsFolder(state.selectedWorkspace?.effectiveConfig, this.workspaceAttachmentsDefaultFolder)} .disabled=${state.selectedSession.archived === true || activityNoticeVisible || this.isRevertingMessage(state)} .canSteer=${state.status?.isStreaming === true} .isCompacting=${state.status?.isCompacting === true} .canStop=${state.status?.isStreaming === true || state.status?.isBashRunning === true || state.status?.isCompacting === true || (state.status?.pendingMessageCount ?? 0) > 0} .status=${state.status} .availableThinkingLevels=${state.availableThinkingLevels} .sending=${state.sendingPrompts[state.selectedSession.id] === true} .onSend=${this.handleSendPrompt} .onStop=${this.handleStopActiveWork} .onSelectModel=${this.handleSelectModel} .onSelectThinking=${this.handleSelectThinking}></prompt-editor>
+              <prompt-editor ?inert=${activityNoticeVisible || this.isRevertingMessage(state)} .promptChips=${this.selectedPromptChips()} .onRemoveChip=${this.handleRemovePromptChip} .shortcuts=${this.shortcutConfig} .defaultStreamingBehavior=${this.defaultStreamingBehavior} .sessionId=${state.selectedSession.id} .cwd=${state.selectedWorkspace?.path} .machineId=${selectedMachineId(state)} .machineLabel=${state.selectedMachine?.name} .projectId=${state.selectedWorkspace?.projectId} .workspaceId=${state.selectedWorkspace?.id} .attachmentsFolder=${workspaceEffectiveAttachmentsFolder(state.selectedWorkspace?.effectiveConfig, this.workspaceAttachmentsDefaultFolder)} .disabled=${state.selectedSession.archived === true || activityNoticeVisible || this.isRevertingMessage(state)} .canSteer=${state.status?.isStreaming === true} .isCompacting=${state.status?.isCompacting === true} .canStop=${state.status?.isStreaming === true || state.status?.isBashRunning === true || state.status?.isCompacting === true || (state.status?.pendingMessageCount ?? 0) > 0} .status=${state.status} .sending=${state.sendingPrompts[state.selectedSession.id] === true} .onSend=${this.handleSendPrompt} .onStop=${this.handleStopActiveWork} .onSelectModel=${this.handleSelectModel} .onSelectThinking=${this.handleSelectThinking} .onSelectMachine=${this.handleSelectComposerMachine} .onSelectWorkspace=${this.handleSelectComposerWorkspace}>${this.renderStatusBar(state)}</prompt-editor>
               ${this.renderSessionActivityNotice()}
             </div>
-            ${this.renderStatusBar(state)}
             ${state.commandDialog !== undefined ? html`<command-picker .title=${state.commandDialog.title} .options=${state.commandDialog.options} .onPick=${(value: string) => this.sessions.respondToCommand(state.commandDialog?.requestId ?? "", value)} .onCancel=${() => { this.sessions.cancelCommand(); }}></command-picker>` : null}
-            ${state.modelDialog !== undefined ? html`<model-picker title=${state.modelDialog.title} .options=${state.modelDialog.options} .catalog=${state.modelDialog.catalog} .defaultValue=${state.modelDialog.defaultValue} .defaultsLoading=${state.modelDialog.defaultsLoading === true} .onSetDefault=${this.handleSetDefaultModel} .selectedValue=${state.modelDialog.selectedValue} .onPick=${(value: string) => { void this.pickModel(value); }} .onToggleEnabled=${this.handleToggleModelEnabled} .onSetScope=${this.handleSetModelScope} .onCancel=${() => { this.setState({ modelDialog: undefined }); }}></model-picker>` : null}
-            ${state.thinkingDialog !== undefined ? html`<command-picker title=${state.thinkingDialog.title} .options=${state.thinkingDialog.options} .defaultValue=${state.thinkingDialog.defaultValue} .defaultsLoading=${state.thinkingDialog.defaultsLoading === true} .onSetDefault=${this.handleSetDefaultThinking} .selectedValue=${state.thinkingDialog.selectedValue} .onPick=${(value: string) => { void this.pickThinking(value); }} .onCancel=${() => { this.setState({ thinkingDialog: undefined }); }}></command-picker>` : null}
+            ${this.renderModelDialog()}
+            ${this.renderComposerContextPicker()}
           ` : html`<div class="empty">${this.sessionEmptyMessage()}</div>`}
         </main>
         ${this.renderWorkspacePanelEdgeControl()}
@@ -4142,28 +4216,4 @@ function omitWorkspaceDeletionRun(runs: Record<string, TerminalCommandRun>, work
 
 function nextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => { resolve(); }));
-}
-
-function thinkingDescription(level: string): string | undefined {
-  switch (level) {
-    case "off": return t("PiWebApp.no_reasoning.34ab682d");
-    case "minimal": return t("PiWebApp.very_brief_reasoning_k_tokens.4a351058");
-    case "low": return t("PiWebApp.light_reasoning_k_tokens.cfef40d8");
-    case "medium": return t("PiWebApp.moderate_reasoning_k_tokens.c46b6830");
-    case "high": return t("PiWebApp.deep_reasoning_k_tokens.04b7b4dc");
-    case "xhigh": return t("PiWebApp.maximum_reasoning_k_tokens.721e91f4");
-    default: return undefined; // unknown level from a newer pi: no description
-  }
-}
-
-function thinkingDisplayLabel(level: string): string {
-  switch (level) {
-    case "off": return t("ui.thinking.off");
-    case "minimal": return t("ui.thinking.minimal");
-    case "low": return t("ui.thinking.low");
-    case "medium": return t("ui.thinking.medium");
-    case "high": return t("ui.thinking.high");
-    case "xhigh": return t("ui.thinking.xhigh");
-    default: return level;
-  }
 }

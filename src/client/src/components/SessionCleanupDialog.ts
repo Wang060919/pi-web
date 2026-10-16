@@ -206,20 +206,21 @@ export class SessionCleanupDialog extends LitElement {
   }
 
   static override styles = css`
-    :host { position: fixed; inset: 0; z-index: 30; color: var(--pi-text); font: 14px system-ui, sans-serif; }
+    :host { position: fixed; inset: 0; z-index: 30; color: var(--pi-text); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     modal-surface { --modal-surface-backdrop-padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); --modal-surface-width: min(760px, 100%); --modal-surface-max-height: min(760px, 100%); --modal-surface-radius: 14px; }
-    header, footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--pi-border); }
-    footer { border-top: 1px solid var(--pi-border); border-bottom: 0; justify-content: end; }
+    header, footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 0; }
+    footer { border-top: 0; border-bottom: 0; justify-content: end; }
     .body { flex: 1 1 auto; min-height: 0; overflow: auto; display: grid; gap: 14px; padding: 16px; }
-    .eyebrow { display: block; color: var(--pi-muted); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .eyebrow { display: block; color: var(--pi-muted); font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0; }
     h1, h2, p { margin: 0; }
-    h1 { font-size: 20px; line-height: 1.2; }
-    h2 { font-size: 15px; }
-    .intro, .hint, .empty { color: var(--pi-muted); }
+    h1 { font-size: 18px; line-height: 24px; font-weight: 500; }
+    h2 { font-size: 14px; line-height: 20px; font-weight: 500; }
+    .intro { font-size: 14px; line-height: 20px; color: var(--pi-text-secondary); }
+    .hint, .empty { color: var(--pi-muted); }
     fieldset { margin: 0; padding: 0; border: 0; display: grid; gap: 10px; }
     .toggle-row { display: grid; grid-template-columns: auto minmax(0, max-content) 88px auto; align-items: center; gap: 8px; color: var(--pi-text); }
     input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--pi-accent); }
-    input.days { box-sizing: border-box; width: 88px; min-width: 0; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); padding: 8px 9px; font: var(--pi-control-font-size, 16px) var(--pi-control-font-family, system-ui, sans-serif); }
+    input.days { box-sizing: border-box; width: 88px; min-width: 0; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); padding: 8px 9px; font: var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif); }
     input.days:disabled { opacity: .55; }
     .warning, .dialog-error, .result { border: 1px solid var(--pi-border); border-radius: 10px; padding: 10px 12px; }
     .warning { border-color: var(--pi-warning-border); background: var(--pi-warning-surface); color: var(--pi-text); }
@@ -235,14 +236,14 @@ export class SessionCleanupDialog extends LitElement {
     thead th:first-child, td.select-cell { width: 72px; text-align: center; }
     th:nth-child(2), td:nth-child(2) { text-align: left; }
     tbody tr.unselected { opacity: .58; }
-    tbody th { max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 500; }
-    tfoot th, tfoot td { border-bottom: 0; font-weight: 700; }
-    button { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); padding: 7px 9px; font: inherit; cursor: pointer; }
+    tbody th { max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--pi-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-weight: 500; }
+    tfoot th, tfoot td { border-bottom: 0; font-weight: 500; }
+    button { border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 7px 9px; font: inherit; cursor: pointer; }
     button:disabled { opacity: .5; cursor: not-allowed; }
     button.danger { color: var(--pi-danger); }
     button.danger:not(:disabled):hover { background: color-mix(in srgb, var(--pi-danger) 14%, transparent); }
     .close-button { width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: transparent; color: var(--pi-muted); padding: 0; font-size: 24px; }
-    .close-button:hover, .close-button:focus { color: var(--pi-text); background: var(--pi-surface-hover); }
+    .close-button:hover, .close-button:focus-visible { color: var(--pi-text); background: var(--pi-surface-hover); }
 
     @media (max-width: 680px) {
       modal-surface { --modal-surface-backdrop-padding: 0; --modal-surface-place-items: stretch; --modal-surface-width: 100%; --modal-surface-max-height: none; --modal-surface-border: 0; --modal-surface-radius: 0; }
@@ -252,6 +253,15 @@ export class SessionCleanupDialog extends LitElement {
       table { min-width: 560px; }
       thead th:first-child, td.select-cell { width: 58px; }
     }
+    button:not(:disabled):hover { background: var(--pi-surface-hover); }
+    button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
+    strong { font-weight: 500; }
+    small { font-size: 12px; line-height: 16px; }
+    @media (max-width: 680px), (pointer: coarse) {
+      button { min-height: 44px; }
+      header button { min-width: 44px; }
+    }
+    input.days:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 1px; }
   `;
 }
 

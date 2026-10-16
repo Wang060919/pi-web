@@ -1,6 +1,6 @@
-import { localizedTemplate } from "../../../../shared/i18n";
-import { LitElement, css, html } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { localizedTemplate, t } from "../../../../shared/i18n";
+import { LitElement, css, html, type PropertyValues } from "lit";
+import { customElement, property, query, state } from "lit/decorators.js";
 import type { Machine, MachineHealth, Project, SessionActivity, SessionInfo, SessionStatus, Workspace } from "../../api";
 import type { MachineStatusSnapshot } from "../../../../shared/machineStatus";
 import type { SessionLabelItem, WorkspaceLabelItem } from "../../plugins/types";
@@ -8,6 +8,9 @@ import { selectedMachineId } from "../../controllers/types";
 import type { NavigationSection } from "../../appShell/navigationState";
 import { NAVIGATION_SECTION_ORDER } from "../../appShell/navigationState";
 import type { KeyboardNavigableSection } from "../navigationFocus";
+import "../ModalSurface";
+import type { ModalSurface } from "../ModalSurface";
+import { navigationContextStyles } from "./navigationContextStyles";
 import "../MachineList";
 import "../MachineSwitcher";
 import "../ProjectList";
@@ -15,19 +18,20 @@ import "../WorkspaceList";
 import "../SessionList";
 
 export type NavigationFocusTarget = NavigationSection | "chat";
+type ContextPicker = "projects" | "workspaces";
 
 @customElement("app-navigation-panel")
 export class AppNavigationPanel extends LitElement {
   @property({ attribute: false }) machines: Machine[] = [];
-  @property({ attribute: false }) selectedMachine?: Machine;
+  @property({ attribute: false }) selectedMachine: Machine | undefined = undefined;
   /** PWA display mode: surfaces the single-machine identity bubble in the header. */
   @property({ type: Boolean }) locationIndicator = false;
   @property({ attribute: false }) machineStatuses: Record<string, MachineHealth> = {};
   @property({ attribute: false }) machineStatusSnapshots: Record<string, MachineStatusSnapshot> = {};
   @property({ attribute: false }) projects: Project[] = [];
-  @property({ attribute: false }) selectedProject?: Project;
+  @property({ attribute: false }) selectedProject: Project | undefined = undefined;
   @property({ attribute: false }) workspaces: Workspace[] = [];
-  @property({ attribute: false }) selectedWorkspace?: Workspace;
+  @property({ attribute: false }) selectedWorkspace: Workspace | undefined = undefined;
   @property({ attribute: false }) sessions: SessionInfo[] = [];
   @property({ attribute: false }) selectedSession?: SessionInfo;
   @property({ attribute: false }) pinnedRootIds: string[] = [];
@@ -88,9 +92,23 @@ export class AppNavigationPanel extends LitElement {
   @query("project-list") private projectList?: KeyboardNavigableSection;
   @query("workspace-list") private workspaceList?: KeyboardNavigableSection;
   @query("session-list") private sessionList?: KeyboardNavigableSection;
+  @query("modal-surface") private pickerSurface?: ModalSurface;
+  @state() private contextPicker: ContextPicker | undefined;
+
+  protected override willUpdate(changed: PropertyValues<this>): void {
+    if (this.contextPicker !== undefined && (
+      (changed.has("selectedMachine") && (changed.get("selectedMachine")?.id ?? "local") !== (this.selectedMachine?.id ?? "local"))
+      || (changed.has("selectedProject") && changed.get("selectedProject")?.id !== this.selectedProject?.id)
+      || (changed.has("selectedWorkspace") && changed.get("selectedWorkspace")?.id !== this.selectedWorkspace?.id)
+      || this.compact
+    )) this.contextPicker = undefined;
+    this.toggleAttribute("context-picker-open", this.contextPicker !== undefined);
+  }
 
   async focusSection(section: NavigationSection): Promise<boolean> {
     await this.updateComplete;
+    if (!this.compact && (section === "projects" || section === "workspaces")) return await this.openContextPicker(section);
+    if (this.contextPicker !== undefined) await this.closeContextPicker();
     switch (section) {
       case "machines": return await this.focusNavigableSection(this.compact ? this.machineList : this.machineSwitcher);
       case "projects": return await this.focusNavigableSection(this.projectList);
@@ -102,7 +120,10 @@ export class AppNavigationPanel extends LitElement {
   // Stable child inputs delegate at invocation time, never capturing old props.
   private readonly childCallbacks = {
     toggleProjects: () => { this.onToggleProjects?.(); },
-    selectProject: (project: Project) => this.onSelectProject?.(project),
+    selectProject: async (project: Project) => {
+      if (this.contextPicker !== undefined) await this.closeContextPicker();
+      await this.onSelectProject?.(project);
+    },
     closeProject: (project: Project) => this.onCloseProject?.(project),
     moveProject: (project: Project, direction: -1 | 1) => this.onMoveProject?.(project, direction),
     moveWorkspace: (workspace: Workspace, direction: -1 | 1) => this.onMoveWorkspace?.(workspace, direction),
@@ -110,7 +131,10 @@ export class AppNavigationPanel extends LitElement {
     unpinSession: (session: SessionInfo) => this.onUnpinSession?.(session),
     moveSessionPin: (session: SessionInfo, direction: -1 | 1) => this.onMoveSessionPin?.(session, direction),
     toggleWorkspaces: () => { this.onToggleWorkspaces?.(); },
-    selectWorkspace: (workspace: Workspace) => this.onSelectWorkspace?.(workspace),
+    selectWorkspace: async (workspace: Workspace) => {
+      if (this.contextPicker !== undefined) await this.closeContextPicker();
+      await this.onSelectWorkspace?.(workspace);
+    },
     deleteWorkspace: (workspace: Workspace) => this.onDeleteWorkspace?.(workspace),
     toggleSessions: () => { this.onToggleSessions?.(); },
     archivedCollapsed: () => this.onArchivedCollapsed?.(),
@@ -172,37 +196,7 @@ export class AppNavigationPanel extends LitElement {
           .onCancelKeyboardNavigation=${() => { this.cancelKeyboardNavigation(); }}
         ></machine-list>
       ` : null}
-      <project-list
-        .projects=${this.projects}
-        .selected=${this.selectedProject}
-        .statusSnapshot=${this.selectedMachineStatusSnapshot()}
-        .collapsible=${this.collapsible}
-        .collapsed=${this.projectsCollapsed}
-        .onToggleCollapsed=${this.childCallbacks.toggleProjects}
-        .onSelect=${this.childCallbacks.selectProject}
-        .onClose=${this.childCallbacks.closeProject}
-        .onMove=${this.childCallbacks.moveProject}
-        .onFocusPreviousSection=${this.childCallbacks.previousFromProjects}
-        .onFocusNextSection=${this.childCallbacks.nextFromProjects}
-        .onCancelKeyboardNavigation=${this.childCallbacks.cancelKeyboardNavigation}
-      ></project-list>
-      <workspace-list
-        .workspaces=${this.workspaces}
-        .selected=${this.selectedWorkspace}
-        .machineId=${this.selectedMachine?.id ?? "local"}
-        .statusSnapshot=${this.selectedMachineStatusSnapshot()}
-        .deletingWorkspaceIds=${this.deletingWorkspaceIds}
-        .collapsible=${this.collapsible}
-        .collapsed=${this.workspacesCollapsed}
-        .workspaceLabelItems=${this.workspaceLabelItems}
-        .onToggleCollapsed=${this.childCallbacks.toggleWorkspaces}
-        .onSelect=${this.childCallbacks.selectWorkspace}
-        .onDelete=${this.childCallbacks.deleteWorkspace}
-        .onMove=${this.childCallbacks.moveWorkspace}
-        .onFocusPreviousSection=${this.childCallbacks.previousFromWorkspaces}
-        .onFocusNextSection=${this.childCallbacks.nextFromWorkspaces}
-        .onCancelKeyboardNavigation=${this.childCallbacks.cancelKeyboardNavigation}
-      ></workspace-list>
+      ${this.compact ? html`${this.renderProjectList()}${this.renderWorkspaceList()}` : this.renderContextSwitcher()}
       <session-list
         .sessions=${this.sessions}
         .pinnedRootIds=${this.pinnedRootIds}
@@ -240,7 +234,120 @@ export class AppNavigationPanel extends LitElement {
         .onFocusNextSection=${this.childCallbacks.nextFromSessions}
         .onCancelKeyboardNavigation=${this.childCallbacks.cancelKeyboardNavigation}
       ></session-list>
+      ${this.renderContextPicker()}
     `;
+  }
+
+  private renderProjectList() {
+    return html`
+      <project-list
+        .projects=${this.projects}
+        .selected=${this.selectedProject}
+        .statusSnapshot=${this.selectedMachineStatusSnapshot()}
+        .collapsible=${this.compact && this.collapsible}
+        .collapsed=${this.compact && this.projectsCollapsed}
+        .onToggleCollapsed=${this.childCallbacks.toggleProjects}
+        .onSelect=${this.childCallbacks.selectProject}
+        .onClose=${this.childCallbacks.closeProject}
+        .onMove=${this.childCallbacks.moveProject}
+        .onFocusPreviousSection=${this.childCallbacks.previousFromProjects}
+        .onFocusNextSection=${this.childCallbacks.nextFromProjects}
+        .onCancelKeyboardNavigation=${this.childCallbacks.cancelKeyboardNavigation}
+      ></project-list>
+    `;
+  }
+
+  private renderWorkspaceList() {
+    return html`
+      <workspace-list
+        .workspaces=${this.workspaces}
+        .selected=${this.selectedWorkspace}
+        .machineId=${this.selectedMachine?.id ?? "local"}
+        .statusSnapshot=${this.selectedMachineStatusSnapshot()}
+        .deletingWorkspaceIds=${this.deletingWorkspaceIds}
+        .collapsible=${this.compact && this.collapsible}
+        .collapsed=${this.compact && this.workspacesCollapsed}
+        .workspaceLabelItems=${this.workspaceLabelItems}
+        .onToggleCollapsed=${this.childCallbacks.toggleWorkspaces}
+        .onSelect=${this.childCallbacks.selectWorkspace}
+        .onDelete=${this.childCallbacks.deleteWorkspace}
+        .onMove=${this.childCallbacks.moveWorkspace}
+        .onFocusPreviousSection=${this.childCallbacks.previousFromWorkspaces}
+        .onFocusNextSection=${this.childCallbacks.nextFromWorkspaces}
+        .onCancelKeyboardNavigation=${this.childCallbacks.cancelKeyboardNavigation}
+      ></workspace-list>
+    `;
+  }
+
+  private renderContextSwitcher() {
+    return html`
+      <div class="context-switcher">
+        <button
+          class="context-select"
+          data-context="projects"
+          title=${this.selectedProject?.path ?? t("ui.navigation.chooseProject")}
+          aria-label=${t("ui.navigation.projectPicker")}
+          aria-haspopup="dialog"
+          aria-expanded=${String(this.contextPicker === "projects")}
+          @click=${() => { void this.openContextPicker("projects"); }}
+        >
+          <span class="context-copy"><small>${t("ui.navigation.project")}</small><span>${this.selectedProject?.name ?? t("ui.navigation.chooseProject")}</span></span>
+          <span class="context-chevron" aria-hidden="true">⌄</span>
+        </button>
+        <button
+          class="context-select"
+          data-context="workspaces"
+          title=${this.selectedWorkspace?.path ?? t("ui.navigation.chooseWorkspace")}
+          aria-label=${t("ui.navigation.workspacePicker")}
+          aria-haspopup="dialog"
+          aria-expanded=${String(this.contextPicker === "workspaces")}
+          @click=${() => { void this.openContextPicker("workspaces"); }}
+        >
+          <span class="context-copy"><small>${t("ui.navigation.workspace")}</small><span>${this.selectedWorkspace?.label ?? t("ui.navigation.chooseWorkspace")}</span></span>
+          <span class="context-chevron" aria-hidden="true">⌄</span>
+        </button>
+      </div>
+    `;
+  }
+
+  private renderContextPicker() {
+    if (this.contextPicker === undefined) return null;
+    const projectPicker = this.contextPicker === "projects";
+    const label = t(projectPicker ? "ui.navigation.projectPicker" : "ui.navigation.workspacePicker");
+    return html`
+      <div class="context-picker">
+        <modal-surface .label=${label} .onClose=${() => { void this.closeContextPicker(); }}>
+          <div class="picker-heading"><strong>${label}</strong><button class="picker-close" aria-label=${t("ui.navigation.closePicker")} title=${t("ui.navigation.closePicker")} @click=${() => { void this.closeContextPicker(); }}>×</button></div>
+          ${projectPicker ? this.renderProjectList() : this.renderWorkspaceList()}
+        </modal-surface>
+      </div>
+    `;
+  }
+
+  private async openContextPicker(picker: ContextPicker): Promise<boolean> {
+    if (this.compact) return false;
+    if (this.contextPicker !== undefined && this.contextPicker !== picker) await this.closeContextPicker();
+    // Keep a stable restoration target even when a keyboard shortcut opens
+    // the picker from the composer rather than from its trigger.
+    this.renderRoot.querySelector<HTMLElement>(`[data-context="${picker}"]`)?.focus({ preventScroll: true });
+    this.contextPicker = picker;
+    await this.updateComplete;
+    if (this.contextPicker !== picker) return false;
+    const surface = this.pickerSurface;
+    await surface?.updateComplete;
+    if (this.contextPicker !== picker) return false;
+    const list = picker === "projects" ? this.projectList : this.workspaceList;
+    if (await this.focusNavigableSection(list)) return true;
+    surface?.focusDialog(this.renderRoot.querySelector<HTMLElement>(".picker-close") ?? undefined);
+    return surface !== undefined;
+  }
+
+  private async closeContextPicker(): Promise<void> {
+    if (this.contextPicker === undefined) return;
+    this.contextPicker = undefined;
+    // Removing ModalSurface restores the trigger before the next navigation
+    // request chooses its own focus target.
+    await this.updateComplete;
   }
 
   /**
@@ -261,35 +368,45 @@ export class AppNavigationPanel extends LitElement {
 
   private focusPreviousFrom(section: NavigationSection): void {
     const target = previousVisibleNavigationTarget(section, this.machines);
-    if (target !== undefined) void this.onFocusNavigationTarget?.(target);
+    if (target !== undefined) void this.focusOutsidePicker(target);
   }
 
   private focusNextFrom(section: NavigationSection): void {
-    void this.onFocusNavigationTarget?.(nextVisibleNavigationTarget(section, this.machines));
+    void this.focusOutsidePicker(nextVisibleNavigationTarget(section, this.machines));
+  }
+
+  private async focusOutsidePicker(target: NavigationFocusTarget): Promise<void> {
+    if (this.contextPicker !== undefined) await this.closeContextPicker();
+    await this.onFocusNavigationTarget?.(target);
   }
 
   private cancelKeyboardNavigation(): void {
+    if (this.contextPicker !== undefined) {
+      void this.closeContextPicker();
+      return;
+    }
     void this.onCancelKeyboardNavigation?.();
   }
 
-  static override styles = css`
-    :host { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  static override styles = [css`
+    :host { --navigation-panel-bg: light-dark(color-mix(in srgb, var(--pi-bg) 98%, var(--pi-text)), color-mix(in srgb, var(--pi-bg) 86%, #000)); display: flex; flex-direction: column; min-height: 0; overflow: hidden; background: var(--navigation-panel-bg); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     :host([compact]) { flex: 1 1 auto; }
-    header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px; border-bottom: 1px solid var(--pi-border); }
-    header strong { flex: 0 0 auto; }
+    header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 0; }
+    header strong { flex: 0 0 auto; font-weight: 600; }
     machine-switcher { flex: 1 1 auto; min-width: 0; }
     :host([compact]) header { display: none; }
     .header-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
     /* Expanded sections share the panel height equally, so collapsing one
        section distributes its space to every remaining section, not just the
        session list. Collapsed sections keep only their heading height. */
-    machine-list, project-list, workspace-list, session-list { flex: 1 1 0px; min-height: 0; overflow: hidden; border-bottom: 1px solid var(--pi-border-muted); }
+    machine-list, project-list, workspace-list, session-list { flex: 1 1 0px; min-height: 0; overflow: hidden; border-bottom: 0; }
     machine-list[collapsed],
     project-list[collapsed],
     workspace-list[collapsed],
     session-list[collapsed] { flex: 0 0 auto; min-height: auto; overflow: hidden; }
-    button { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); padding: 7px 9px; cursor: pointer; }
-  `;
+    button { border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 6px 8px; font: inherit; cursor: pointer; }
+    button:not(:disabled):hover { background: var(--pi-surface-hover); }
+  `, navigationContextStyles];
 }
 
 export function shouldShowMachinesSection(machines: readonly Machine[]): boolean {

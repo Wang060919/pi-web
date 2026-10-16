@@ -132,20 +132,20 @@ export class NavigationDialog extends LitElement {
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     header, footer { flex: 0 0 auto; }
     .destination, footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    h2 { margin: 0; padding: 12px 12px 4px; font-size: 14px; }
+    h2 { margin: 0; padding: 12px 12px 4px; font-size: 14px; line-height: 20px; font-weight: 500; }
     p { margin: 0; padding: 0 12px 12px; color: var(--pi-muted); font-size: 12px; flex: 0 0 auto; }
     nav { overscroll-behavior: contain; }
-    .destination { border-bottom: 1px solid var(--pi-border-muted); gap: 0; }
-    .destination-button { flex: 1; min-width: 0; overflow-wrap: anywhere; text-align: left; padding: 10px 12px; font: inherit; font-weight: 600; }
+    .destination { border-bottom: 0; gap: 0; }
+    .destination-button { flex: 1; min-width: 0; overflow-wrap: anywhere; text-align: left; padding: 10px 12px; font: inherit; font-weight: 500; }
     .destination-button.selected, .destination-button:hover { background: var(--pi-selection-bg); }
     .pin-button { display: inline-flex; align-items: center; justify-content: center; padding: 10px 12px; }
     .pin-button[aria-pressed="true"] svg { color: var(--pi-accent); }
-    footer { padding: 12px; flex-wrap: wrap; border-top: 1px solid var(--pi-border); }
+    footer { padding: 12px; flex-wrap: wrap; border-top: 0; }
     .mobile-navigation { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12px; }
     .toggle-options { display: inline-flex; gap: 4px; }
     .toggle-options button { font-size: inherit; padding: 5px 7px; }
-    footer button { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); padding: 7px 9px; }
+    footer button { border: 0; border-radius: 6px; background: transparent; padding: 7px 9px; }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
-    footer button[aria-pressed="true"] { border-color: var(--pi-accent); background: var(--pi-selection-bg); }
+    footer button[aria-pressed="true"] { background: var(--pi-selection-bg); }
   `];
 }

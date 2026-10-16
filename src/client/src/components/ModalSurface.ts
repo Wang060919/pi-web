@@ -1,6 +1,6 @@
 import { LitElement, css, html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
-import { deepActiveElement, focusElement, isHiddenOrInertInComposedTree, registerRenderedModal, type RenderedModalRegistration } from "./modalLayerRegistry";
+import { composedContains, deepActiveElement, focusElement, isHiddenOrInertInComposedTree, registerRenderedModal, type RenderedModalRegistration } from "./modalLayerRegistry";
 
 const FOCUSABLE_SELECTOR = "button, input, select, textarea, a[href], [tabindex]";
 
@@ -74,11 +74,16 @@ export class ModalSurface extends LitElement {
    * Moves focus into the dialog: the `initialFocus` target when one matches,
    * otherwise the dialog section. Hosts call this after swapping content that
    * held focus (for example a step change) so keys keep reaching the dialog.
+   * An explicit target lets embedded controls restore focus within this layer.
    */
-  focusDialog(): void {
+  focusDialog(target?: HTMLElement): void {
     // Async dialog data can resolve after a visually higher modal has opened.
     // Only the actual top layer may claim focus; when that layer closes, the
     // rendered-modal registry reapplies the surviving layer's focus contract.
+    if (target !== undefined) {
+      if (this.modalRegistration?.isTop === true && composedContains(this, target)) focusElement(target);
+      return;
+    }
     this.modalRegistration?.focus();
   }
 
@@ -176,7 +181,7 @@ export class ModalSurface extends LitElement {
          --modal-surface-border / --modal-surface-radius / --modal-surface-shadow */
     :host { display: block; width: 100%; height: 100%; }
     .backdrop { box-sizing: border-box; width: 100%; height: 100%; display: grid; place-items: var(--modal-surface-place-items, center); padding: var(--modal-surface-backdrop-padding, 0); background: var(--pi-overlay); overflow: hidden; }
-    section[role="dialog"] { box-sizing: border-box; width: var(--modal-surface-width, min(720px, 100%)); max-width: var(--modal-surface-max-width, 100%); height: var(--modal-surface-height, auto); max-height: var(--modal-surface-max-height, 100%); min-height: var(--modal-surface-min-height, auto); display: flex; flex-direction: column; border: var(--modal-surface-border, 1px solid var(--pi-border)); border-radius: var(--modal-surface-radius, 12px); background: var(--pi-bg); box-shadow: var(--modal-surface-shadow, 0 20px 60px var(--pi-shadow-strong)); overflow: hidden; }
+    section[role="dialog"] { box-sizing: border-box; width: var(--modal-surface-width, min(720px, 100%)); max-width: var(--modal-surface-max-width, 100%); height: var(--modal-surface-height, auto); max-height: var(--modal-surface-max-height, 100%); min-height: var(--modal-surface-min-height, auto); display: flex; flex-direction: column; border: var(--modal-surface-border, 1px solid var(--pi-border-muted)); border-radius: var(--modal-surface-radius, 12px); background: light-dark(var(--pi-surface), var(--pi-bg)); box-shadow: var(--modal-surface-shadow, 0 20px 60px var(--pi-shadow-strong)); overflow: hidden; }
   `;
 }
 

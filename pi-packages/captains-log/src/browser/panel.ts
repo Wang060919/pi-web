@@ -69,37 +69,38 @@ export function renderCaptainPanel(html: Html, view: CaptainPanelView) {
 // Light DOM inherits workspace typography/buttons. Extra rules are package-scoped and use host themes.
 const styles = `
   captains-log-lifetime { display: block; min-width: 0; }
-  .captains-log { box-sizing: border-box; padding: 16px; min-width: 0; color: inherit; font: inherit; line-height: 1.5; }
+  .captains-log { box-sizing: border-box; padding: 16px; min-width: 0; color: var(--pi-text); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
   .captains-log *, .captains-log *::before, .captains-log *::after { box-sizing: border-box; }
   .captains-log h2, .captains-log p { margin: 0; }
-  .captains-log h2 { font-size: 15px; }
-  .captains-log button { font: inherit; }
+  .captains-log h2 { font-size: 16px; line-height: 22px; font-weight: 500; }
+  .captains-log strong { font-weight: 500; }
+  .captains-log button { min-height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 6px 10px; font: inherit; cursor: pointer; }
   .captains-log button:hover:not(:disabled) { background: var(--pi-surface-hover); }
   .captains-log button:disabled { opacity: .5; cursor: not-allowed; }
   .captains-log button:focus-visible, .captains-log summary:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
-  .captains-log .captain-primary { border-color: var(--pi-accent-border); background: var(--pi-selection-bg); padding: 8px 12px; }
-  .captains-log .captain-source { display: grid; gap: 3px; margin: 18px 0 12px; padding: 10px 12px; background: var(--pi-surface); border: 1px solid var(--pi-border-muted); border-radius: 8px; overflow-wrap: anywhere; }
-  .captains-log .captain-source span { font-size: 11px; }
+  .captains-log .captain-primary { background: var(--pi-selection-bg); padding: 8px 12px; }
+  .captains-log .captain-source { display: grid; gap: 3px; margin: 18px 0 12px; padding: 10px 12px; background: var(--pi-surface); border: 0; border-radius: 8px; overflow-wrap: anywhere; }
+  .captains-log .captain-source span { font-size: 12px; line-height: 16px; }
   .captains-log .captain-status { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 10px 0 16px; color: var(--pi-muted); font-size: 12px; }
   .captains-log .captain-notice { padding: 12px; margin-bottom: 12px; border: 1px solid var(--pi-warning-border); border-radius: 8px; background: var(--pi-warning-surface); overflow-wrap: anywhere; white-space: pre-wrap; }
   .captains-log .captain-notice p { margin-top: 6px; }
   .captains-log .captain-empty { padding: 16px 0; }
-  .captains-log .captain-reply { padding: 16px 0; border-top: 1px solid var(--pi-border-muted); }
+  .captains-log .captain-reply { padding: 16px 0; border-top: 0; }
   .captains-log .captain-reply-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
-  .captains-log time { color: var(--pi-muted); font-size: 11px; }
-  .captains-log .captain-answer { line-height: 1.65; overflow-wrap: anywhere; min-width: 0; }
+  .captains-log time { color: var(--pi-muted); font-size: 12px; line-height: 16px; }
+  .captains-log .captain-answer { font-size: 14px; line-height: 20px; overflow-wrap: anywhere; min-width: 0; }
   .captains-log .captain-answer > :first-child { margin-top: 0; }
   .captains-log .captain-answer > :last-child { margin-bottom: 0; }
-  .captains-log .captain-answer p, .captains-log .captain-answer ul, .captains-log .captain-answer ol { margin: .65em 0; }
+  .captains-log .captain-answer p, .captains-log .captain-answer ul, .captains-log .captain-answer ol { margin: 8px 0; }
   .captains-log .captain-answer h1, .captains-log .captain-answer h2, .captains-log .captain-answer h3,
-  .captains-log .captain-answer h4, .captains-log .captain-answer h5, .captains-log .captain-answer h6 { margin: 1em 0 .4em; line-height: 1.3; }
-  .captains-log .captain-answer h1 { font-size: 1.5em; }
-  .captains-log .captain-answer h2 { font-size: 1.3em; }
-  .captains-log .captain-answer h3 { font-size: 1.15em; }
+  .captains-log .captain-answer h4, .captains-log .captain-answer h5, .captains-log .captain-answer h6 { margin: 14px 0 8px; font-weight: 500; line-height: 1.3; }
+  .captains-log .captain-answer h1 { font-size: 20px; }
+  .captains-log .captain-answer h2 { font-size: 17px; }
+  .captains-log .captain-answer h3 { font-size: 15px; }
   .captains-log .captain-answer ul, .captains-log .captain-answer ol { padding-left: 1.7em; }
   .captains-log .captain-answer blockquote { margin: .75em 0; padding-left: 1em; border-left: 3px solid var(--pi-border-muted); color: var(--pi-muted); }
-  .captains-log .captain-answer code { font-family: monospace; background: var(--pi-surface); border-radius: 3px; padding: .1em .25em; }
-  .captains-log .captain-answer pre { max-width: 100%; overflow: auto; padding: 12px; background: var(--pi-surface); border: 1px solid var(--pi-border-muted); border-radius: 6px; white-space: pre; overflow-wrap: normal; }
+  .captains-log .captain-answer code { font: 12px/1.46 var(--pi-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); background: var(--pi-surface); border-radius: 3px; padding: .1em .25em; }
+  .captains-log .captain-answer pre { max-width: 100%; overflow: auto; padding: 12px; background: var(--pi-surface); border: 0; border-radius: 6px; white-space: pre; overflow-wrap: normal; }
   .captains-log .captain-answer pre code { padding: 0; background: none; }
   .captains-log .captain-answer a { color: var(--pi-accent); text-decoration: underline; }
   .captains-log .captain-answer a:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
@@ -108,13 +109,18 @@ const styles = `
   .captains-log .captain-answer th, .captains-log .captain-answer td { border: 1px solid var(--pi-border-muted); padding: 6px 10px; text-align: left; }
   .captains-log .captain-answer th { background: var(--pi-surface); }
   .captains-log .captain-answer hr { border: 0; border-top: 1px solid var(--pi-border-muted); }
-  .captains-log .captain-secondary { border-top: 1px solid var(--pi-border-muted); margin-top: 12px; padding-top: 6px; }
+  .captains-log .captain-secondary { border-top: 0; margin-top: 12px; padding-top: 6px; }
   .captains-log details { padding: 8px 0; }
   .captains-log summary { cursor: pointer; color: var(--pi-muted); }
   .captains-log details p { margin: 8px 0; overflow-wrap: anywhere; }
   .captains-log .captain-history { display: grid; gap: 6px; padding-top: 8px; }
   .captains-log .captain-history button { text-align: left; min-width: 0; }
-  .captains-log dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; font-size: 11px; }
+  .captains-log .captain-history button.selected { background: var(--pi-selection-bg); font-weight: 500; }
+  .captains-log dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; font-size: 12px; line-height: 16px; }
   .captains-log dd { margin: 0; overflow-wrap: anywhere; }
-  .captains-log .captain-footnote { font-size: 11px; margin-top: 10px; }
+  .captains-log .captain-footnote { font-size: 12px; line-height: 16px; margin-top: 10px; }
+  @media (max-width: 640px), (pointer: coarse) {
+    .captains-log button { min-height: 44px; }
+    .captains-log summary { box-sizing: border-box; min-height: 44px; padding: 13px 0; }
+  }
 `;

@@ -98,7 +98,7 @@ export class ActionPalette extends LitElement {
   }
 
   static override styles = [paletteStyles, css`
-    .options button { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; width: 100%; padding: 10px 12px; border-bottom: 1px solid var(--pi-border-muted); text-align: left; }
+    .options button { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; width: 100%; padding: 10px 12px; border-bottom: 0; text-align: left; }
     .options button.selected, .options button:hover:not(:disabled) { background: var(--pi-selection-bg); }
     .options button:disabled { cursor: not-allowed; opacity: .68; }
     .options button.disabled.selected { background: color-mix(in srgb, var(--pi-selection-bg) 55%, transparent); }
@@ -107,7 +107,7 @@ export class ActionPalette extends LitElement {
     small { display: block; color: var(--pi-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .disabled-reason { color: var(--pi-warning); }
     .group { grid-column: 1 / -1; font-size: 12px; }
-    kbd { align-self: center; border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface); color: var(--pi-muted); padding: 2px 6px; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: nowrap; }
+    kbd { align-self: center; border: 0; border-radius: 6px; background: var(--pi-surface); color: var(--pi-muted); padding: 2px 6px; font: 12px/16px var(--pi-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); white-space: nowrap; }
   `];
 }
 

@@ -10,6 +10,9 @@ import { rememberExternalMarkdownImageDimensions, restoreExternalMarkdownImageDi
 import type { MarkdownWorkspaceContext, WorkspaceFileOpenRequest } from "../formatting/workspaceLinks";
 import { formattedTextStyles } from "./shared";
 import { codeBlockFrameStyles } from "./codeBlockFrameStyles";
+import { workspaceFileCards } from "../formatting/workspaceFileCards";
+import { workspaceFilePreviewUrl } from "../api/urls";
+import { workspaceFileCardStyles } from "./workspaceFileCardStyles";
 
 @customElement("formatted-text")
 export class FormattedText extends LitElement {
@@ -20,6 +23,7 @@ export class FormattedText extends LitElement {
   @property({ attribute: false }) contentRendering: ChatContentRendering | undefined;
   @property() machineId = "local";
   @property({ attribute: false }) workspaceContext: MarkdownWorkspaceContext | undefined;
+  @property({ type: Boolean }) fileCards = false;
 
   override render() {
     const toSafeHtml = (text: string) => toSafeMarkdownHtml(text, this.workspaceContext, this.intentKey, this.imagesEnabled, this.codeBlocks);
@@ -30,7 +34,24 @@ export class FormattedText extends LitElement {
       toSafeHtml,
     }, this.intentKey, this.codeBlocks) : undefined) ?? unsafeHTML(toSafeHtml(this.text));
     const className = this.codeBlocks.overflow === "scroll" ? "formatted code-blocks-scroll" : "formatted";
-    return html`<div class=${className} dir="auto" @load=${this.onImageLoad} @click=${this.onFormattedClick}>${content}</div>`;
+    const files = this.fileCards ? workspaceFileCards(this.text, this.workspaceContext) : [];
+    const context = this.workspaceContext;
+    return html`<div class=${className} dir="auto" @load=${this.onImageLoad} @click=${this.onFormattedClick}>${content}</div>
+      ${context === undefined || files.length === 0 ? null : html`
+        <section class="file-cards" aria-label=${t("ui.fileCards.heading")} @click=${this.onFormattedClick}>
+          <h4 class="file-cards-heading">${t("ui.fileCards.heading")}</h4>
+          <div class="file-card-list">
+            ${files.map((file) => html`
+              <a class="file-card" data-workspace-file=${file.path} title=${file.path}
+                href=${workspaceFilePreviewUrl(context.projectId, context.workspaceId, file.path, { machineId: context.machineId, download: true })}>
+                <span class="file-card-type" aria-hidden="true">${file.extension || t("ui.fileCards.file")}</span>
+                <span class="file-card-copy"><strong>${file.name}</strong><small>${t("ui.fileCards.open")}</small></span>
+                <span class="file-card-open" aria-hidden="true">↗</span>
+              </a>
+            `)}
+          </div>
+        </section>
+      `}`;
   }
 
   override updated(): void {
@@ -87,5 +108,5 @@ export class FormattedText extends LitElement {
     button.setAttribute("aria-label", label);
   }
 
-  static override styles = [formattedTextStyles, codeBlockFrameStyles];
+  static override styles = [formattedTextStyles, codeBlockFrameStyles, workspaceFileCardStyles];
 }

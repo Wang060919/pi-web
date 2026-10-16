@@ -277,11 +277,11 @@ export class ExtensionDialogCard extends LitElement {
       width: 100%;
       margin: 0 0 14px;
       color: var(--pi-text);
-      font: 14px system-ui, sans-serif;
+      font: 400 14px/20px var(--pi-font-family, system-ui, sans-serif);
       container-type: inline-size;
     }
     .card {
-      border: 1px solid var(--pi-border);
+      border: 0;
       border-radius: 10px;
       background: var(--pi-surface);
     }
@@ -295,17 +295,17 @@ export class ExtensionDialogCard extends LitElement {
       gap: 12px;
       min-height: 22px;
       padding: 8px 16px 7px;
-      border-bottom: 1px solid var(--pi-border-muted);
+      border-bottom: 0;
       border-radius: 9px 9px 0 0;
       background: var(--pi-surface);
-      box-shadow: 0 8px 18px var(--pi-shadow-soft);
+      box-shadow: none;
     }
     h2, p { margin-top: 0; }
     h2 {
       min-width: 0;
       margin-bottom: 0;
       font-size: 14px;
-      font-weight: 650;
+      font-weight: 500;
       line-height: 1.35;
       overflow-wrap: anywhere;
     }
@@ -326,7 +326,7 @@ export class ExtensionDialogCard extends LitElement {
       line-height: 1.35;
       overflow-wrap: anywhere;
     }
-    .option-button:hover:not(:disabled) { border-color: var(--pi-accent); background: var(--pi-surface-hover); }
+    .option-button:hover:not(:disabled) { background: var(--pi-surface-hover); }
     .dialog-input-form { display: grid; }
     .dialog-input {
       box-sizing: border-box;
@@ -337,7 +337,7 @@ export class ExtensionDialogCard extends LitElement {
       background: var(--pi-bg);
       color: var(--pi-text);
       padding: 8px;
-      font: var(--pi-control-font-size, 16px)/1.4 var(--pi-control-font-family, system-ui, sans-serif);
+      font: var(--pi-control-font-size, 16px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif);
     }
     .dialog-footer {
       display: flex;
@@ -350,9 +350,9 @@ export class ExtensionDialogCard extends LitElement {
     }
     .dialog-message + .dialog-footer, .dialog-options + .dialog-footer { border-top: 0; }
     button {
-      border: 1px solid var(--pi-border);
-      border-radius: 8px;
-      background: var(--pi-surface);
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
       color: var(--pi-text);
       padding: 7px 12px;
       font: inherit;
@@ -361,8 +361,8 @@ export class ExtensionDialogCard extends LitElement {
     button:hover:not(:disabled) { background: var(--pi-surface-hover); }
     button:disabled { cursor: wait; opacity: .65; }
     button:focus-visible, .dialog-input:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
-    .primary-action { border-color: var(--pi-accent); background: var(--pi-accent); color: var(--pi-accent-contrast, white); font-weight: 650; }
-    .primary-action:hover:not(:disabled) { background: color-mix(in srgb, var(--pi-accent) 86%, white); }
+    .primary-action { background: var(--pi-selection-bg); color: var(--pi-text); font-weight: 500; }
+    .primary-action:hover:not(:disabled) { background: var(--pi-surface-hover); }
     .closed-summary {
       margin: 0;
       padding: 12px 16px;
@@ -372,8 +372,9 @@ export class ExtensionDialogCard extends LitElement {
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
+    @media (pointer: coarse) { button { min-height: 44px; box-sizing: border-box; } }
     @container (max-width: 580px) {
-      .primary-action { min-height: 42px; }
+      .primary-action { min-height: 44px; }
     }
   `;
 }

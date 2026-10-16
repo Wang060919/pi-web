@@ -4,11 +4,12 @@ import { markdown, deleteMarkupBackward, insertNewlineContinueMarkup } from "@co
 import { EditorSelection, EditorState, Compartment } from "@codemirror/state";
 import { drawSelection, EditorView, keymap, placeholder } from "@codemirror/view";
 import { defaultHighlightStyle, indentOnInput, indentUnit, syntaxHighlighting } from "@codemirror/language";
-import { LitElement, html, type PropertyValues } from "lit";
+import { LitElement, html, svg, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { api, DEFAULT_WORKSPACE_ATTACHMENTS_FOLDER, type FileSuggestion, type PromptAttachment, type SessionModel, type SessionStatus, type SlashCommand } from "../api";
 import type { PromptAttachmentDelivery } from "../../../shared/apiTypes";
 import { capturePromptAttachments, effectivePromptAttachmentDelivery, isInlinePromptAttachment, promptAttachmentsCanUseInlineDelivery } from "../promptAttachmentCapture";
+import { thinkingDisplayLabel } from "../thinkingLevelPresentation";
 import { inputModeForDraft, inputModesEqual, type InputMode } from "../inputModes";
 import { machineSessionKey } from "../machineKeys";
 import type { StagedPromptChip } from "../promptChips";
@@ -21,11 +22,13 @@ import { createMobilePromptEnterMedia, shouldUsePromptEnterShiftShortcut } from 
 import { composerSendShortcut, matchesComposerSend } from "../composerShortcuts";
 import type { ShortcutPreferenceConfig } from "../keyboardShortcuts";
 import { promptEditorStyles, type CompletionItem } from "./shared";
-import { renderAttachIcon, renderSendIcon, renderQueueIcon, renderSteerIcon, renderStopIcon, renderThinkingGauge } from "./promptEditorIcons";
-import { thinkingGauge, thinkingLevelLabel } from "../../../shared/thinkingLevels";
+import { promptAttachmentStyles } from "./promptAttachmentStyles";
+import { renderQueueIcon, renderSteerIcon, renderStopIcon } from "./promptEditorIcons";
+import { formatFileSize } from "../utils/format";
 import "./AutocompleteMenu";
+import "./AttachmentPreview";
 
-const promptPlaceholder = t("PromptEditor.message_pi_use_for_commands_for_tracked.a1b5c004");
+const promptPlaceholder = t("ui.composer.placeholder");
 
 // Text nodes inside contenteditable can become iOS keyboard context, even in
 // non-editable placeholder widgets. Render the hint with CSS-generated content.
@@ -49,6 +52,7 @@ export class PromptEditor extends LitElement {
   @property() sessionId?: string;
   @property() cwd?: string;
   @property() machineId = "local";
+  @property() machineLabel?: string;
   @property() projectId?: string;
   @property() workspaceId?: string;
   /**
@@ -68,7 +72,8 @@ export class PromptEditor extends LitElement {
   @property({ attribute: false }) onStop?: () => void;
   @property({ attribute: false }) onSelectModel?: () => void;
   @property({ attribute: false }) onSelectThinking?: () => void;
-  @property({ attribute: false }) availableThinkingLevels: readonly string[] = [];
+  @property({ attribute: false }) onSelectMachine?: () => void;
+  @property({ attribute: false }) onSelectWorkspace?: () => void;
   @query(".markdown-editor") private editorHost?: HTMLDivElement;
   @query(".attachment-input") private attachmentInput?: HTMLInputElement;
   // `draft` is the live document text but is intentionally NOT reactive: it
@@ -84,6 +89,7 @@ export class PromptEditor extends LitElement {
   @state() private attachments: readonly PendingAttachment[] = [];
   @state() private attachmentDelivery: PromptAttachmentDelivery = loadAttachmentDelivery();
   @state() private attachmentError: string | undefined = undefined;
+  @state() private previewAttachmentId: string | undefined = undefined;
   @state() private chipSendingKey: string | undefined = undefined;
   @state() private chipError: string | undefined = undefined;
   private attachmentSeq = 0;
@@ -106,6 +112,7 @@ export class PromptEditor extends LitElement {
     const currentKey = draftStorageKey(this.machineId, this.sessionId);
     this.draft = currentKey !== undefined ? loadDraft(currentKey) : "";
     this.attachments = currentKey !== undefined ? loadStagedAttachments(currentKey) : [];
+    this.previewAttachmentId = undefined;
     this.attachmentError = undefined;
     this.chipError = undefined;
     this.currentInputMode = inputModeForDraft(this.draft);
@@ -144,26 +151,50 @@ export class PromptEditor extends LitElement {
     const shellMode = shellInputMode !== undefined;
     const queuesInput = this.canSteer || this.isCompacting;
     const keyboardSteers = this.defaultSendBehavior() === "steer";
-    const busy = this.disabled || this.sending || this.chipSendingKey === this.composerKey();
-    return localizedTemplate("PromptEditor.template.be441e6c", html)`
-      <footer class=${shellMode ? "shell-mode" : ""} @paste=${(event: ClipboardEvent) => { void this.handlePaste(event); }} @dragover=${(event: DragEvent) => { this.handleDragOver(event); }} @drop=${(event: DragEvent) => { void this.handleDrop(event); }}>
+    const submissionPending = this.sending || this.chipSendingKey === this.composerKey();
+    const busy = this.disabled || submissionPending;
+    const folderLabel = this.cwd?.split("/").filter((segment) => segment !== "").at(-1) ?? this.cwd;
+    return html`
+      <footer class=${shellMode ? "shell-mode" : ""} aria-busy=${submissionPending ? "true" : "false"} @paste=${(event: ClipboardEvent) => { void this.handlePaste(event); }} @dragover=${(event: DragEvent) => { this.handleDragOver(event); }} @drop=${(event: DragEvent) => { void this.handleDrop(event); }}>
+        ${this.cwd === undefined ? null : html`
+          <div class="composer-context">
+            <button class="context-chip machine-chip" type="button" title=${this.machineLabel ?? this.machineId} aria-label=${t("ui.composer.machinePicker")} aria-haspopup="dialog" ?disabled=${this.onSelectMachine === undefined} @click=${() => this.onSelectMachine?.()}>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2.5" width="10" height="8" rx="1"></rect><path d="M1.5 13h13l-1.5-2.5H3z"></path></svg>
+              <span>${this.machineLabel ?? (this.machineId === "local" ? t("ui.composer.local") : this.machineId)}</span>
+            </button>
+            <button class="context-chip folder-chip" type="button" title=${this.cwd} aria-label=${t("ui.navigation.workspacePicker")} aria-haspopup="dialog" ?disabled=${this.onSelectWorkspace === undefined} @click=${() => this.onSelectWorkspace?.()}>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h4l1.5 2h5.5v8H2.5z"></path></svg>
+              <span>${folderLabel}</span>
+            </button>
+          </div>
+        `}
         <div class="editor-wrap">
-          <div class=${`markdown-editor${this.disabled ? " markdown-editor-disabled" : ""}`} aria-label="Message pi" aria-disabled=${this.disabled ? "true" : "false"}></div>
-          <input class="attachment-input" type="file" multiple hidden @change=${(event: Event) => { void this.handleFileInput(event); }} />
-          <button class="editor-attach icon-button" ?disabled=${busy} title="Attach files" aria-label="Attach files" @click=${() => { this.attachmentInput?.click(); }}>${renderAttachIcon()}</button>
-          ${shellMode ? localizedTemplate("PromptEditor.shell_command.f0a1fde8", html)`<div class="mode-hint">Shell command${shellInputMode.excludeFromContext ? t("PromptEditor.excluded_from_context.77ba9e69") : ""}</div>` : null}
-          ${this.isCompacting && !shellMode ? localizedTemplate("PromptEditor.compacting_history_message_will_be_queued.a54a4ada", html)`<div class="mode-hint">Compacting history · message will be queued</div>` : null}
+          <div class="editor-row">
+            <div class="editor-input">
+              <div class=${`markdown-editor${this.disabled ? " markdown-editor-disabled" : ""}`} aria-label=${t("ui.composer.message")} aria-disabled=${this.disabled ? "true" : "false"}></div>
+              <input class="attachment-input" type="file" multiple hidden @change=${(event: Event) => { void this.handleFileInput(event); }} />
+              ${shellMode ? localizedTemplate("PromptEditor.shell_command.f0a1fde8", html)`<div class="mode-hint">Shell command${shellInputMode.excludeFromContext ? t("PromptEditor.excluded_from_context.77ba9e69") : ""}</div>` : null}
+            </div>
+            <div class="composer-buttons">
+              <button class="icon-button composer-action send-button ${queuesInput ? "queue-button" : ""} ${keyboardSteers ? "" : "default-send-action"}" ?disabled=${busy} title=${queuesInput ? t("PromptEditor.queue_until_the_current_activity_finishes.2420ce17") : t("PromptEditor.send_message.0a862bc3")} aria-label=${queuesInput ? t("PromptEditor.queue_message.85941fe3") : t("PromptEditor.send_message.0f5782d0")} @click=${() => { this.send("followUp"); }}>${queuesInput ? renderQueueIcon() : renderComposerSendIcon()}<span class="composer-action-label">${queuesInput ? t("ui.composer.queue") : t("ui.composer.send")}</span></button>
+              ${this.canSteer && !this.isCompacting ? localizedTemplate("PromptEditor.template.937eff61", html)`<button class="icon-button composer-action steer-button ${keyboardSteers ? "default-send-action" : ""}" ?disabled=${busy} title="Steer the current response before the next model call" aria-label="Steer current response" @click=${() => { this.send("steer"); }}>${renderSteerIcon()}<span class="composer-action-label">${t("ui.composer.steer")}</span></button>` : null}
+              <button class="icon-button composer-action stop-button" ?hidden=${!this.canStop} ?disabled=${this.disabled || !this.canStop} title=${this.canStop ? t("PromptEditor.stop_current_work_and_clear_queued_messages.6018d1cd") : t("PromptEditor.nothing_running.c930593d")} aria-label=${t("ui.composer.stopWork")} @click=${() => this.onStop?.()}>${renderStopIcon()}<span class="composer-action-label">${t("ui.composer.stop")}</span></button>
+            </div>
+          </div>
           ${this.renderPromptChips()}
           ${this.renderAttachments()}
           <autocomplete-menu .items=${this.completions} .selectedIndex=${this.selectedIndex} .onPick=${(item: CompletionItem) => { this.pick(item); }}></autocomplete-menu>
         </div>
         <div class="actions">
-          ${this.renderCompactStatus()}
-          <button class="icon-button send-button ${keyboardSteers ? "" : "default-send-action"}" ?disabled=${busy} title=${queuesInput ? t("PromptEditor.queue_until_the_current_activity_finishes.2420ce17") : t("PromptEditor.send_message.0a862bc3")} aria-label=${queuesInput ? t("PromptEditor.queue_message.85941fe3") : t("PromptEditor.send_message.0f5782d0")} @click=${() => { this.send("followUp"); }}>${queuesInput ? renderQueueIcon() : renderSendIcon()}</button>
-          ${this.canSteer && !this.isCompacting ? localizedTemplate("PromptEditor.template.937eff61", html)`<button class="icon-button steer-button ${keyboardSteers ? "default-send-action" : ""}" ?disabled=${busy} title="Steer the current response before the next model call" aria-label="Steer current response" @click=${() => { this.send("steer"); }}>${renderSteerIcon()}</button>` : null}
-          <button class="icon-button stop-button" ?disabled=${this.disabled || !this.canStop} title=${this.canStop ? t("PromptEditor.stop_current_work_and_clear_queued_messages.6018d1cd") : t("PromptEditor.nothing_running.c930593d")} aria-label="Stop current work" @click=${() => this.onStop?.()}>${renderStopIcon()}</button>
+          <button class="editor-attach icon-button" ?disabled=${busy} title=${t("ui.composer.attach")} aria-label=${t("ui.composer.attach")} @click=${() => { this.attachmentInput?.click(); }}><span class="attach-mark" aria-hidden="true">+</span></button>
+          <div class="composer-controls">
+            ${this.renderCompactStatus()}
+            <slot name="status"></slot>
+          </div>
         </div>
+        ${submissionPending || (this.isCompacting && !shellMode) ? html`<div class="composer-state" role="status" aria-live="polite">${submissionPending ? t("ui.composer.sending") : t("ui.composer.compacting")}</div>` : null}
       </footer>
+      ${this.renderAttachmentDialog()}
     `;
   }
 
@@ -198,15 +229,24 @@ export class PromptEditor extends LitElement {
     return this.editor;
   }
 
+  /** Anchor the model menu to the model button in the composer toolbar. */
+  get modelAnchor(): HTMLElement | undefined {
+    return this.renderRoot.querySelector<HTMLElement>(".select-model") ?? undefined;
+  }
+
+  get thinkingAnchor(): HTMLElement | undefined {
+    return this.renderRoot.querySelector<HTMLElement>(".select-thinking") ?? undefined;
+  }
+
   private renderCompactStatus() {
     const status = this.status;
     if (status === undefined) return null;
     const model = status.model?.id ?? t("PromptEditor.no_model.0a560ca1");
     const provider = status.model?.provider !== undefined && status.model.provider !== "" ? `${status.model.provider}/` : "";
-    return localizedTemplate("PromptEditor.template.ac92dd24", html)`
-      <div class="compact-status" aria-label="Session status">
-        <button class="select-model" title="Select model" @click=${() => this.onSelectModel?.()}>${provider}${model}</button>
-        <button class="select-thinking icon-button" title=${localizedText("PromptEditor.thinking_level.b2571526")`Thinking level: ${thinkingLevelLabel(status.thinkingLevel)}`} aria-label=${localizedText("PromptEditor.thinking_level.aa8606ef")`Thinking level: ${thinkingLevelLabel(status.thinkingLevel)}`} @click=${() => this.onSelectThinking?.()}>${renderThinkingGauge(thinkingGauge(status.thinkingLevel, this.availableThinkingLevels))}</button>
+    return html`
+      <div class="compact-status" aria-label=${t("ui.composer.status")}>
+        <button class="select-model" type="button" title=${t("ui.composer.model")} aria-haspopup="dialog" @click=${() => this.onSelectModel?.()}><span class="model-label" title=${`${provider}${model}`}>${model}</span></button>
+        ${status.thinkingLevel === undefined ? null : html`<button class="select-thinking thinking-button" type="button" title=${t("ui.thinkingPicker.title")} aria-label=${`${t("ui.thinkingPicker.title")}: ${thinkingDisplayLabel(status.thinkingLevel)}`} aria-haspopup="dialog" @click=${() => this.onSelectThinking?.()}><span class="thinking-label">${thinkingDisplayLabel(status.thinkingLevel)}</span></button>`}
       </div>
     `;
   }
@@ -232,33 +272,53 @@ export class PromptEditor extends LitElement {
     const delivery = this.effectiveAttachmentDelivery();
     return localizedTemplate("PromptEditor.template.f006a493", html)`
       <div class="attachments" aria-label="Pending attachments">
-        ${this.attachments.map((attachment) => localizedTemplate("PromptEditor.template.f6a5aa80", html)`
-          <div class=${`attachment-chip ${isInlinePromptAttachment(attachment) ? "attachment-chip-image" : "attachment-chip-file"}`} title=${attachment.name}>
-            ${this.renderAttachmentPreview(attachment)}
+        <div class="attachment-items">
+          ${this.attachments.map((attachment) => localizedTemplate("PromptEditor.template.f6a5aa80", html)`
+          <div class="attachment-chip attachment-card" title=${attachment.name}>
+            <button class="attachment-preview-trigger" type="button" title=${t("ui.attachmentPreview.preview")} aria-label=${`${t("ui.attachmentPreview.preview")}: ${attachment.name}`} @click=${() => { this.previewAttachmentId = attachment.id; }}>
+              <span class="attachment-thumbnail" aria-hidden="true">${this.renderAttachmentThumbnail(attachment)}</span>
+              <span class="attachment-card-copy">
+                <span class="attachment-card-name">${attachment.name}</span>
+                <span class="attachment-card-info">${fileExtensionLabel(attachment.name)} · ${formatFileSize(attachment.size)}</span>
+              </span>
+            </button>
             <button type="button" class="attachment-remove" title="Remove attachment" aria-label=${localizedText("PromptEditor.remove.ee640944")`Remove ${attachment.name}`} @click=${() => { this.removeAttachment(attachment.id); }}>×</button>
           </div>
         `)}
+        </div>
         ${this.attachments.length > 0 ? localizedTemplate("PromptEditor.attach_to_message.47fbc200", html)`
-          <label class="attachment-delivery" title=${canUseInlineDelivery ? t("PromptEditor.how_attachments_are_delivered_to_the_agent.41e0a0ea") : t("PromptEditor.general_files_are_saved_and_mentioned_from.559b9fea")}>
-            <select .value=${delivery} @change=${(event: Event) => { this.changeDelivery(event); }}>
-              <option value="inline" ?disabled=${!canUseInlineDelivery}>Attach to message${canUseInlineDelivery ? "" : t("PromptEditor.images_only.76d1724e")}</option>
-              <option value="folder">${attachmentFolderDeliveryLabel(this.attachmentsFolder)}</option>
-            </select>
-          </label>
+          <div class="attachment-controls">
+            <span class="attachment-count">${t("ui.composer.attachments")} · ${this.attachments.length}</span>
+            <label class="attachment-delivery" title=${canUseInlineDelivery ? t("PromptEditor.how_attachments_are_delivered_to_the_agent.41e0a0ea") : t("PromptEditor.general_files_are_saved_and_mentioned_from.559b9fea")}>
+              <select aria-label=${t("PromptEditor.how_attachments_are_delivered_to_the_agent.41e0a0ea")} .value=${delivery} @change=${(event: Event) => { this.changeDelivery(event); }}>
+                <option value="inline" ?disabled=${!canUseInlineDelivery}>Attach to message${canUseInlineDelivery ? "" : t("PromptEditor.images_only.76d1724e")}</option>
+                <option value="folder">${attachmentFolderDeliveryLabel(this.attachmentsFolder)}</option>
+              </select>
+            </label>
+          </div>
         ` : null}
-        ${this.attachmentError !== undefined ? html`<div class="attachment-error">${this.attachmentError}</div>` : null}
+        ${this.attachmentError !== undefined ? html`<div class="attachment-error" role="alert">${this.attachmentError}</div>` : null}
       </div>
     `;
   }
 
-  private renderAttachmentPreview(attachment: PendingAttachment) {
+  private renderAttachmentThumbnail(attachment: PendingAttachment) {
     if (isInlinePromptAttachment(attachment)) {
       return html`<img src=${`data:${attachment.mimeType};base64,${attachment.data}`} alt=${attachment.name} />`;
     }
     return html`
       <div class="attachment-file-preview" aria-hidden="true">${fileExtensionLabel(attachment.name)}</div>
-      <span class="attachment-file-name">${attachment.name}</span>
     `;
+  }
+
+  private renderAttachmentDialog() {
+    const attachment = this.attachments.find((item) => item.id === this.previewAttachmentId);
+    if (attachment === undefined) return null;
+    return html`<attachment-preview
+      .attachment=${attachment}
+      .onClose=${() => { this.previewAttachmentId = undefined; }}
+      .onRemove=${() => { this.removeAttachment(attachment.id); }}
+    ></attachment-preview>`;
   }
 
   private changeDelivery(event: Event) {
@@ -274,6 +334,11 @@ export class PromptEditor extends LitElement {
 
   private removeAttachment(id: string) {
     this.attachments = this.attachments.filter((attachment) => attachment.id !== id);
+    if (this.previewAttachmentId === id) {
+      this.previewAttachmentId = undefined;
+      // The preview's opener is being removed, so restore focus to the composer.
+      void this.updateComplete.then(() => { this.focusInput(); });
+    }
   }
 
   private async handlePaste(event: ClipboardEvent) {
@@ -602,17 +667,18 @@ export class PromptEditor extends LitElement {
     }
     this.completions = [];
     this.attachments = [];
+    this.previewAttachmentId = undefined;
     this.attachmentError = undefined;
     // `draft` is not reactive, so the cleared text will not flow to CodeMirror
     // via `updated()`; push it to the editor document explicitly.
     this.syncEditorDoc();
   }
 
-  static override styles = promptEditorStyles;
+  static override styles = [promptEditorStyles, promptAttachmentStyles];
 }
 
-// The only `status` fields the template reads directly are the model identity
-// and thinking level (shown in renderCompactStatus). Everything else the editor
+// The model identity and thinking level are shown in renderCompactStatus.
+// Everything else the editor
 // cares about (canSteer/canStop/isCompacting/sending) is passed as a separate
 // property that Lit already diffs by value. Comparing just these fields lets us
 // ignore the per-token status churn that does not change anything on screen.
@@ -640,6 +706,10 @@ function emptyFileSuggestions(): FileSuggestion[] {
 
 function emptySessionModels(): SessionModel[] {
   return [];
+}
+
+function renderComposerSendIcon() {
+  return svg`<svg class="prompt-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 5v7a3 3 0 0 1-3 3H5m4-4-4 4 4 4"></path></svg>`;
 }
 
 function filesFromDataTransfer(data: DataTransfer | null): File[] {

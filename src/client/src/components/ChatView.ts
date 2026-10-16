@@ -9,8 +9,11 @@ import { queuedMessageAttachmentLabel, type QueuedMessageAction, type QueuedMess
 import type { DisplayedMessageActionAvailabilityContext, MessageActionAvailabilityContext, MessageActionFeedback, MessageActionResult } from "../../../plugin-api";
 import { displayedMessageActionMessage, messageActionMessage, MessageActionAvailabilityCache, type RegisteredMessageAction } from "../plugins/messageActions";
 import { machineSessionKey } from "../machineKeys";
-import { canonicalEntryActionHeaders, chatMessageHasHeader, groupChatMessages, summarizeChatGroup, type ChatGroup } from "../chatGroups";
+import { canonicalEntryActionHeaders, chatMessageHasHeader, groupChatMessages, type ChatGroup } from "../chatGroups";
+import { chatGroupProgress, type ChatGroupProgress } from "../chatGroupProgress";
 import { openTranscriptQuestion, transcriptQuestionOutcomes } from "../chatQuestions";
+import { chatTimelineEntries, type ChatTimelineEntry } from "../chatTimeline";
+import { ChatTimeline } from "./ChatTimeline";
 import { ChatScrollFlows } from "../ChatScrollFlows";
 import { ChatRenderKeys } from "../chatRenderKeys";
 import { DEFAULT_CHAT_BEHAVIORS, type ChatBehaviors } from "../chatBehaviors";
@@ -142,7 +145,15 @@ export function chatMessageGroupClassName(defaultOpen: boolean): string {
 
 /** The disclosure summary label for an event group, distinguishing the live tail. */
 export function chatMessageGroupLabel(defaultOpen: boolean): string {
-  return defaultOpen ? t("ChatView.live_events.324b38f3") : t("ChatView.events.a9f87569");
+  return defaultOpen ? t("ChatView.process_running") : t("ChatView.process_steps");
+}
+
+function chatMessageGroupSummary(progress: ChatGroupProgress): string {
+  return [
+    progress.toolCount === 0 ? undefined : `${String(progress.toolCount)} ${t(progress.toolCount === 1 ? "ChatView.process_tool" : "ChatView.process_tools")}`,
+    progress.thinkingCount === 0 ? undefined : `${String(progress.thinkingCount)} ${t(progress.thinkingCount === 1 ? "ChatView.process_thought" : "ChatView.process_thoughts")}`,
+    progress.recordCount === 0 ? undefined : `${String(progress.recordCount)} ${t(progress.recordCount === 1 ? "ChatView.process_record" : "ChatView.process_records")}`,
+  ].filter((part) => part !== undefined).join(" · ");
 }
 
 /** Whether a queued-message section shows the server clear-queue action. */
@@ -249,6 +260,7 @@ export class ChatView extends LitElement {
   @property({ attribute: false }) onLoadMore?: () => void;
   @property({ attribute: false }) behaviors: ChatBehaviors = DEFAULT_CHAT_BEHAVIORS;
   @query(".chat") private chat?: HTMLDivElement;
+  @query("chat-timeline") private timeline?: ChatTimeline;
   @query("dialog.image-zoom") private imageZoomDialog?: HTMLDialogElement;
   @state() private followingLive = false;
   @state() private zoomedImage: { src: string; alt: string } | undefined = undefined;
@@ -280,6 +292,8 @@ export class ChatView extends LitElement {
   private groupedMessagesInput?: ChatLine[];
   private groupedMessagesStart = 0;
   private groupedMessagesCache: ChatGroup[] = [];
+  private timelineGroups: readonly ChatGroup[] | undefined;
+  private timelineEntriesCache: ChatTimelineEntry[] = [];
   private readonly messageMetaCache = new WeakMap<ChatLine, string>();
   private imageSession: SessionRef | undefined;
   private touchY: number | undefined;
@@ -310,6 +324,12 @@ export class ChatView extends LitElement {
   private readonly handleTouchEnd = () => { this.touchY = undefined; };
   private readonly handleJumpTop = () => { this.scrollFlows.jumpToTop(); };
   private readonly handleJumpEnd = () => { this.scrollFlows.jumpToEnd(); };
+  private readonly handleTimelineNavigate = (entry: ChatTimelineEntry): void => {
+    if (!this.timelineEntriesCache.some((item) => item.key === entry.key && item.index === entry.index)) return;
+    const target = Array.from(this.chat?.children ?? []).find((element): element is HTMLElement => element instanceof HTMLElement
+      && element.matches("article.user") && element.dataset["index"] === String(entry.index));
+    if (target !== undefined) this.scrollFlows.jumpToAnchor(target);
+  };
   private readonly openImageZoom = (src: string, alt: string): void => {
     this.zoomedImage = { src, alt };
   };
@@ -399,6 +419,7 @@ export class ChatView extends LitElement {
         : openQuestionId !== undefined && openQuestionId !== this.lastOpenQuestionId ? "ask" : false,
     });
     this.lastOpenQuestionId = openQuestionId;
+    if (this.timeline instanceof ChatTimeline) this.timeline.viewport = this.chat;
     if (changed.has("notificationInbox") && this.pendingNotificationFocus !== undefined) this.focusPendingNotificationTarget();
     if (changed.has("zoomedImage")) this.syncImageZoomDialog();
   }
@@ -448,6 +469,10 @@ export class ChatView extends LitElement {
 
   override render() {
     const groups = this.groupedMessages();
+    if (this.timelineGroups !== groups) {
+      this.timelineGroups = groups;
+      this.timelineEntriesCache = chatTimelineEntries(groups);
+    }
     const entryActionHeaders = canonicalEntryActionHeaders(groups);
     // Keep incremental updates within one transcript, but dispose the whole
     // repeat part when the transcript changes. Besides preventing cross-session
@@ -464,11 +489,11 @@ export class ChatView extends LitElement {
       };
     }));
     const following = this.behaviors.followTail && this.followingLive;
-    return localizedTemplate("ChatView.template.0c3846b0", html)`
+    return html`
       ${this.renderTopNotices()}
       ${this.renderNotificationLiveRegions()}
       <div class=${this.behaviors.visualEffects ? "chat-wrap" : "chat-wrap plain"}>
-        <div class="chat" @image-open=${(event: CustomEvent<ImageOpenDetail>) => { this.openImageZoom(event.detail.src, event.detail.alt); }}
+        <div class=${this.timelineEntriesCache.length > 0 ? "chat timeline-scroll" : "chat"} tabindex="0" role="region" aria-label=${t("ui.chatTimeline.transcript")} @image-open=${(event: CustomEvent<ImageOpenDetail>) => { this.openImageZoom(event.detail.src, event.detail.alt); }}
           @scroll=${this.behaviors.rememberPosition || this.behaviors.followTail || this.behaviors.automaticHistory ? this.handleScroll : undefined}
           @toggle=${this.behaviors.followTail ? this.handleDisclosureToggle : undefined}
           @wheel=${this.handlesScrollIntent ? this.handleWheel : undefined}
@@ -492,11 +517,12 @@ export class ChatView extends LitElement {
           ${this.renderExtensionDialogs()}
         </div>
         ${this.renderActivityDock()}
-        <nav class="chat-jumps" aria-label="Chat navigation">
-          <button type="button" title="Jump to top" aria-label="Jump to top" @click=${this.handleJumpTop}>↑</button>
+        ${this.timelineEntriesCache.length === 0 ? nothing : html`<chat-timeline .entries=${this.timelineEntriesCache} .onNavigate=${this.handleTimelineNavigate}></chat-timeline>`}
+        <nav class="chat-jumps" aria-label=${t("ui.chatTimeline.controls")}>
+          <button type="button" title=${t("ui.chatTimeline.top")} aria-label=${t("ui.chatTimeline.top")} @click=${this.handleJumpTop}>↑</button>
           <button type="button" class=${following ? "following" : ""}
             title=${!this.behaviors.followTail ? t("ChatView.jump_to_end.c37e7d58") : following ? t("ChatView.following_live_jump_to_end.9520bc45") : t("ChatView.jump_to_end_and_follow_live.db38db8e")}
-            aria-label="Jump to end" aria-describedby="chat-follow-state" @click=${this.handleJumpEnd}>↓</button>
+            aria-label=${t("ui.chatTimeline.end")} aria-describedby="chat-follow-state" @click=${this.handleJumpEnd}>↓</button>
           <span id="chat-follow-state" class="visually-hidden">${!this.behaviors.followTail ? t("ChatView.automatic_following_disabled.0de38a22") : following ? t("ChatView.following_live.b062bdb4") : t("ChatView.live_following_paused.ecda395d")}</span>
         </nav>
       </div>
@@ -929,13 +955,23 @@ export class ChatView extends LitElement {
 
   private renderMessageGroup(group: Extract<ChatGroup, { kind: "group" }>, defaultOpen: boolean, entryActionHeaders: ReadonlySet<ChatLine> = new Set()) {
     const { messages, startIndex } = group;
+    const lines = messages.map((event) => event.message);
+    const progress = chatGroupProgress(lines);
+    const summarySource = lines.every((message) => message.source === "compaction") ? "compaction"
+      : lines.every((message) => message.source === "branch_summary") ? "branch" : undefined;
+    const label = summarySource === "compaction" ? t("ChatView.process_compaction")
+      : summarySource === "branch" ? t("ChatView.process_branch")
+        : defaultOpen && progress.toolCount === 0 && progress.thinkingCount > 0 ? t("ChatView.process_thinking") : chatMessageGroupLabel(defaultOpen);
     const disclosureKey = this.groupDisclosureKey(group, defaultOpen);
     const open = this.behaviors.rememberDisclosures ? this.disclosures.isOpen(disclosureKey, defaultOpen) : defaultOpen;
     return html`
-      <details class=${chatMessageGroupClassName(defaultOpen)} data-index=${startIndex} data-scroll-anchor-id=${this.groupAnchorKey(group, defaultOpen) ?? nothing} ?open=${open} @toggle=${this.behaviors.rememberDisclosures ? (event: Event) => { this.onGroupToggle(disclosureKey, event, defaultOpen); } : undefined}>
+      <details class=${`${chatMessageGroupClassName(defaultOpen)}${progress.failedCount > 0 ? " has-errors" : ""}`} data-index=${startIndex} data-scroll-anchor-id=${this.groupAnchorKey(group, defaultOpen) ?? nothing} ?open=${open} @toggle=${this.behaviors.rememberDisclosures ? (event: Event) => { this.onGroupToggle(disclosureKey, event, defaultOpen); } : undefined}>
         <summary>
-          <b class="label">${chatMessageGroupLabel(defaultOpen)}</b>
-          <span>${summarizeChatGroup(messages.map((event) => event.message))}</span>
+          <b class="label">${label}</b>
+          <span class="group-summary-text">${chatMessageGroupSummary(progress)}</span>
+          ${defaultOpen && progress.runningTools.length > 0 ? html`<span class="group-running-tool" title=${progress.runningTools.join(", ")}>${progress.runningTools.join(", ")}</span>` : null}
+          ${progress.failedCount > 0 ? html`<span class="group-state error">${String(progress.failedCount)} ${t("ChatView.process_failed")}</span>` : null}
+          ${!defaultOpen && progress.unfinishedCount > 0 ? html`<span class="group-state unfinished">${String(progress.unfinishedCount)} ${t("ChatView.process_unfinished")}</span>` : null}
         </summary>
         ${this.renderMessageGroupBody(group, entryActionHeaders)}
       </details>
@@ -949,7 +985,7 @@ export class ChatView extends LitElement {
           const toolOnly = this.isToolExecutionOnlyMessage(message);
           return html`
             <section class=${toolOnly ? "group-msg tool-execution-shell" : `group-msg ${message.role}`} data-index=${index} data-scroll-anchor-id=${chatEventAnchorKey(index, message) ?? nothing}>
-              ${chatMessageHasHeader(message) ? this.renderMessageHeader(message, `${String(startIndex)}:${String(offset)}`, index, entryActionHeaders) : null}
+              ${chatMessageHasHeader(message) ? this.renderMessageHeader(message, `${String(startIndex)}:${String(offset)}`, index, entryActionHeaders, message.role === "assistant" ? null : roleDisplayLabel(message.role)) : null}
               ${message.parts.map((part, partIndex) => this.renderPart(part, message, index, partIndex))}
             </section>
           `;
@@ -958,12 +994,12 @@ export class ChatView extends LitElement {
     `;
   }
 
-  private renderMessageHeader(message: ChatLine, key: string, index: number, entryActionHeaders: ReadonlySet<ChatLine>, label: string = roleDisplayLabel(message.role)) {
+  private renderMessageHeader(message: ChatLine, key: string, index: number, entryActionHeaders: ReadonlySet<ChatLine>, label: string | null = roleDisplayLabel(message.role)) {
     const meta = this.messageMetaLabel(message);
     const expanded = this.expandedMetaKey === key;
     return html`
-      <div class="msg-header">
-        <b class="label">${label}</b>
+      <div class=${label === null ? "msg-header compact-event-header" : "msg-header"}>
+        ${label === null ? null : html`<b class="label">${label}</b>`}
         <div class="msg-header-trailing">
           ${this.renderMessageActions(message, key, this.messages[index - this.messageStart] ?? message, entryActionHeaders.has(message))}
           <span class=${expanded ? "msg-meta expanded" : "msg-meta"} role="button" tabindex="0" title=${meta} aria-label=${meta} aria-expanded=${String(expanded)} @click=${() => { this.expandedMetaKey = expanded ? undefined : key; }} @keydown=${(event: KeyboardEvent) => { this.onMetaKeydown(event, key, expanded); }}>${meta}</span>
@@ -1063,7 +1099,7 @@ export class ChatView extends LitElement {
       if (text === "") return null;
       if (part.type === "thinking") return localizedTemplate("ChatView.thinking.acdb2bf0", html)`<details class="part"><summary>thinking</summary><formatted-text .imagesEnabled=${this.behaviors.loadImages} .codeBlocks=${this.behaviors.codeBlocks} .intentKey=${intentKey} .contentRendering=${this.contentRendering} .machineId=${this.machineId} .workspaceContext=${this.workspaceContext} .text=${text}></formatted-text></details>`;
       if (message.role === "bash") return html`<pre class="part shell-output">${text}</pre>`;
-      return html`<formatted-text .imagesEnabled=${this.behaviors.loadImages} .codeBlocks=${this.behaviors.codeBlocks} .intentKey=${intentKey} class="part" .contentRendering=${this.contentRendering} .machineId=${this.machineId} .workspaceContext=${this.workspaceContext} .text=${text}></formatted-text>`;
+      return html`<formatted-text .imagesEnabled=${this.behaviors.loadImages} .codeBlocks=${this.behaviors.codeBlocks} .intentKey=${intentKey} class="part" .contentRendering=${this.contentRendering} .machineId=${this.machineId} .workspaceContext=${this.workspaceContext} .fileCards=${message.role === "assistant"} .text=${text}></formatted-text>`;
     }
     if (part.type === "skillInvocation") return localizedTemplate("ChatView.skill.a1debad5", html)`
       <details class="part skill-invocation">

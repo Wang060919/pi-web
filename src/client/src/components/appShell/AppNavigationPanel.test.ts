@@ -199,6 +199,152 @@ describe("navigation order controls", () => {
   });
 });
 
+describe("desktop context selectors", () => {
+  it("keeps project and workspace summaries above the session list until a selector opens", async () => {
+    const panel = await mountDesktopPanel();
+
+    expect(contextControl(panel, "projects").textContent).toContain("project-1");
+    expect(contextControl(panel, "workspaces").textContent).toContain("ws-1");
+    expect(contextControl(panel, "workspaces").title).toBe("/repo/ws-1");
+    expect(panel.shadowRoot?.querySelector("project-list")).toBeNull();
+    expect(panel.shadowRoot?.querySelector("workspace-list")).toBeNull();
+    expect(section(panel, "session-list", SessionList).sessions).toEqual(panel.sessions);
+
+    contextControl(panel, "projects").click();
+    await panel.updateComplete;
+    expect(contextControl(panel, "projects").getAttribute("aria-expanded")).toBe("true");
+    expect(section(panel, "project-list", ProjectList).projects).toBe(panel.projects);
+    expect(panel.shadowRoot?.querySelector("workspace-list")).toBeNull();
+  });
+
+  it("focuses the selected row for keyboard navigation and returns focus to its trigger on Escape", async () => {
+    const panel = await mountDesktopPanel();
+    panel.projects = [project("other"), ...panel.projects];
+    panel.onCancelKeyboardNavigation = vi.fn();
+    await panel.updateComplete;
+
+    expect(await panel.focusSection("projects")).toBe(true);
+    const projects = section(panel, "project-list", ProjectList);
+    const selectedRow = control(projects, ".action-row.selected");
+    expect(projects.shadowRoot?.activeElement).toBe(selectedRow);
+    selectedRow.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, composed: true }));
+    await panel.updateComplete;
+
+    expect(panel.shadowRoot?.querySelector("modal-surface")).toBeNull();
+    expect(panel.shadowRoot?.activeElement).toBe(contextControl(panel, "projects"));
+    expect(panel.onCancelKeyboardNavigation).not.toHaveBeenCalled();
+  });
+
+  it("keeps an empty selector accessible and closes it from the dialog Escape route", async () => {
+    const panel = await mountDesktopPanel();
+    panel.projects = [];
+    panel.selectedProject = undefined;
+    await panel.updateComplete;
+
+    expect(await panel.focusSection("projects")).toBe(true);
+    const close = panel.shadowRoot?.querySelector(".picker-close");
+    expect(panel.shadowRoot?.activeElement).toBe(close);
+    close?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, composed: true }));
+    await panel.updateComplete;
+    expect(panel.shadowRoot?.querySelector("modal-surface")).toBeNull();
+    expect(panel.shadowRoot?.activeElement).toBe(contextControl(panel, "projects"));
+  });
+
+  it.each(["machine", "project", "workspace", "compact"] as const)("dismisses an open selector when the %s context changes", async (context) => {
+    const panel = await mountDesktopPanel();
+    expect(await panel.focusSection("projects")).toBe(true);
+    if (context === "machine") panel.selectedMachine = machine("remote-a");
+    if (context === "project") panel.selectedProject = project("other");
+    if (context === "workspace") panel.selectedWorkspace = workspace("other", "project-1");
+    if (context === "compact") panel.compact = true;
+    await panel.updateComplete;
+
+    expect(panel.shadowRoot?.querySelector("modal-surface")).toBeNull();
+    if (context !== "compact") expect(panel.shadowRoot?.activeElement).toBe(contextControl(panel, "projects"));
+  });
+
+  it("retains an open selector during same-context data refreshes", async () => {
+    const panel = await mountDesktopPanel();
+    expect(await panel.focusSection("projects")).toBe(true);
+    panel.selectedMachine = machine("local");
+    panel.selectedProject = project("project-1");
+    panel.selectedWorkspace = workspace("ws-1", "project-1");
+    await panel.updateComplete;
+
+    expect(panel.shadowRoot?.querySelector("modal-surface")).not.toBeNull();
+    expect(contextControl(panel, "projects").getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("preserves management, machine status, and plugin label inputs in the workspace selector", async () => {
+    vi.spyOn(trustApi, "workspaceTrust").mockResolvedValue({ path: "/repo/ws-1", decision: null, trusted: false });
+    const panel = await mountDesktopPanel();
+    const snapshot = machineStatusSnapshot({ workspaces: { "ws-1": { "core:working": true } } });
+    panel.machineStatusSnapshots = { local: snapshot };
+    panel.workspaces = [...panel.workspaces, workspace("ws-2", "project-1")];
+    panel.deletingWorkspaceIds = ["another-workspace"];
+    panel.workspaceLabelItems = () => [{ type: "text", text: "Plugin workspace label" }];
+    panel.onMoveWorkspace = vi.fn();
+    panel.onSelectWorkspace = vi.fn();
+    panel.projectsCollapsed = true;
+    panel.workspacesCollapsed = true;
+    await panel.updateComplete;
+
+    expect(await panel.focusSection("workspaces")).toBe(true);
+    const workspaces = section(panel, "workspace-list", WorkspaceList);
+    expect(workspaces.collapsed).toBe(false);
+    expect(workspaces.collapsible).toBe(false);
+    expect(workspaces.machineId).toBe("local");
+    expect(workspaces.statusSnapshot).toBe(snapshot);
+    expect(workspaces.deletingWorkspaceIds).toBe(panel.deletingWorkspaceIds);
+    expect(workspaces.shadowRoot?.textContent).toContain("Plugin workspace label");
+
+    control(workspaces, ".action-menu-toggle").click();
+    await workspaces.updateComplete;
+    menuButton(workspaces, "Move down").click();
+    expect(panel.onMoveWorkspace).toHaveBeenCalledWith(panel.workspaces[0], 1);
+    expect(panel.shadowRoot?.querySelector("modal-surface")).not.toBeNull();
+    control(workspaces, ".action-row").click();
+    await panel.updateComplete;
+    await Promise.resolve();
+    expect(panel.onSelectWorkspace).toHaveBeenCalledWith(panel.workspaces[0]);
+    expect(panel.shadowRoot?.querySelector("modal-surface")).toBeNull();
+  });
+
+  it("closes a picker before forwarding keyboard navigation to another section", async () => {
+    const panel = await mountDesktopPanel();
+    const focus = vi.fn();
+    panel.onFocusNavigationTarget = focus;
+    expect(await panel.focusSection("projects")).toBe(true);
+    const projects = section(panel, "project-list", ProjectList);
+
+    control(projects, ".action-row").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, composed: true }));
+    await panel.updateComplete;
+    await Promise.resolve();
+    expect(panel.shadowRoot?.querySelector("modal-surface")).toBeNull();
+    expect(focus).toHaveBeenCalledWith("workspaces");
+  });
+});
+
+function contextControl(panel: AppNavigationPanel, context: "projects" | "workspaces"): HTMLButtonElement {
+  const button = panel.shadowRoot?.querySelector(`[data-context="${context}"]`);
+  if (!(button instanceof HTMLButtonElement)) throw new Error(`Missing ${context} selector`);
+  return button;
+}
+
+async function mountDesktopPanel(): Promise<AppNavigationPanel> {
+  const panel = new AppNavigationPanel();
+  panel.machines = [machine("local"), machine("remote-a")];
+  panel.selectedMachine = panel.machines[0];
+  panel.projects = [project("project-1")];
+  panel.selectedProject = panel.projects[0];
+  panel.workspaces = [workspace("ws-1", "project-1")];
+  panel.selectedWorkspace = panel.workspaces[0];
+  panel.sessions = [session("session-1")];
+  document.body.append(panel);
+  await panel.updateComplete;
+  return panel;
+}
+
 function menuButton(list: ProjectList | WorkspaceList | SessionList, text: string): HTMLButtonElement {
   const button = [...(list.shadowRoot?.querySelectorAll("button") ?? [])].find((item) => item.textContent.trim() === text);
   if (!(button instanceof HTMLButtonElement)) throw new Error(`Missing ${text}`);

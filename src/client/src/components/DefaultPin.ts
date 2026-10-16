@@ -15,12 +15,15 @@ export function defaultPin(label: string, active: boolean, disabled: boolean, on
 export const defaultPinHelp = localizedTemplate("DefaultPin.new_session_default.806aea3c", html)`<div class="default-help"><strong>New session default</strong></div>`;
 
 export const defaultPinStyles = css`
-  .default-help { display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; color: var(--pi-muted); }
-  .default-row { display: flex; align-items: center; border-bottom: 1px solid var(--pi-border-muted); }
+  .default-help { font-size: 12px; line-height: 16px; display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; color: var(--pi-muted); }
+  .default-row { display: flex; align-items: center; border-bottom: 0; border-radius: 6px; }
   .options .default-row > button:not(.default-pin) { flex: 1; min-width: 0; width: auto; display: block; padding: 10px 12px; text-align: left; border-bottom: 0; }
   .options .default-row > button.selected { background: var(--pi-selection-bg); }
   .options button.default-pin { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; margin: 0 6px; border: 0; border-radius: 6px; }
   .default-pin[aria-pressed="true"] { color: var(--pi-accent); }
   .default-pin:disabled { opacity: 0.45; cursor: default; }
   .default-pin:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
+  @media (max-width: 680px), (pointer: coarse) {
+    .options button.default-pin { width: 44px; height: 44px; }
+  }
 `;

@@ -71,8 +71,8 @@ function viewerTheme(dependencies: FilesViewerDependencies): Extension {
       fontSize: "12px",
     },
     ".cm-scroller": {
-      fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-      lineHeight: "1.45",
+      fontFamily: "var(--pi-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace)",
+      lineHeight: "1.46",
     },
     ".cm-gutters": {
       backgroundColor: "var(--pi-bg)",

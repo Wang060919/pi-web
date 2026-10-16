@@ -86,7 +86,7 @@ function fixture(behaviors: ChatBehaviors = DEFAULT_CHAT_BEHAVIORS) {
   });
   scroller.getBoundingClientRect = vi.fn(() => new DOMRect(0, 100, 600, state.viewport));
   const host = {
-    getScroller: vi.fn(() => scroller),
+    getScroller: vi.fn((): HTMLDivElement | undefined => scroller),
     getAnchors: vi.fn(() => state.anchors),
     getSessionId: () => state.sessionId,
     getBehaviors: () => state.behaviors,
@@ -112,7 +112,7 @@ function fixture(behaviors: ChatBehaviors = DEFAULT_CHAT_BEHAVIORS) {
     flows.beforeRender({ sessionChanged: true, prepend: false });
     update({ sessionChanged: true });
   }
-  return { flows, frames, saves, storage, state, host, element, update, start, readTop, readHeight, readViewport, writeTop };
+  return { flows, frames, saves, storage, state, host, scroller, element, update, start, readTop, readHeight, readViewport, writeTop };
 }
 
 afterEach(() => {
@@ -165,6 +165,74 @@ describe("ChatScrollFlows composition", () => {
     expect(f.frames.request).not.toHaveBeenCalled();
     expect(f.saves.setTimeout).not.toHaveBeenCalled();
     expect(f.storage.setItem).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { targetTop: 600, expectedTop: 584 },
+    { targetTop: 980, expectedTop: 700 },
+  ])("anchor navigation cancels queued tail work and stays paused at $expectedTop", ({ targetTop, expectedTop }) => {
+    const f = fixture();
+    const target = f.element(targetTop, "selected");
+    f.scroller.append(target);
+    f.state.anchors = [target];
+    f.start();
+    expect(f.frames.pending).toBe(1);
+    expect(f.flows.followingLive).toBe(true);
+
+    f.flows.jumpToAnchor(target);
+    expect(f.state.top).toBe(expectedTop);
+    expect(f.flows.followingLive).toBe(false);
+    f.flows.onScroll();
+    f.frames.flush();
+    f.saves.flush();
+    expect(f.storage.values.get(chatScrollStorageKey("s1"))).toBe(JSON.stringify(expectedTop === 700
+      ? { mode: "bottom" }
+      : { mode: "anchor", anchorId: "selected", offset: 16 }));
+    f.state.height += 200;
+    f.update();
+    f.flows.onContentLayoutChanged();
+    f.frames.flush();
+    expect(f.state.top).toBe(expectedTop);
+    expect(f.writeTop).toHaveBeenCalledOnce();
+  });
+
+  it.each(["restore", "prepend"])("anchor navigation supersedes pending %s correction", (pending) => {
+    const f = fixture();
+    f.state.top = 200;
+    f.state.anchors = [f.element(200, "old")];
+    if (pending === "restore") f.storage.seed("s1", { mode: "anchor", anchorId: "old", offset: 0 });
+    f.start();
+    if (pending === "prepend") {
+      f.flows.beforeRender({ sessionChanged: false, prepend: true });
+      f.state.height += 300;
+      f.update({ historyChanged: true });
+    }
+    expect(f.frames.pending).toBe(1);
+    const target = f.element(600, "selected");
+    f.scroller.append(target);
+    f.state.anchors = [target];
+
+    f.flows.jumpToAnchor(target);
+    f.frames.flush();
+    f.saves.flush();
+    expect(f.state.top).toBe(584);
+    expect(f.flows.followingLive).toBe(false);
+    expect(f.writeTop).toHaveBeenCalledOnce();
+    expect(f.storage.values.get(chatScrollStorageKey("s1"))).toBe(JSON.stringify({ mode: "anchor", anchorId: "selected", offset: 16 }));
+  });
+
+  it.each(["outside", "hidden", "disposed", "no-scroller"])("ignores %s anchor destinations without writing the viewport", (invalid) => {
+    const f = fixture();
+    const target = f.element(400, "selected");
+    if (invalid !== "outside") f.scroller.append(target);
+    if (invalid === "hidden") target.getBoundingClientRect = () => new DOMRect();
+    if (invalid === "disposed") f.flows.dispose();
+    if (invalid === "no-scroller") f.host.getScroller.mockReturnValue(undefined);
+    f.flows.jumpToAnchor(target);
+    f.frames.flush();
+    f.saves.flush();
+    expect(f.writeTop).not.toHaveBeenCalled();
+    expect(f.saves.pending).toBe(0);
   });
 
   it("starts at the tail by default and follows updates until upward navigation", () => {
