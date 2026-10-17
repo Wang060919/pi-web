@@ -1,5 +1,5 @@
 import { constants } from "node:fs";
-import { lstat, mkdir, open, realpath, rename, stat, unlink } from "node:fs/promises";
+import { link, lstat, mkdir, open, readlink, realpath, rename, stat, symlink, unlink } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import type { DeleteWorkspaceFileResponse, FileContentMediaType, FileContentResponse, MoveWorkspaceFileOptions, MoveWorkspaceFileResponse, PiWebPathAccessConfig, WriteWorkspaceFileOptions, WriteWorkspaceFileResponse } from "../../shared/apiTypes.js";
 import { classifyWorkspaceFile, MAX_WORKSPACE_FILE_CONTENT_BYTES, type WorkspaceFileClassification } from "../../shared/workspaceFiles.js";
@@ -147,34 +147,48 @@ export async function moveWorkspaceFile(rootPath: string, fromPath: string | und
   const createDirs = options.createDirs ?? true;
   const overwrite = options.overwrite ?? false;
 
-  // Source: must exist and be a file (uses realpath via resolveInsideWorkspace)
-  const { target: source, relativePath: fromRelative } = await resolveInsideWorkspace(rootPath, fromPath);
-  const sourceStat = await stat(source);
+  // Validate the referent, but move the directory entry itself. Resolving the
+  // final component for rename would move a symlink's target and leave it broken.
+  const { target: resolvedSource, relativePath: fromRelative } = await resolveInsideWorkspace(rootPath, fromPath);
+  const sourceStat = await stat(resolvedSource);
   if (!sourceStat.isFile()) throw new Error("Source path is not a file");
+  const sourcePath = await resolveParentInsideWorkspace(rootPath, fromPath);
+  const sourceParent = await realpath(dirname(sourcePath.target));
+  ensureInside(sourcePath.root, sourceParent);
+  const source = join(sourceParent, basename(sourcePath.target));
+  const sourceEntry = await lstat(source);
+  if (!sourceEntry.isFile() && !sourceEntry.isSymbolicLink()) throw new Error("Source path is not a file");
+  const linkTarget = sourceEntry.isSymbolicLink() ? await readlink(source) : undefined;
 
   // Target: uses resolveParentInsideWorkspace + realpath(dirname) pattern (same as writeFile)
   const { root, target: dest, relativePath: destRelative } = await resolveParentInsideWorkspace(rootPath, toPath);
 
-  if (createDirs) await mkdir(dirname(dest), { recursive: true });
-
-  // Resolve symlinks in the parent path to prevent escape via symlink
-  const realParent = await realpath(dirname(dest));
+  const realParent = await prepareWriteParent(root, dirname(dest), createDirs);
   const realDest = join(realParent, basename(dest));
-  ensureInside(root, realDest);
 
-  if (!overwrite) {
+  if (overwrite) {
+    await rename(source, realDest);
+  } else {
+    // Exclusive entry creation protects against other requests and external
+    // writers, including dangling destination symlinks. A regular file's hard
+    // link preserves its bytes and metadata without a check-then-rename race.
     try {
-      const destStat = await stat(realDest);
-      if (destStat.isFile()) throw new Error(`File already exists: ${destRelative}`);
+      if (linkTarget === undefined) await link(source, realDest);
+      else await symlink(linkTarget, realDest, "file");
     } catch (error: unknown) {
-      if (isNodeErrorWithCode(error, "ENOENT")) { /* expected — target doesn't exist */ }
-      else if (error instanceof Error && error.message.startsWith("File already exists")) throw error;
-      else throw error;
+      if (isNodeErrorWithCode(error, "EEXIST")) throw new Error(`File already exists: ${destRelative}`, { cause: error });
+      throw error;
+    }
+    try {
+      await unlink(source);
+    } catch (error) {
+      // Keep both entries on failure instead of risking removal of a target
+      // another writer may already have replaced. The caller can reconcile it.
+      throw new Error(`Destination created, but source could not be removed: ${fromRelative}`, { cause: error });
     }
   }
 
-  await rename(source, realDest);
-  const finalStat = await stat(realDest);
+  const finalStat = await lstat(realDest);
   return { fromPath: fromRelative, toPath: destRelative, size: finalStat.size, modifiedAt: finalStat.mtime.toISOString() };
 }
 
