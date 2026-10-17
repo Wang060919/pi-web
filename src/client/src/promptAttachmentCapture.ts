@@ -13,6 +13,13 @@ export interface CapturableFile {
   size: number;
 }
 
+export interface PromptImageData {
+  name: string;
+  mimeType: string;
+  data: string;
+  size: number;
+}
+
 export type CapturedAttachment =
   | {
     kind: "image";
@@ -21,6 +28,11 @@ export type CapturedAttachment =
     /** Base64 payload without the data: URL prefix. */
     data: string;
     size: number;
+    /** Original bytes remain available when a user opts into image compression. */
+    originalImage?: PromptImageData;
+    imageCompression?: "original" | "compressed";
+    imageProcessing?: boolean;
+    imageProcessingError?: string;
   }
   | {
     kind: "file";

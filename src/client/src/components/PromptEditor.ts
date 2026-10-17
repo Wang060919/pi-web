@@ -1,9 +1,9 @@
 import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
-import { defaultKeymap, history, historyKeymap, indentWithTab, insertNewlineAndIndent } from "@codemirror/commands";
+import { defaultKeymap, history, historyKeymap, indentWithTab, insertNewlineAndIndent, isolateHistory } from "@codemirror/commands";
 import { markdown, deleteMarkupBackward, insertNewlineContinueMarkup } from "@codemirror/lang-markdown";
-import { EditorSelection, EditorState, Compartment } from "@codemirror/state";
+import { EditorSelection, EditorState, Compartment, Transaction } from "@codemirror/state";
 import { drawSelection, EditorView, keymap, placeholder } from "@codemirror/view";
-import { defaultHighlightStyle, indentOnInput, indentUnit, syntaxHighlighting } from "@codemirror/language";
+import { defaultHighlightStyle, indentOnInput, indentUnit, syntaxHighlighting, syntaxTree } from "@codemirror/language";
 import { LitElement, html, svg, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { api, DEFAULT_WORKSPACE_ATTACHMENTS_FOLDER, type FileSuggestion, type PromptAttachment, type SessionModel, type SessionStatus, type SlashCommand } from "../api";
@@ -17,7 +17,7 @@ import type { StagedPromptChip } from "../promptChips";
 import { detectPromptCompletionTrigger, fileCompletionInsertText, modelCompletionChoices, type PromptCompletionTrigger } from "../promptCompletions";
 import { promptArgumentHintExtension, setPromptArgumentHint } from "../promptArgumentHint";
 import { clearDraft, loadDraft, saveDraft } from "../promptDraftStorage";
-import { clearStagedAttachments, loadStagedAttachments, saveStagedAttachments, type PendingAttachment } from "../promptAttachmentStaging";
+import { beginStagedAttachmentCapture, clearStagedAttachments, loadStagedAttachments, saveStagedAttachments, subscribeStagedAttachments, type PendingAttachment } from "../promptAttachmentStaging";
 import { loadAttachmentDelivery, saveAttachmentDelivery } from "../attachmentPreferences";
 import { createMobilePromptEnterMedia, shouldUsePromptEnterShiftShortcut } from "../promptEnterBehavior";
 import { composerSendShortcut, matchesComposerSend } from "../composerShortcuts";
@@ -26,6 +26,10 @@ import { promptEditorStyles, type CompletionItem } from "./shared";
 import { promptAttachmentStyles } from "./promptAttachmentStyles";
 import { renderQueueIcon, renderSteerIcon, renderStopIcon } from "./promptEditorIcons";
 import { formatFileSize } from "../utils/format";
+import { promptInputHistoryChoices } from "../promptInputHistory";
+import { promptClipboardMarkdown } from "../promptClipboardLinks";
+import { changeStagedImageCompression } from "../promptImageCompression";
+import { promptComposerEnhancementsStyles } from "./promptComposerEnhancementsStyles";
 import "./AutocompleteMenu";
 import "./AttachmentPreview";
 import "./ThinkingLevelLabel";
@@ -69,6 +73,8 @@ export class PromptEditor extends LitElement {
   @property({ attribute: false }) status?: SessionStatus;
   @property({ type: Boolean }) sending = false;
   @property({ attribute: false }) promptChips: readonly StagedPromptChip[] = [];
+  /** User prompts in transcript order, oldest first. */
+  @property({ attribute: false }) inputHistory: readonly string[] = [];
   @property({ attribute: false }) onRemoveChip?: (chip: StagedPromptChip) => void;
   @property({ attribute: false }) onSend?: PromptSendHandler;
   @property({ attribute: false }) onStop?: () => void;
@@ -88,13 +94,15 @@ export class PromptEditor extends LitElement {
   @state() private currentInputMode: InputMode = { kind: "normal" };
   @state() private completions: CompletionItem[] = [];
   @state() private selectedIndex = 0;
+  @state() private historyOpen = false;
+  @state() private historyIndex = 0;
   @state() private attachments: readonly PendingAttachment[] = [];
   @state() private attachmentDelivery: PromptAttachmentDelivery = loadAttachmentDelivery();
   @state() private attachmentError: string | undefined = undefined;
   @state() private previewAttachmentId: string | undefined = undefined;
   @state() private chipSendingKey: string | undefined = undefined;
   @state() private chipError: string | undefined = undefined;
-  private attachmentSeq = 0;
+  private unsubscribeStagedAttachments: (() => void) | undefined;
   private requestVersion = 0;
   private editor: EditorView | undefined;
   private readonly editableCompartment = new Compartment();
@@ -102,24 +110,40 @@ export class PromptEditor extends LitElement {
   private readonly mobilePromptEnterMedia = createMobilePromptEnterMedia();
   private explicitShiftKeyActive = false;
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.connectStagedAttachments();
+  }
+
+  private connectStagedAttachments(): void {
+    this.unsubscribeStagedAttachments?.();
+    this.unsubscribeStagedAttachments = undefined;
+    const key = draftStorageKey(this.machineId, this.sessionId);
+    this.attachments = key === undefined ? [] : loadStagedAttachments(key);
+    if (key !== undefined && this.isConnected) {
+      this.unsubscribeStagedAttachments = subscribeStagedAttachments(key, (attachments) => {
+        if (this.isConnected && key === draftStorageKey(this.machineId, this.sessionId)) this.attachments = attachments;
+      });
+    }
+  }
+
   protected override willUpdate(changed: PropertyValues<this>) {
     if (!changed.has("sessionId") && !changed.has("machineId")) return;
+    this.requestVersion += 1;
     const previousSessionId = changed.has("sessionId") ? changed.get("sessionId") : this.sessionId;
     const previousMachineId = changed.has("machineId") ? changed.get("machineId") : this.machineId;
     const previousKey = draftStorageKey(previousMachineId, previousSessionId);
-    if (previousKey !== undefined) {
-      saveDraft(previousKey, this.draft);
-      saveStagedAttachments(previousKey, this.attachments);
-    }
+    if (previousKey !== undefined) saveDraft(previousKey, this.draft);
     const currentKey = draftStorageKey(this.machineId, this.sessionId);
     this.draft = currentKey !== undefined ? loadDraft(currentKey) : "";
-    this.attachments = currentKey !== undefined ? loadStagedAttachments(currentKey) : [];
+    this.connectStagedAttachments();
     this.previewAttachmentId = undefined;
     this.attachmentError = undefined;
     this.chipError = undefined;
     this.currentInputMode = inputModeForDraft(this.draft);
     this.completions = [];
     this.selectedIndex = 0;
+    this.historyOpen = false;
   }
 
   protected override shouldUpdate(changed: PropertyValues<this>): boolean {
@@ -139,10 +163,17 @@ export class PromptEditor extends LitElement {
 
   protected override updated(changed: PropertyValues) {
     if (changed.has("disabled")) this.updateEditorDisabledState();
-    if (changed.has("sessionId") || changed.has("machineId")) this.syncEditorDoc();
+    if (changed.has("sessionId") || changed.has("machineId")) {
+      // History belongs to this conversation, including when two drafts match.
+      this.editor?.setState(this.createEditorState());
+      void this.refreshCompletions();
+    }
+    this.syncHistoryAccessibility();
   }
 
   override disconnectedCallback(): void {
+    this.unsubscribeStagedAttachments?.();
+    this.unsubscribeStagedAttachments = undefined;
     this.editor?.destroy();
     this.editor = undefined;
     super.disconnectedCallback();
@@ -154,7 +185,7 @@ export class PromptEditor extends LitElement {
     const queuesInput = this.canSteer || this.isCompacting;
     const keyboardSteers = this.defaultSendBehavior() === "steer";
     const submissionPending = this.sending || this.chipSendingKey === this.composerKey();
-    const busy = this.disabled || submissionPending;
+    const busy = this.disabled || submissionPending || this.hasProcessingImage();
     const folderLabel = this.cwd?.split("/").filter((segment) => segment !== "").at(-1) ?? this.cwd;
     return html`
       <footer class=${shellMode ? "shell-mode" : ""} aria-busy=${submissionPending ? "true" : "false"} @paste=${(event: ClipboardEvent) => { void this.handlePaste(event); }} @dragover=${(event: DragEvent) => { this.handleDragOver(event); }} @drop=${(event: DragEvent) => { void this.handleDrop(event); }}>
@@ -171,6 +202,7 @@ export class PromptEditor extends LitElement {
           </div>
         `}
         <div class="editor-wrap">
+          ${this.renderInputHistory()}
           <div class="editor-row">
             <div class="editor-input">
               <div class=${`markdown-editor${this.disabled ? " markdown-editor-disabled" : ""}`} aria-label=${t("ui.composer.message")} aria-disabled=${this.disabled ? "true" : "false"}></div>
@@ -205,6 +237,7 @@ export class PromptEditor extends LitElement {
   }
 
   replaceText(text: string): void {
+    this.historyOpen = false;
     this.draft = text;
     const key = draftStorageKey(this.machineId, this.sessionId);
     if (key !== undefined) saveDraft(key, text);
@@ -285,6 +318,7 @@ export class PromptEditor extends LitElement {
                 <span class="attachment-card-info">${fileExtensionLabel(attachment.name)} · ${formatFileSize(attachment.size)}</span>
               </span>
             </button>
+            ${this.renderImageCompression(attachment)}
             <button type="button" class="attachment-remove" title="Remove attachment" aria-label=${localizedText("PromptEditor.remove.ee640944")`Remove ${attachment.name}`} @click=${() => { this.removeAttachment(attachment.id); }}>×</button>
           </div>
         `)}
@@ -303,6 +337,65 @@ export class PromptEditor extends LitElement {
         ${this.attachmentError !== undefined ? html`<div class="attachment-error" role="alert">${this.attachmentError}</div>` : null}
       </div>
     `;
+  }
+
+  private renderImageCompression(attachment: PendingAttachment) {
+    if (attachment.kind !== "image") return null;
+    const originalSize = attachment.originalImage?.size ?? attachment.size;
+    return html`
+      <div class="attachment-image-controls">
+        <select aria-label=${`${t("ui.composer.imageQuality")}: ${attachment.name}`} .value=${attachment.imageCompression ?? "original"} ?disabled=${attachment.imageProcessing === true || this.disabled || this.sending} @change=${(event: Event) => { this.changeImageCompression(attachment.id, event); }}>
+          <option value="original">${t("ui.composer.imageOriginal")}</option>
+          <option value="compressed" ?disabled=${attachment.mimeType === "image/gif"}>${t("ui.composer.imageCompressed")}</option>
+        </select>
+        <span aria-live="polite">${attachment.imageProcessing === true ? t("ui.composer.imageProcessing") : `${formatFileSize(originalSize)} → ${formatFileSize(attachment.size)}`}</span>
+        ${attachment.imageProcessingError === undefined ? null : html`<span class="attachment-processing-error" role="alert">${attachment.imageProcessingError}</span>`}
+      </div>
+    `;
+  }
+
+  private changeImageCompression(id: string, event: Event): void {
+    const key = draftStorageKey(this.machineId, this.sessionId);
+    if (key === undefined || !(event.target instanceof HTMLSelectElement)) return;
+    void changeStagedImageCompression(key, id, event.target.value === "compressed" ? "compressed" : "original");
+  }
+
+  private hasProcessingImage(): boolean {
+    return this.attachments.some((attachment) => attachment.kind === "image" && attachment.imageProcessing === true);
+  }
+
+  private renderInputHistory() {
+    if (!this.historyOpen) return null;
+    const choices = promptInputHistoryChoices(this.inputHistory);
+    return html`
+      <div class="prompt-history" id="prompt-history" role="listbox" aria-label=${t("ui.composer.inputHistory")}>
+        <div class="prompt-history-heading"><span>${t("ui.composer.inputHistory")}</span><span>${t("ui.composer.inputHistoryHint")}</span></div>
+        ${choices.map((text, index) => html`
+          <button type="button" id=${`prompt-history-${String(index)}`} role="option" aria-selected=${String(index === this.historyIndex)} class=${index === this.historyIndex ? "selected" : ""} tabindex="-1" @mousedown=${(event: MouseEvent) => { event.preventDefault(); }} @click=${() => { this.pickInputHistory(text); }}><span class="prompt-history-text">${text}</span></button>
+        `)}
+      </div>
+    `;
+  }
+
+  private syncHistoryAccessibility(): void {
+    const input = this.editor?.contentDOM;
+    if (input === undefined) return;
+    if (this.historyOpen) {
+      input.setAttribute("aria-controls", "prompt-history");
+      input.setAttribute("aria-activedescendant", `prompt-history-${String(this.historyIndex)}`);
+      this.renderRoot.querySelector<HTMLElement>(".prompt-history .selected")?.scrollIntoView({ block: "nearest" });
+    } else {
+      input.removeAttribute("aria-controls");
+      input.removeAttribute("aria-activedescendant");
+    }
+  }
+
+  private pickInputHistory(text: string): void {
+    const editor = this.editor;
+    if (editor === undefined || this.disabled) return;
+    this.historyOpen = false;
+    editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: text }, selection: EditorSelection.cursor(text.length), annotations: isolateHistory.of("full"), scrollIntoView: true });
+    editor.focus();
   }
 
   private renderAttachmentThumbnail(attachment: PendingAttachment) {
@@ -336,7 +429,10 @@ export class PromptEditor extends LitElement {
   }
 
   private removeAttachment(id: string) {
-    this.attachments = this.attachments.filter((attachment) => attachment.id !== id);
+    const key = draftStorageKey(this.machineId, this.sessionId);
+    const current = key === undefined ? this.attachments : loadStagedAttachments(key);
+    this.attachments = current.filter((attachment) => attachment.id !== id);
+    if (key !== undefined) saveStagedAttachments(key, this.attachments);
     if (this.previewAttachmentId === id) {
       this.previewAttachmentId = undefined;
       // The preview's opener is being removed, so restore focus to the composer.
@@ -371,12 +467,21 @@ export class PromptEditor extends LitElement {
   }
 
   private async addAttachmentFiles(files: File[]) {
+    const originKey = draftStorageKey(this.machineId, this.sessionId);
+    const capture = originKey === undefined ? undefined : beginStagedAttachmentCapture(originKey);
     this.attachmentError = undefined;
-    const { attachments, error } = await capturePromptAttachments(files, readFileAsBase64);
-    if (attachments.length > 0) {
-      this.attachments = [...this.attachments, ...attachments.map((attachment) => ({ id: `attachment-${String(++this.attachmentSeq)}`, ...attachment }))];
+    try {
+      const { attachments, error } = await capturePromptAttachments(files, readFileAsBase64);
+      const isCurrent = this.isConnected && (capture?.key ?? originKey) === draftStorageKey(this.machineId, this.sessionId);
+      // Merge against the current store even when a replacement composer has
+      // already edited it. Pending owners follow temporary-session handoffs.
+      const pending = attachments.map((attachment) => ({ id: newAttachmentId(), ...attachment }));
+      if (capture !== undefined) capture.append(pending);
+      else if (isCurrent) this.attachments = [...this.attachments, ...pending];
+      if (isCurrent && error !== undefined) this.attachmentError = error;
+    } finally {
+      capture?.dispose();
     }
-    if (error !== undefined) this.attachmentError = error;
   }
 
   private currentAttachments(): PromptAttachment[] {
@@ -391,42 +496,48 @@ export class PromptEditor extends LitElement {
     if (!this.editorHost || this.editor !== undefined) return;
     this.editor = new EditorView({
       parent: this.editorHost,
-      state: EditorState.create({
-        doc: this.draft,
-        extensions: [
-          history(),
-          markdown(),
-          indentOnInput(),
-          indentUnit.of("  "),
-          syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-          EditorView.lineWrapping,
-          drawSelection(),
-          EditorView.contentAttributes.of((view) => inputAssistanceContentAttributes(view.state.sliceDoc(0, view.state.selection.main.head))),
-          EditorView.domEventHandlers({
-            keyup: (event) => this.handleEditorKeyUp(event),
-            blur: () => this.resetEditorModifierState(),
-          }),
-          placeholder(createPromptPlaceholder),
-          EditorView.contentAttributes.of({ "aria-placeholder": promptPlaceholder }),
-          promptArgumentHintExtension,
-          this.editableCompartment.of(EditorView.editable.of(!this.disabled)),
-          this.readOnlyCompartment.of(EditorState.readOnly.of(this.disabled)),
-          EditorView.updateListener.of((update) => {
-            if (update.docChanged) this.updateDraft(update.state.doc.toString());
-          }),
-          keymap.of([
-            { any: (view, event) => this.handleEditorKeyDown(event, view) },
-            { key: "ArrowDown", run: () => this.moveCompletion(1) },
-            { key: "ArrowUp", run: () => this.moveCompletion(-1) },
-            { key: "Escape", run: () => this.closeCompletions() },
-            { key: "Tab", run: (view) => this.handleEditorTab(view) },
-            { key: "Shift-Tab", run: (view) => indentWithTab.shift?.(view) ?? false },
-            { key: "Backspace", run: (view) => deleteMarkupBackward(view) },
-            ...historyKeymap,
-            ...defaultKeymap,
-          ]),
-        ],
-      }),
+      state: this.createEditorState(),
+    });
+  }
+
+  private createEditorState(): EditorState {
+    return EditorState.create({
+      doc: this.draft,
+      selection: EditorSelection.cursor(this.draft.length),
+      extensions: [
+        history(),
+        markdown(),
+        indentOnInput(),
+        indentUnit.of("  "),
+        syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+        EditorView.lineWrapping,
+        drawSelection(),
+        EditorView.contentAttributes.of((view) => inputAssistanceContentAttributes(view.state.sliceDoc(0, view.state.selection.main.head))),
+        EditorView.domEventHandlers({
+          paste: (event, view) => this.handleEditorPaste(event, view),
+          keyup: (event) => this.handleEditorKeyUp(event),
+          blur: () => { this.historyOpen = false; return this.resetEditorModifierState(); },
+        }),
+        placeholder(createPromptPlaceholder),
+        EditorView.contentAttributes.of({ "aria-placeholder": promptPlaceholder }),
+        promptArgumentHintExtension,
+        this.editableCompartment.of(EditorView.editable.of(!this.disabled)),
+        this.readOnlyCompartment.of(EditorState.readOnly.of(this.disabled)),
+        EditorView.updateListener.of((update) => {
+          if (update.docChanged) this.updateDraft(update.state.doc.toString());
+        }),
+        keymap.of([
+          { any: (view, event) => this.handleEditorKeyDown(event, view) },
+          { key: "ArrowDown", run: () => this.moveCompletion(1) },
+          { key: "ArrowUp", run: () => this.moveCompletion(-1) },
+          { key: "Escape", run: () => this.closeCompletions() },
+          { key: "Tab", run: (view) => this.handleEditorTab(view) },
+          { key: "Shift-Tab", run: (view) => indentWithTab.shift?.(view) ?? false },
+          { key: "Backspace", run: (view) => deleteMarkupBackward(view) },
+          ...historyKeymap,
+          ...defaultKeymap,
+        ]),
+      ],
     });
   }
 
@@ -451,6 +562,7 @@ export class PromptEditor extends LitElement {
   }
 
   private updateDraft(value: string) {
+    this.historyOpen = false;
     this.draft = value;
     const key = draftStorageKey(this.machineId, this.sessionId);
     if (key !== undefined) saveDraft(key, this.draft);
@@ -530,6 +642,9 @@ export class PromptEditor extends LitElement {
     if (this.editor === undefined || !event.composedPath().includes(this.editor.contentDOM)) return false;
     // Keep Enter/newline handling and IME composition inside the editor, too.
     return event.isComposing || this.editor.composing
+      || (!event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && (
+        (this.historyOpen && ["ArrowUp", "ArrowDown", "Tab", "Escape"].includes(event.key))
+        || (event.key === "ArrowUp" && this.editor.state.doc.length === 0 && this.inputHistory.length > 0)))
       || (event.key === "Enter" && !event.ctrlKey && !event.metaKey && !event.altKey)
       || this.matchesSendShortcut(event);
   }
@@ -547,6 +662,7 @@ export class PromptEditor extends LitElement {
       return false;
     }
     if (event.defaultPrevented || event.isComposing || view.composing) return false;
+    if (!event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && this.handleInputHistoryKey(event.key, view)) return true;
     const send = this.matchesSendShortcut(event);
     const plainEnter = event.key === "Enter" && !event.ctrlKey && !event.metaKey && !event.altKey
       && !shouldUsePromptEnterShiftShortcut(event.shiftKey, this.explicitShiftKeyActive, this.mobilePromptEnterMedia);
@@ -564,6 +680,44 @@ export class PromptEditor extends LitElement {
       return insertNewlineContinueMarkup(view) || insertNewlineAndIndent(view);
     }
     return false;
+  }
+
+  private handleInputHistoryKey(key: string, view: EditorView): boolean {
+    if (this.disabled) return false;
+    const choices = promptInputHistoryChoices(this.inputHistory);
+    if (this.historyOpen) {
+      if (key === "ArrowUp" || key === "ArrowDown") {
+        this.historyIndex = (this.historyIndex + (key === "ArrowUp" ? -1 : 1) + choices.length) % Math.max(1, choices.length);
+        return true;
+      }
+      if (key === "Escape") { this.historyOpen = false; return true; }
+      if (key === "Tab") {
+        const text = choices[this.historyIndex];
+        if (text !== undefined) this.pickInputHistory(text);
+        else this.historyOpen = false;
+        return true;
+      }
+      this.historyOpen = false;
+    }
+    if (key !== "ArrowUp" || view.state.doc.length !== 0 || choices.length === 0 || this.completions.length > 0) return false;
+    this.historyIndex = 0;
+    this.historyOpen = true;
+    return true;
+  }
+
+  private handleEditorPaste(event: ClipboardEvent, view: EditorView): boolean {
+    if (this.disabled || view.composing || event.clipboardData === null || filesFromDataTransfer(event.clipboardData).length > 0 || this.currentInputMode.kind !== "normal") return false;
+    let node = syntaxTree(view.state).resolveInner(view.state.selection.main.head, -1);
+    for (;;) {
+      if (["FencedCode", "CodeBlock", "InlineCode"].includes(node.name)) return false;
+      if (node.parent === null) break;
+      node = node.parent;
+    }
+    const markdown = promptClipboardMarkdown(event.clipboardData.getData("text/html"));
+    if (markdown === undefined) return false;
+    event.preventDefault();
+    view.dispatch(view.state.replaceSelection(markdown), { annotations: [Transaction.userEvent.of("input.paste"), isolateHistory.of("full")], scrollIntoView: true });
+    return true;
   }
 
   private handleEditorKeyUp(event: KeyboardEvent): boolean {
@@ -611,7 +765,7 @@ export class PromptEditor extends LitElement {
   }
 
   private send(streamingBehavior?: "steer" | "followUp") {
-    if (this.disabled || this.sending || this.chipSendingKey === this.composerKey()) return;
+    if (this.disabled || this.sending || this.chipSendingKey === this.composerKey() || this.hasProcessingImage()) return;
     const text = this.draft.trim();
     const pending = this.attachments;
     const chips = this.promptChips;
@@ -661,6 +815,7 @@ export class PromptEditor extends LitElement {
   }
 
   private resetComposer() {
+    this.historyOpen = false;
     this.draft = "";
     this.currentInputMode = { kind: "normal" };
     const key = draftStorageKey(this.machineId, this.sessionId);
@@ -677,7 +832,7 @@ export class PromptEditor extends LitElement {
     this.syncEditorDoc();
   }
 
-  static override styles = [promptEditorStyles, promptAttachmentStyles];
+  static override styles = [promptEditorStyles, promptAttachmentStyles, promptComposerEnhancementsStyles];
 }
 
 // The model identity and thinking level are shown in renderCompactStatus.
@@ -709,6 +864,11 @@ function emptyFileSuggestions(): FileSuggestion[] {
 
 function emptySessionModels(): SessionModel[] {
   return [];
+}
+
+function newAttachmentId(): string {
+  // getRandomValues also supports LAN HTTP deployments, unlike randomUUID.
+  return `attachment-${Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
 }
 
 function renderComposerSendIcon() {

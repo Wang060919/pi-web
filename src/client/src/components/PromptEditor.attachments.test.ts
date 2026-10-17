@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_WORKSPACE_ATTACHMENTS_FOLDER } from "../api";
-import { clearStagedAttachments } from "../promptAttachmentStaging";
+import { clearStagedAttachments, saveStagedAttachments } from "../promptAttachmentStaging";
 import { attachmentFolderDeliveryLabel, PromptEditor } from "./PromptEditor";
 
 class MemoryStorage implements Storage {
@@ -109,6 +109,7 @@ describe("PromptEditor pending attachments across session switches", () => {
     editor.sessionId = "session-a";
     const attachment = { id: "attachment-1", kind: "file" as const, name: "notes.txt", mimeType: "text/plain", data: "aGVsbG8=", size: 5 };
     Reflect.set(editor, "attachments", [attachment]);
+    saveStagedAttachments("local:session-a", [attachment]);
 
     // Switch to a different session: the pending attachment must not follow.
     editor.sessionId = "session-b";
@@ -123,6 +124,7 @@ describe("PromptEditor pending attachments across session switches", () => {
     editor.sessionId = "session-a";
     const attachment = { id: "attachment-1", kind: "file" as const, name: "notes.txt", mimeType: "text/plain", data: "aGVsbG8=", size: 5 };
     Reflect.set(editor, "attachments", [attachment]);
+    saveStagedAttachments("local:session-a", [attachment]);
 
     editor.sessionId = "session-b";
     triggerSessionSwitch(editor, { machineId: "local", sessionId: "session-a" });
@@ -138,7 +140,9 @@ describe("PromptEditor pending attachments across session switches", () => {
     const editor = new PromptEditor();
     editor.machineId = "local";
     editor.sessionId = "session-a";
-    Reflect.set(editor, "attachments", [{ id: "attachment-1", kind: "file" as const, name: "notes.txt", mimeType: "text/plain", data: "aGVsbG8=", size: 5 }]);
+    const attachment = { id: "attachment-1", kind: "file" as const, name: "notes.txt", mimeType: "text/plain", data: "aGVsbG8=", size: 5 };
+    Reflect.set(editor, "attachments", [attachment]);
+    saveStagedAttachments("local:session-a", [attachment]);
 
     // Leave session-a with the attachment pending, then come back to it.
     editor.sessionId = "session-b";

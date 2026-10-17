@@ -3212,8 +3212,8 @@ export const templates = {
     ]
   },
   "PromptEditor.template.f6a5aa80": {
-    "sourceHash": 2005826188,
-    "valueCount": 10,
+    "sourceHash": 370473800,
+    "valueCount": 11,
     "strings": [
       "\n          <div class=\"attachment-chip attachment-card\" title=",
       ">\n            <button class=\"attachment-preview-trigger\" type=\"button\" title=",
@@ -3223,7 +3223,8 @@ export const templates = {
       "</span>\n              <span class=\"attachment-card-copy\">\n                <span class=\"attachment-card-name\">",
       "</span>\n                <span class=\"attachment-card-info\">",
       " · ",
-      "</span>\n              </span>\n            </button>\n            <button type=\"button\" class=\"attachment-remove\" title=\"移除附件\" aria-label=",
+      "</span>\n              </span>\n            </button>\n            ",
+      "\n            <button type=\"button\" class=\"attachment-remove\" title=\"移除附件\" aria-label=",
       " @click=",
       ">×</button>\n          </div>\n        "
     ],
@@ -3237,7 +3238,8 @@ export const templates = {
       6,
       7,
       8,
-      9
+      9,
+      10
     ]
   },
   "PromptEditor.remove.ee640944": {
