@@ -3,6 +3,7 @@ import { LitElement, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { writeClipboardText } from "../clipboard";
 import type { ToolExecutionPart } from "./shared";
+import { toolDisplayName, toolDisplayText } from "../toolPresentation";
 
 const MAX_COLLAPSED_DIFF_LINES = 180;
 
@@ -16,6 +17,7 @@ export class ToolExecutionView extends LitElement {
   @property({ attribute: false }) execution: ToolExecutionPart | undefined;
   @state() private showFullDiff = false;
   @state() private copied = false;
+  @state() private copyError = false;
   @state() private diffOpen = true;
 
   override render() {
@@ -29,7 +31,7 @@ export class ToolExecutionView extends LitElement {
     const diffStats = visibleDiff === undefined ? undefined : countDiffLines(visibleDiff);
     const previewMismatch = actualDiff !== undefined && preview?.diff !== undefined && actualDiff !== preview.diff;
     const errorText = execution.status === "error" ? execution.resultText : preview?.error;
-    const bodyText = visibleDiff === undefined ? execution.resultText : undefined;
+    const bodyText = visibleDiff === undefined ? toolDisplayText(execution) : undefined;
     const target = toolTarget(execution, path);
 
     return html`
@@ -37,7 +39,7 @@ export class ToolExecutionView extends LitElement {
         <div class="tool-header">
           <div class="tool-title">
             <span class="status-icon" aria-hidden="true">${statusIcon(execution.status)}</span>
-            <strong>${execution.toolName}</strong>
+            <strong title=${execution.toolName}>${toolDisplayName(execution)}</strong>
             ${this.renderHeaderTarget(target)}
           </div>
           <div class="tool-meta">
@@ -49,6 +51,7 @@ export class ToolExecutionView extends LitElement {
 
         ${previewMismatch ? localizedTemplate("ToolExecutionView.applied_diff_differs_from_the_preview.67520e1d", html)`<p class="notice">Applied diff differs from the preview.</p>` : null}
         ${errorText === undefined || errorText === "" ? null : html`<pre class="error-text">${errorText}</pre>`}
+        ${this.copyError ? html`<p role="alert" class="error-text">${t("ui.tools.copyFailed")}</p>` : null}
         ${visibleDiff === undefined ? this.renderTextBody(bodyText, execution.status === "error", target) : this.renderDiffBody(visibleDiff, actualDiff === undefined ? t("ToolExecutionView.preview_diff.5d45110d") : t("ToolExecutionView.applied_diff.fb9a87b0"), target)}
       </section>
     `;
@@ -79,6 +82,7 @@ export class ToolExecutionView extends LitElement {
         ${text === undefined || text === "" ? null : localizedTemplate("ToolExecutionView.result.5f8bc2b0", html)`
           <div class="detail-result">
             <span class="detail-label">Result</span>
+            <button type="button" @click=${() => { void this.copyDiff(this.execution?.resultText ?? text); }}>${this.copied ? t("ToolExecutionView.copied.22728566") : t("ui.tools.copyRaw")}</button>
             <pre>${text}</pre>
           </div>
         `}
@@ -118,6 +122,7 @@ export class ToolExecutionView extends LitElement {
 
   private async copyDiff(diff: string): Promise<void> {
     const copied = await writeClipboardText(diff);
+    this.copyError = !copied;
     if (!copied) {
       this.copied = false;
       return;
@@ -150,7 +155,10 @@ export class ToolExecutionView extends LitElement {
     .error-text { margin: 0; border: 0; border-radius: 7px; background: color-mix(in srgb, var(--pi-danger) 10%, var(--pi-bg)); color: var(--pi-danger); padding: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px var(--pi-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); }
     .text-body { padding-top: 6px; }
     .detail-target, .detail-result { display: grid; gap: 4px; margin-top: 8px; min-width: 0; }
-    .detail-label { color: var(--pi-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .detail-result { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; }
+    .detail-result > button { justify-self: end; }
+    .detail-result > pre { grid-column: 1 / -1; }
+    .detail-label { color: var(--pi-muted); font-size: 12px; }
     .text-body pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px var(--pi-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); color: var(--pi-text); }
     .detail-result pre { box-sizing: border-box; max-width: 100%; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; border: 0; border-radius: 7px; background: var(--pi-bg); padding: 8px; white-space: pre; overflow-wrap: normal; direction: ltr; text-align: left; unicode-bidi: isolate; }
     .detail-target-value { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--pi-accent); font: 12px var(--pi-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); direction: ltr; text-align: left; unicode-bidi: isolate; }
@@ -160,8 +168,11 @@ export class ToolExecutionView extends LitElement {
     .diff-details > summary small { flex: 0 0 auto; color: var(--pi-dim); }
     .diff-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; margin-top: 8px; color: var(--pi-muted); font-size: 12px; }
     .diff-toolbar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    button { border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 3px 7px; font: 12px/16px var(--pi-font-family, system-ui, sans-serif); cursor: pointer; }
+    button { border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 4px 7px; font: 400 13px/18px var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); cursor: pointer; }
+    .diff-toolbar button, .detail-result > button { max-width: 100%; color: var(--pi-muted); }
     button:not(:disabled):hover { background: var(--pi-surface-hover); }
+    .diff-toolbar button:not(:disabled):hover, .detail-result > button:not(:disabled):hover { color: var(--pi-text); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
     button:focus-visible, summary:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
     .diff { box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; margin: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; border: 0; border-radius: 7px; background: var(--pi-bg); padding: 8px 0; color: var(--pi-muted); font: 12px var(--pi-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); line-height: 1.45; }
     .diff-content { display: block; width: max-content; min-width: 100%; }

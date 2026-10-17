@@ -1,8 +1,9 @@
 import { roleDisplayLabel, localizedTemplate, localizedText, t } from "../../../shared/i18n";
-import { LitElement, html, nothing } from "lit";
+import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { keyed } from "lit/directives/keyed.js";
+import { styleMap } from "lit/directives/style-map.js";
 import { ChatDisclosureController } from "../chatDisclosure";
 import { writeClipboardText } from "../clipboard";
 import { queuedMessageAttachmentLabel, type QueuedMessageAction, type QueuedMessageActionTarget } from "../queuedMessageActions";
@@ -15,6 +16,9 @@ import { openTranscriptQuestion, transcriptQuestionOutcomes } from "../chatQuest
 import { chatTimelineEntries, type ChatTimelineEntry } from "../chatTimeline";
 import { ChatTimeline } from "./ChatTimeline";
 import { ChatScrollFlows } from "../ChatScrollFlows";
+import { turnWrittenFiles } from "../toolPresentation";
+import { selectedContentIn, type QuotedChatSelection } from "../quotedSelection";
+import { selectionQuotePosition, type QuoteAnchorRect, type QuotePopoverPosition } from "../selectionQuotePosition";
 import { ChatRenderKeys } from "../chatRenderKeys";
 import { DEFAULT_CHAT_BEHAVIORS, type ChatBehaviors } from "../chatBehaviors";
 import type { AskUserSubmission, PendingExtensionDialog, QueuedSessionMessage, SessionActivity, SessionRef, SessionStatus, SessionWarningSeverity } from "../api";
@@ -207,6 +211,112 @@ function chatMessageModelLabel(message: ChatLine): string | undefined {
 
 @customElement("chat-view")
 export class ChatView extends LitElement {
+  @property({ attribute: false }) onQuoteSelection?: (selection: QuotedChatSelection, newSession: boolean) => Promise<void>;
+  @state() private quotedSelection: QuotedChatSelection | undefined;
+  @state() private quotePosition: QuotePopoverPosition | undefined;
+  @state() private quoting = false;
+  @state() private quoteError = "";
+  private quoteAnchor: QuoteAnchorRect | undefined;
+
+  private dismissQuoteSelection(): void {
+    this.quotedSelection = undefined;
+    this.quotePosition = undefined;
+    this.quoteAnchor = undefined;
+    this.quoteError = "";
+    this.quoting = false;
+  }
+
+  private readonly handleQuoteOutsidePointer = (event: PointerEvent): void => {
+    if (!event.composedPath().some((node) => node instanceof HTMLElement && node.classList.contains("selection-quote-bar"))) this.dismissQuoteSelection();
+  };
+
+  private readonly handleQuoteEscape = (event: KeyboardEvent): void => {
+    if (event.key === "Escape") this.dismissQuoteSelection();
+  };
+
+  private captureTextSelection(event: Event): void {
+    if (this.quoting) return;
+    const source = event.composedPath().find((node): node is HTMLElement => node instanceof HTMLElement && node.localName === "formatted-text");
+    const container = source?.closest<HTMLElement>("[data-index]");
+    const index = Number(container?.dataset["index"]);
+    const message = this.messages[index - this.messageStart];
+    this.dismissQuoteSelection();
+    if (!source?.shadowRoot || !container || message?.role !== "assistant" || message.entryId === undefined || message.entryId === "") return;
+    const content = selectedContentIn(source.shadowRoot);
+    if (content === undefined || content.text === "" || content.text.length > 64_000) return;
+    const bounds = this.chat?.getBoundingClientRect();
+    if (!bounds) return;
+    // Anchor to the first visible selected line, including multi-line selections.
+    const anchor = Array.from(content.range.getClientRects()).find((rect) => rect.width > 0 && rect.height > 0
+      && rect.bottom > bounds.top && rect.top < bounds.bottom && rect.right > bounds.left && rect.left < bounds.right);
+    if (!anchor) return;
+    const selected = { text: content.text, entryId: message.entryId, machineId: this.machineId, sessionId: this.sessionId };
+    this.quoteAnchor = { left: Math.max(anchor.left, bounds.left), right: Math.min(anchor.right, bounds.right), top: Math.max(anchor.top, bounds.top), bottom: Math.min(anchor.bottom, bounds.bottom) };
+    this.quotedSelection = selected;
+    void this.positionQuotePopover(selected);
+  }
+
+  private async positionQuotePopover(selected: QuotedChatSelection): Promise<void> {
+    await this.updateComplete;
+    if (!this.isConnected || this.quotedSelection !== selected || !this.quoteAnchor) return;
+    const toolbar = this.renderRoot.querySelector<HTMLElement>(".selection-quote-bar");
+    const wrap = this.renderRoot.querySelector<HTMLElement>(".chat-wrap");
+    if (!toolbar || !wrap) return;
+    this.quotePosition = selectionQuotePosition(this.quoteAnchor, wrap.getBoundingClientRect(), toolbar.getBoundingClientRect());
+  }
+
+  private async useQuotedSelection(newSession: boolean): Promise<void> {
+    const selected = this.quotedSelection;
+    if (!selected || !this.onQuoteSelection || this.quoting) return;
+    this.quoting = true;
+    try {
+      await this.onQuoteSelection(selected, newSession);
+      if (this.quotedSelection === selected) this.dismissQuoteSelection();
+    } catch (error) {
+      if (this.quotedSelection === selected) {
+        this.quoteError = error instanceof Error ? error.message : String(error);
+        void this.positionQuotePopover(selected);
+      }
+    } finally {
+      if (this.quotedSelection === selected) this.quoting = false;
+    }
+  }
+
+  /** Scroll only; never changes the model's active session branch. */
+  async revealEntry(entryId: string): Promise<boolean> {
+    const index = this.messages.findIndex((message) => message.entryId === entryId);
+    if (index < 0) return false;
+    await this.updateComplete;
+    const target = this.renderRoot.querySelector<HTMLElement>(`[data-index="${String(index + this.messageStart)}"]`);
+    if (!target) return false;
+    let ancestor = target.parentElement;
+    while (ancestor && ancestor !== this.chat) {
+      if (ancestor instanceof HTMLDetailsElement) ancestor.open = true;
+      ancestor = ancestor.parentElement;
+    }
+    this.scrollFlows.jumpToAnchor(target);
+    target.animate([{ backgroundColor: "var(--pi-selection-bg)" }, { backgroundColor: "transparent" }], { duration: 1800 });
+    return true;
+  }
+
+  private renderWrittenFiles(index: number) {
+    const files = turnWrittenFiles(this.messages, index - this.messageStart, this.workspaceContext);
+    if (!files.length || !this.workspaceContext) return nothing;
+    const context = this.workspaceContext;
+    return html`<nav class="turn-written-files" aria-label=${t("ui.tools.writtenFiles")}><span>${t("ui.tools.writtenFiles")}</span>${files.map((path) => html`<button type="button" @click=${() => { this.dispatchEvent(new CustomEvent("workspace-file-open", { detail: { ...context, path }, bubbles: true, composed: true })); }}>${path}</button>`)}</nav>`;
+  }
+
+  private renderQuoteToolbar() {
+    const selection = this.quotedSelection;
+    if (selection?.sessionId !== this.sessionId || selection.machineId !== this.machineId || !this.onQuoteSelection) return nothing;
+    return html`<aside class="selection-quote-bar" role="group" aria-label=${t("ui.quote.actions")}
+      style=${styleMap({ left: `${String(this.quotePosition?.left ?? 0)}px`, top: `${String(this.quotePosition?.top ?? 0)}px`, visibility: this.quotePosition ? "visible" : "hidden" })}
+      @pointerdown=${(event: PointerEvent) => { event.preventDefault(); }}>
+      <button type="button" ?disabled=${this.quoting} @click=${() => { void this.useQuotedSelection(false); }}>${t("ui.quote.askHere")}</button>
+      <button type="button" ?disabled=${this.quoting} @click=${() => { void this.useQuotedSelection(true); }}>${t("ui.quote.askNew")}</button>
+      ${this.quoteError ? html`<small role="alert">${this.quoteError}</small>` : nothing}
+    </aside>`;
+  }
   @property({ attribute: false }) messages: ChatLine[] = [];
   @property() sessionId = "";
   @property() sessionCwd = "";
@@ -298,8 +408,11 @@ export class ChatView extends LitElement {
   private imageSession: SessionRef | undefined;
   private touchY: number | undefined;
   private loadMoreRequested = false;
-  private readonly onViewportResize = () => { this.scrollFlows.onViewportResize(); };
-  private readonly handleScroll = () => { this.scrollFlows.onScroll(); };
+  private readonly onViewportResize = () => { this.dismissQuoteSelection(); this.scrollFlows.onViewportResize(); };
+  private readonly handleScroll = () => {
+    this.dismissQuoteSelection();
+    if (this.behaviors.rememberPosition || this.behaviors.followTail || this.behaviors.automaticHistory) this.scrollFlows.onScroll();
+  };
   // Native details toggles do not bubble; capture layout changes independently
   // of the listener that remembers a group's disclosure choice.
   private readonly handleDisclosureToggle = {
@@ -351,19 +464,26 @@ export class ChatView extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.ownerDocument.addEventListener("pointerdown", this.handleQuoteOutsidePointer, true);
+    this.ownerDocument.addEventListener("keydown", this.handleQuoteEscape);
     window.addEventListener("resize", this.onViewportResize);
     window.addEventListener("pagehide", this.onPageHide);
     window.visualViewport?.addEventListener("resize", this.onViewportResize);
+    window.visualViewport?.addEventListener("scroll", this.onViewportResize);
   }
 
   override disconnectedCallback(): void {
+    this.dismissQuoteSelection();
     this.scrollFlows.dispose();
     this.releaseImageZoomModal();
     this.messageActionGeneration += 1;
     this.clearMessageActionFeedback();
+    this.ownerDocument.removeEventListener("pointerdown", this.handleQuoteOutsidePointer, true);
+    this.ownerDocument.removeEventListener("keydown", this.handleQuoteEscape);
     window.removeEventListener("resize", this.onViewportResize);
     window.removeEventListener("pagehide", this.onPageHide);
     window.visualViewport?.removeEventListener("resize", this.onViewportResize);
+    window.visualViewport?.removeEventListener("scroll", this.onViewportResize);
     super.disconnectedCallback();
   }
 
@@ -375,6 +495,9 @@ export class ChatView extends LitElement {
   }
 
   protected override willUpdate(changed: Map<string, unknown>): void {
+    if (changed.has("sessionId") || changed.has("machineId")) {
+      this.dismissQuoteSelection();
+    }
     if (changed.has("messages")) {
       this.questionOutcomes = transcriptQuestionOutcomes(this.messages);
       this.questionIds = new Set(this.messages.flatMap((line) => line.parts.flatMap((part) => part.type === "askUserQuestion" ? [part.ask.askId] : [])));
@@ -494,13 +617,15 @@ export class ChatView extends LitElement {
       ${this.renderNotificationLiveRegions()}
       <div class=${this.behaviors.visualEffects ? "chat-wrap" : "chat-wrap plain"}>
         <div class=${this.timelineEntriesCache.length > 0 ? "chat timeline-scroll" : "chat"} tabindex="0" role="region" aria-label=${t("ui.chatTimeline.transcript")} @image-open=${(event: CustomEvent<ImageOpenDetail>) => { this.openImageZoom(event.detail.src, event.detail.alt); }}
-          @scroll=${this.behaviors.rememberPosition || this.behaviors.followTail || this.behaviors.automaticHistory ? this.handleScroll : undefined}
+          @scroll=${this.handleScroll}
           @toggle=${this.behaviors.followTail ? this.handleDisclosureToggle : undefined}
           @wheel=${this.handlesScrollIntent ? this.handleWheel : undefined}
           @touchstart=${this.handlesScrollIntent ? this.handleTouchStart : undefined}
           @touchmove=${this.handlesScrollIntent ? this.handleTouchMove : undefined}
           @touchend=${this.handlesScrollIntent ? this.handleTouchEnd : undefined}
-          @touchcancel=${this.handlesScrollIntent ? this.handleTouchEnd : undefined}>
+          @touchcancel=${this.handlesScrollIntent ? this.handleTouchEnd : undefined}
+          @mouseup=${(event: MouseEvent) => { this.captureTextSelection(event); }}
+          @keyup=${(event: KeyboardEvent) => { if (event.shiftKey) this.captureTextSelection(event); }}>
           ${this.renderHistoryBoundary()}
           ${keyed(transcriptIdentity, repeat(
             groups,
@@ -517,6 +642,7 @@ export class ChatView extends LitElement {
           ${this.renderExtensionDialogs()}
         </div>
         ${this.renderActivityDock()}
+        ${this.renderQuoteToolbar()}
         ${this.timelineEntriesCache.length === 0 ? nothing : html`<chat-timeline .entries=${this.timelineEntriesCache} .onNavigate=${this.handleTimelineNavigate}></chat-timeline>`}
         <nav class="chat-jumps" aria-label=${t("ui.chatTimeline.controls")}>
           <button type="button" title=${t("ui.chatTimeline.top")} aria-label=${t("ui.chatTimeline.top")} @click=${this.handleJumpTop}>↑</button>
@@ -935,6 +1061,7 @@ export class ChatView extends LitElement {
       <article class=${hasHeader ? `msg ${message.role}` : shellClass} data-index=${index} data-scroll-anchor-id=${chatMessageAnchorKey(index, message) ?? nothing}>
         ${hasHeader ? this.renderMessageHeader(message, String(index), index, entryActionHeaders) : null}
         ${message.parts.map((part, partIndex) => this.renderPart(part, message, index, partIndex))}
+        ${this.renderWrittenFiles(index)}
       </article>
     `;
   }
@@ -987,6 +1114,7 @@ export class ChatView extends LitElement {
             <section class=${toolOnly ? "group-msg tool-execution-shell" : `group-msg ${message.role}`} data-index=${index} data-scroll-anchor-id=${chatEventAnchorKey(index, message) ?? nothing}>
               ${chatMessageHasHeader(message) ? this.renderMessageHeader(message, `${String(startIndex)}:${String(offset)}`, index, entryActionHeaders, message.role === "assistant" ? null : roleDisplayLabel(message.role)) : null}
               ${message.parts.map((part, partIndex) => this.renderPart(part, message, index, partIndex))}
+              ${this.renderWrittenFiles(index)}
             </section>
           `;
         })}
@@ -1218,5 +1346,16 @@ export class ChatView extends LitElement {
     return live ? `g:${identity}` : `g-end:${identity}`;
   }
 
-  static override styles = chatStyles;
+  static override styles = [chatStyles, css`
+    .turn-written-files { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; min-width: 0; margin-top: 10px; color: var(--pi-muted); font: 400 12px/18px var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
+    .turn-written-files button { max-width: 100%; border: 1px solid var(--pi-border-muted); border-radius: 6px; padding: 3px 7px; background: var(--pi-surface); color: var(--pi-text-secondary); font: inherit; text-align: start; overflow-wrap: anywhere; cursor: pointer; }
+    .turn-written-files button:not(:disabled):hover { background: var(--pi-surface-hover); color: var(--pi-text); }
+    .selection-quote-bar { position: absolute; z-index: 30; display: flex; align-items: center; flex-wrap: wrap; width: max-content; max-width: calc(100% - 16px); box-sizing: border-box; padding: 3px; border: 1px solid var(--pi-border-muted); border-radius: 8px; box-shadow: 0 3px 12px var(--pi-shadow); background: var(--pi-surface); font: 400 13px/20px var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
+    .selection-quote-bar button { flex: 1 0 auto; border: 0; border-radius: 4px; padding: 2px 6px; background: transparent; color: var(--pi-text); font: inherit; cursor: pointer; white-space: nowrap; }
+    .selection-quote-bar button + button { border-inline-start: 1px solid var(--pi-border-muted); border-start-start-radius: 0; border-end-start-radius: 0; }
+    .selection-quote-bar button:not(:disabled):hover { background: var(--pi-surface-hover); }
+    .selection-quote-bar button:disabled, .turn-written-files button:disabled { opacity: .5; cursor: not-allowed; }
+    .selection-quote-bar small { flex-basis: 100%; max-width: 280px; padding: 3px 6px; overflow-wrap: anywhere; color: var(--pi-danger); }
+    .selection-quote-bar button:focus-visible, .turn-written-files button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
+  `];
 }

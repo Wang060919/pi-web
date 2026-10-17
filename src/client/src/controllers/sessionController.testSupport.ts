@@ -182,6 +182,9 @@ let nextFrameId = 1;
 beforeEach(() => {
   framesById.clear();
   nextFrameId = 1;
+  // Each scenario owns its browser transcript cache, including under Node's
+  // built-in sessionStorage implementation.
+  vi.stubGlobal("sessionStorage", new MemoryStorage());
   vi.stubGlobal("requestAnimationFrame", (callback: () => void) => {
     const id = nextFrameId++;
     framesById.set(id, callback);

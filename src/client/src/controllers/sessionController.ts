@@ -264,7 +264,11 @@ export class SessionController {
     await this.clearSessionAfterNavigation(this.navigationSelection());
   }
 
-  async startSession(options?: { updateUrl?: boolean | undefined }) {
+  async startSession(options?: { updateUrl?: boolean | undefined }): Promise<void> {
+    await this.startSessionWithResult(options);
+  }
+
+  async startSessionWithResult(options?: { updateUrl?: boolean | undefined }): Promise<SessionInfo | undefined> {
     const workspace = this.getState().selectedWorkspace;
     if (!workspace) return;
     const machineId = selectedMachineId(this.getState());
@@ -281,8 +285,10 @@ export class SessionController {
     try {
       const session = await this.api.startSession(workspace.path, machineId, pending.tempId);
       await this.resolvePendingSessionStart(pending.tempId, session);
+      return session;
     } catch (error) {
       this.failPendingSessionStart(pending.tempId, error);
+      return undefined;
     }
   }
 

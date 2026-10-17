@@ -4450,14 +4450,18 @@ export const templates = {
     ]
   },
   "ToolExecutionView.result.5f8bc2b0": {
-    "sourceHash": 591282540,
-    "valueCount": 1,
+    "sourceHash": 101792121,
+    "valueCount": 3,
     "strings": [
-      "\n          <div class=\"detail-result\">\n            <span class=\"detail-label\">结果</span>\n            <pre>",
+      "\n          <div class=\"detail-result\">\n            <span class=\"detail-label\">结果</span>\n            <button type=\"button\" @click=",
+      ">",
+      "</button>\n            <pre>",
       "</pre>\n          </div>\n        "
     ],
     "order": [
-      0
+      0,
+      1,
+      2
     ]
   },
   "ToolExecutionView.showing_of_lines.25201e9f": {
