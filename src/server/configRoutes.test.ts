@@ -242,6 +242,52 @@ describe("config routes", () => {
     });
   });
 
+  it("applies a selected-machine PATCH on the target without replacing unrelated config", async () => {
+    savedConfig = fullConfig();
+    const response = await app.inject({ method: "PATCH", url: "/api/config", payload: { config: { askUser: false } } });
+    expect(response.statusCode).toBe(200);
+    expect(savedConfig).toEqual({ ...fullConfig(), askUser: false });
+    expect(response.json<PiWebConfigResponse>().config).not.toHaveProperty("host");
+  });
+
+  it("rejects gateway-only keys in a selected-machine PATCH before reading or writing", async () => {
+    const response = await app.inject({ method: "PATCH", url: "/api/config", payload: { config: { host: "0.0.0.0" } } });
+    expect(response.statusCode).toBe(400);
+    expect(service.read).not.toHaveBeenCalled();
+    expect(service.write).not.toHaveBeenCalled();
+  });
+
+  it("serializes target patches with local patches and full-config writes", async () => {
+    const firstWriteStarted = deferred();
+    const releaseFirstWrite = deferred();
+    let firstWrite = true;
+    service.write = vi.fn(async (config: PiWebConfigValues) => {
+      if (firstWrite) {
+        firstWrite = false;
+        firstWriteStarted.resolve();
+        await releaseFirstWrite.promise;
+      }
+      savedConfig = config;
+      return responseFor(savedConfig, true);
+    });
+    const fullWrite = app.inject({ method: "PUT", url: "/api/config", payload: { config: { host: "gateway.example", port: 8505 } } }).then((response) => response);
+    await firstWriteStarted.promise;
+    const patch = app.inject({ method: "PATCH", url: "/api/config", payload: { config: { spawnSessions: true } } }).then((response) => response);
+    const localPatch = app.inject({ method: "PUT", url: "/api/machines/local/config", payload: { config: { askUser: true } } }).then((response) => response);
+    releaseFirstWrite.resolve();
+    expect((await Promise.all([fullWrite, patch, localPatch])).map((response) => response.statusCode)).toEqual([200, 200, 200]);
+    expect(savedConfig).toEqual({ host: "gateway.example", port: 8505, spawnSessions: true, askUser: true });
+  });
+
+  it("continues target mutations after an earlier write fails", async () => {
+    vi.mocked(service.write).mockRejectedValueOnce(new Error("storage unavailable"));
+    const failed = await app.inject({ method: "PATCH", url: "/api/config", payload: { config: { spawnSessions: true } } });
+    const successful = await app.inject({ method: "PATCH", url: "/api/config", payload: { config: { askUser: true } } });
+    expect(failed.statusCode).toBe(500);
+    expect(successful.statusCode).toBe(200);
+    expect(savedConfig).toEqual({ host: "127.0.0.1", port: 8504, allowedHosts: [], askUser: true });
+  });
+
   it("keeps foreign-platform agent paths portable at federation transport boundaries", () => {
     const agent = { command: "C:\\tools\\pi.exe", dir: "C:\\pi-profiles\\work" };
     const response = {
@@ -329,4 +375,10 @@ function responseFor(config: PiWebConfigValues, exists: boolean): PiWebConfigRes
     effectiveConfig: config,
     envOverrides: { host: false, port: false, allowedHosts: false, spawnSessions: false, subsessions: false, askUser: false },
   };
+}
+
+function deferred(): { promise: Promise<void>; resolve: () => void } {
+  let resolve = () => { /* Assigned synchronously by the Promise constructor. */ };
+  const promise = new Promise<void>((done) => { resolve = done; });
+  return { promise, resolve };
 }

@@ -23,6 +23,23 @@ export const SELECTED_MACHINE_CONFIG_KEYS = [
 ] as const satisfies readonly (keyof PiWebConfigValues)[];
 
 const SELECTED_MACHINE_CONFIG_KEY_SET = new Set<string>(SELECTED_MACHINE_CONFIG_KEYS);
+const pendingConfigWrites = new WeakMap<PiWebConfigService, Promise<void>>();
+
+/** All routes sharing a target service serialize complete writes and read-modify-writes together. */
+function mutateConfig(service: PiWebConfigService, operation: () => PiWebConfigResponse | Promise<PiWebConfigResponse>): Promise<PiWebConfigResponse> {
+  const result = (pendingConfigWrites.get(service) ?? Promise.resolve()).then(operation);
+  const settled = result.then(() => undefined, () => undefined);
+  pendingConfigWrites.set(service, settled);
+  void settled.then(() => { if (pendingConfigWrites.get(service) === settled) pendingConfigWrites.delete(service); });
+  return result;
+}
+
+function patchSelectedMachineConfig(service: PiWebConfigService, patch: PiWebConfigValues): Promise<PiWebConfigResponse> {
+  return mutateConfig(service, async () => {
+    const current = await service.read();
+    return service.write(mergeSelectedMachineConfig(current.config, patch));
+  });
+}
 
 export function createFilePiWebConfigService(options: LoadOptions = {}): PiWebConfigService {
   return {
@@ -58,7 +75,20 @@ export function registerConfigRoutes(app: FastifyInstance, service: PiWebConfigS
 
   app.put<{ Body: { config?: unknown } | undefined }>("/api/config", async (request, reply) => {
     try {
-      return await service.write(parseConfigRequest(request.body?.config));
+      const config = parseConfigRequest(request.body?.config);
+      return await mutateConfig(service, () => service.write(config));
+    } catch (error) {
+      const status = isConfigValidationError(error) ? 400 : 500;
+      return reply.code(status).send({ error: errorMessage(error) });
+    }
+  });
+
+  // Federation sends only the selected-machine patch. Merge it at the target,
+  // where other gateways and local settings share the same mutation queue.
+  app.patch<{ Body: { config?: unknown } | undefined }>("/api/config", async (request, reply) => {
+    try {
+      const patch = parseSelectedMachineConfigRequest(request.body?.config);
+      return selectedMachineConfigResponse(await patchSelectedMachineConfig(service, patch));
     } catch (error) {
       const status = isConfigValidationError(error) ? 400 : 500;
       return reply.code(status).send({ error: errorMessage(error) });
@@ -77,9 +107,8 @@ export function registerLocalMachineConfigRoutes(app: FastifyInstance, service: 
 
   app.put<{ Body: { config?: unknown } | undefined }>("/api/machines/local/config", async (request, reply) => {
     try {
-      const current = await service.read();
       const patch = parseSelectedMachineConfigRequest(request.body?.config);
-      return selectedMachineConfigResponse(await service.write(mergeSelectedMachineConfig(current.config, patch)));
+      return selectedMachineConfigResponse(await patchSelectedMachineConfig(service, patch));
     } catch (error) {
       const status = isConfigValidationError(error) ? 400 : 500;
       return reply.code(status).send({ error: errorMessage(error) });

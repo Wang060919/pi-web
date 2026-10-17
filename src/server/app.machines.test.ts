@@ -115,13 +115,13 @@ describe("buildApp machine routes", () => {
     expect(requestJson).toHaveBeenCalledWith("GET", "/api/config");
   });
 
-  it("merges remote selected-machine config updates into the target machine config", async () => {
+  it("sends only the selected-machine patch for the target to merge", async () => {
     const addResponse = await appTestContext.app.inject({ method: "POST", url: "/api/machines", payload: { name: "Remote", baseUrl: "https://remote.example.test/" } });
     const remote = addResponse.json<{ id: string }>();
     let persistedConfig = fullPiWebConfig();
     const requestJson = vi.fn<MachineClient["requestJson"]>((method, _path, body) => {
       if (method === "GET") return Promise.resolve({ statusCode: 200, headers: { "content-type": "application/json" }, body: piWebConfigResponse(persistedConfig) });
-      persistedConfig = configFromMachineConfigWriteBody(body);
+      persistedConfig = { ...persistedConfig, ...configFromMachineConfigWriteBody(body) };
       return Promise.resolve({ statusCode: 200, headers: { "content-type": "application/json" }, body: piWebConfigResponse(persistedConfig) });
     });
     appTestContext.remoteClient = fakeRemoteClient({ requestJson });
@@ -132,8 +132,7 @@ describe("buildApp machine routes", () => {
       payload: { config: { plugins: { info: { enabled: false } }, pathAccess: { allowedPaths: ["/srv/remote"] }, uploads: { defaultFolder: "remote\\uploads" }, maxUploadBytes: 4096, spawnSessions: true, agent: { command: "remote-agent", dir: "/srv/remote-agent" } } },
     });
 
-    const expectedMerged: PiWebConfigValues = {
-      ...fullPiWebConfig(),
+    const expectedPatch: PiWebConfigValues = {
       plugins: { info: { enabled: false } },
       pathAccess: { allowedPaths: ["/srv/remote"] },
       uploads: { defaultFolder: "remote/uploads" },
@@ -142,8 +141,8 @@ describe("buildApp machine routes", () => {
       agent: { command: "remote-agent", dir: "/srv/remote-agent" },
     };
     expect(response.statusCode).toBe(200);
-    expect(requestJson).toHaveBeenNthCalledWith(1, "GET", "/api/config");
-    expect(requestJson).toHaveBeenNthCalledWith(2, "PUT", "/api/config", { config: expectedMerged });
+    expect(requestJson).toHaveBeenCalledExactlyOnceWith("PATCH", "/api/config", { config: expectedPatch });
+    expect(persistedConfig).toEqual({ ...fullPiWebConfig(), ...expectedPatch });
     expect(response.json<PiWebConfigResponse>().config).toEqual({
       plugins: { info: { enabled: false } },
       pathAccess: { allowedPaths: ["/srv/remote"] },
@@ -161,7 +160,7 @@ describe("buildApp machine routes", () => {
     const defaultProfileConfig = fullPiWebConfig();
     delete defaultProfileConfig.agent;
     const requestJson = vi.fn<MachineClient["requestJson"]>((method, _path, body) => {
-      const config = method === "PUT" ? configFromMachineConfigWriteBody(body) : defaultProfileConfig;
+      const config = method === "PATCH" ? { ...defaultProfileConfig, ...configFromMachineConfigWriteBody(body) } : defaultProfileConfig;
       return Promise.resolve({ statusCode: 200, headers: { "content-type": "application/json" }, body: piWebConfigResponse(config) });
     });
     appTestContext.remoteClient = fakeRemoteClient({ requestJson });
@@ -181,7 +180,7 @@ describe("buildApp machine routes", () => {
     const remote = addResponse.json<{ id: string }>();
     const windowsAgent = { command: "C:\\tools\\pi.exe", dir: "C:\\agent-profiles\\work" };
     const requestJson = vi.fn<MachineClient["requestJson"]>((method, _path, body) => {
-      const config = method === "PUT" ? configFromMachineConfigWriteBody(body) : fullPiWebConfig();
+      const config = method === "PATCH" ? { ...fullPiWebConfig(), ...configFromMachineConfigWriteBody(body) } : fullPiWebConfig();
       return Promise.resolve({ statusCode: 200, headers: { "content-type": "application/json" }, body: piWebConfigResponse(config) });
     });
     appTestContext.remoteClient = fakeRemoteClient({ requestJson });
@@ -194,9 +193,7 @@ describe("buildApp machine routes", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json<PiWebConfigResponse>().config.agent).toEqual(windowsAgent);
-    expect(requestJson).toHaveBeenNthCalledWith(2, "PUT", "/api/config", {
-      config: { ...fullPiWebConfig(), agent: windowsAgent },
-    });
+    expect(requestJson).toHaveBeenCalledExactlyOnceWith("PATCH", "/api/config", { config: { agent: windowsAgent } });
   });
 
   it("rejects unsafe remote selected-machine config keys before proxying", async () => {

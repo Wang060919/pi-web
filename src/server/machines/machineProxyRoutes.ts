@@ -5,7 +5,7 @@ import {
   PAIRED_PLUGIN_BACKEND_CHANNEL_ROUTE_PATH,
   PLUGIN_BACKEND_CHANNEL_DATA_FRAME_MAX_BYTES,
 } from "../../shared/pluginBackendProtocol.js";
-import { mergeSelectedMachineConfig, parsePiWebConfigResponseBody, parseSelectedMachineConfigRequest, selectedMachineConfigResponse } from "../configRoutes.js";
+import { parsePiWebConfigResponseBody, parseSelectedMachineConfigRequest, selectedMachineConfigResponse } from "../configRoutes.js";
 import {
   type PluginBackendChannelProxyAdmissionPool,
   type PluginBackendChannelProxyScope,
@@ -226,12 +226,15 @@ async function proxySelectedMachineConfigRequest(client: MachineClient, machineI
 
   if (method === "PUT") {
     const patch = parseSelectedMachineConfigRequest(configPayload(body), "portable");
-    const currentResponse = await client.requestJson("GET", remotePath);
-    if (!isSuccessfulStatus(currentResponse.statusCode)) return sendUpstreamJsonResponse(reply, currentResponse, machineId);
-
-    const current = parsePiWebConfigResponseBody(currentResponse.body, "Remote machine config response");
-    const merged = mergeSelectedMachineConfig(current.config, patch);
-    return sendSelectedMachineConfigResponse(reply, await client.requestJson("PUT", remotePath, { config: merged }), machineId);
+    const upstream = await client.requestJson("PATCH", remotePath, { config: patch });
+    if (upstream.statusCode === 404 || upstream.statusCode === 405) {
+      return reply.code(409).send({
+        error: "Remote machine does not support atomic configuration updates. Update and restart the web/API service on that machine before saving settings.",
+        code: "selected-machine-config-incompatible",
+        machineId,
+      });
+    }
+    return sendSelectedMachineConfigResponse(reply, upstream, machineId);
   }
 
   return reply.code(405).send({ error: "Method not allowed" });
