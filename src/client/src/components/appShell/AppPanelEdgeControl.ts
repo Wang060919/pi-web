@@ -208,8 +208,8 @@ export class AppPanelEdgeControl extends LitElement {
     .resize-handle { position: absolute; inset: 0 -6px; z-index: 0; cursor: col-resize; touch-action: none; outline: none; }
     .resize-handle::after { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; transform: translateX(-50%); background: transparent; transition: width .12s ease, background .12s ease, opacity .12s ease; }
     .resize-handle:focus-visible::after, :host([resizing]) .resize-handle::after { width: 2px; background: var(--pi-text-secondary); opacity: .45; }
-    .edge-button { position: relative; z-index: 1; box-sizing: border-box; display: grid; place-items: center; width: 18px; height: 48px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--pi-muted); opacity: .45; cursor: pointer; }
-    .edge-button:hover, .edge-button:focus-visible { color: var(--pi-text); background: var(--pi-surface-hover); opacity: 1; }
+    .edge-button { position: relative; z-index: 1; box-sizing: border-box; display: grid; place-items: center; width: 18px; height: 48px; padding: 0; border: 0; border-radius: 6px; background: var(--pi-surface-hover); color: var(--pi-text-secondary); cursor: pointer; }
+    .edge-button:hover, .edge-button:focus-visible { color: var(--pi-text); background: var(--pi-selection-bg); }
     .edge-button:focus-visible { outline: 1px solid var(--pi-text-secondary); outline-offset: 2px; }
     :host([side="navigation"][collapsed]) .edge-button { transform: translateX(calc(50% - .5px)); }
     :host([side="workspace"][collapsed]) .edge-button { transform: translateX(calc(-50% + .5px)); }

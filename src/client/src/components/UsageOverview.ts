@@ -126,7 +126,7 @@ export class UsageOverview extends LitElement {
   static override styles = css`
     :host { display: block; width: 480px; max-width: 100%; color: var(--pi-text, light-dark(#171717, #e5e5e5)); font: 400 12px/16px var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
     * { box-sizing: border-box; }
-    .panel { --usage-surface: light-dark(#f0f0ef, var(--pi-surface, #282828)); --usage-cell: light-dark(#dadad9, #3e3e3e); --usage-label: light-dark(#86847f, #898781); padding: 8px 12px 14px; border-radius: 8px; background: var(--usage-surface); }
+    .panel { --usage-surface: light-dark(#f0f0ef, var(--pi-surface, #282828)); --usage-cell: light-dark(#dadad9, #3e3e3e); --usage-label: light-dark(#605e59, #b3b0aa); padding: 8px 12px 14px; border-radius: 8px; background: var(--usage-surface); }
     header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 20px; }
     .switch { display: inline-flex; align-items: center; gap: 1px; }
     button { border: 0; font: inherit; color: inherit; cursor: pointer; }

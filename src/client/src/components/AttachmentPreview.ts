@@ -97,7 +97,7 @@ export class AttachmentPreview extends LitElement {
     dd { margin: 0; color: var(--pi-text); overflow-wrap: anywhere; }
     footer { display: flex; flex: none; justify-content: flex-end; padding: 10px 16px; border-top: 0; }
     .preview-remove { padding: 7px 10px; color: var(--pi-danger); font-size: 12px; }
-    .preview-remove:hover { background: var(--pi-danger-bg); }
+    .preview-remove:hover { background: color-mix(in srgb, var(--pi-danger) 14%, transparent); }
     @media (pointer: coarse) { .preview-close { width: 44px; height: 44px; } .preview-remove, summary { min-height: 44px; box-sizing: border-box; } }
     @media (max-width: 640px) {
       modal-surface { --modal-surface-width: calc(100vw - 16px); --modal-surface-max-height: calc(100dvh - 16px); --modal-surface-backdrop-padding: 8px; }
