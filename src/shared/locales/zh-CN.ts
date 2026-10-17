@@ -77,8 +77,8 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "ui.attachmentPreview.invalidText": "无法按 UTF-8 文本解码此文件。",
   "ui.attachmentPreview.imageFailed": "无法显示此图片。",
   "ui.attachmentPreview.truncated": "仅显示此文件的前 64 KB。",
-  "ChatView.process_steps": "执行过程",
-  "ChatView.process_running": "正在执行",
+  "ChatView.process_steps": "处理过程",
+  "ChatView.process_running": "正在处理",
   "ChatView.process_thinking": "正在思考",
   "ChatView.process_failed": "项失败",
   "ChatView.process_unfinished": "项未完成",
@@ -99,7 +99,7 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "ui.chatTimeline.image": "图片消息",
   "ui.chatTimeline.top": "跳到顶部",
   "ui.chatTimeline.end": "跳到末尾",
-  "ui.composer.message": "给 pi 发消息",
+  "ui.composer.message": "给 Pi 发消息",
   "ui.composer.attach": "添加附件",
   "ui.composer.model": "选择模型",
   "ui.composer.status": "会话状态",
@@ -113,7 +113,7 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "ui.composer.sending": "正在发送…",
   "ui.composer.compacting": "正在压缩历史 · 下一条消息将排队",
   "ui.composer.attachments": "附件",
-  "ui.composer.placeholder": "给 pi 发消息…",
+  "ui.composer.placeholder": "给 Pi 发消息…",
   "ui.modelPicker.close": "关闭",
   "ui.modelPicker.search": "搜索模型",
   "ui.modelPicker.manage": "管理可用模型…",
@@ -142,9 +142,9 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "ui.thinkingPicker.defaultLoading": "正在加载默认值…",
   "ui.thinkingPicker.defaultFailed": "未能保存新会话默认值，请重试。",
   "ui.thinkingPicker.none": "未设置",
-  "ui.thinkingPicker.unavailable": "此模型没有可用的思考级别。",
-  "ui.thinkingPicker.fixed": "此模型仅支持一个思考级别。",
-  "ui.thinkingPicker.unknown": "请选择支持的级别以修改思考强度。",
+  "ui.thinkingPicker.unavailable": "此模型不支持调整思考强度。",
+  "ui.thinkingPicker.fixed": "此模型的思考强度固定。",
+  "ui.thinkingPicker.unknown": "请选择此模型支持的思考强度。",
   "ui.thinkingDescription.off": "不使用额外推理。",
   "ui.thinkingDescription.minimal": "简短推理，适合简单任务。",
   "ui.thinkingDescription.low": "轻量推理，适合日常任务。",
@@ -156,7 +156,7 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "workspaceUploads.workspace_upload_cancelled.592407c1": "工作区上传已取消",
   "workspaceUploads.workspace_upload_failed.719d68c1": "工作区上传失败",
   "workspaceUploads.workspace_upload_aborted.b5505fc9": "工作区上传已中止",
-  "ActionPalette.action_palette.13cea0f6": "操作面板",
+  "ActionPalette.action_palette.13cea0f6": "搜索与命令",
   "AskUserCard.sending.3fd54f08": "正在发送…",
   "AskUserCard.send_answers.d76b03bb": "发送回答",
   "AskUserCard.sending.1dd6ffb6": "正在发送…",
@@ -303,7 +303,7 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "PiWebApp.loading_projects.c11b5753": "正在加载项目…",
   "PiWebApp.looking_for_projects_you_have_added_to.48f17012": "正在查找已添加到 PI WEB 的项目。",
   "PiWebApp.no_projects_yet.ae56d5c4": "尚未添加项目",
-  "PiWebApp.use_actions_add_project_to_add_a.96056a51": "使用“操作 → 添加项目”添加文件夹。选择工作区后，此处将显示工作区工具。",
+  "PiWebApp.use_actions_add_project_to_add_a.96056a51": "通过“搜索 → 添加项目”添加文件夹。选择工作区后，即可使用文件、终端等工具。",
   "PiWebApp.select_a_project.41a584e8": "选择项目",
   "PiWebApp.choose_a_project_from_the_sidebar_then.02253883": "从侧栏选择项目，然后选择工作区以使用工具。",
   "PiWebApp.loading_workspaces.1497018c": "正在加载工作区…",
@@ -329,7 +329,7 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "PiWebApp.restore_all_side_panels_to_their_default.66de84d2": "将所有侧面板恢复为默认宽度",
   "PiWebApp.view.44ce88a7": "视图",
   "PiWebApp.open_navigation.d486774c": "打开导航",
-  "PiWebApp.find_destinations_and_manage_pinned_tabs.70f3990a": "查找目标并管理固定标签页",
+  "PiWebApp.find_destinations_and_manage_pinned_tabs.70f3990a": "查找页面和工具，并管理固定入口",
   "PiWebApp.navigation.35ce8ca9": "导航",
   "PiWebApp.focus_machines.2e0e4bd4": "聚焦机器",
   "PiWebApp.move_keyboard_focus_to_the_machine_selector.4b768e01": "将键盘焦点移至机器选择器",
@@ -349,7 +349,7 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "PiWebApp.workspace_deletion_scope_changed.f0a2a1c0": "工作区删除范围已更改",
   "PiWebApp.select_model.d9ea3ae1": "选择模型",
   "PiWebApp.current.15361875": " ✓ 当前",
-  "PiWebApp.select_thinking_level.4e50eb8c": "选择思考级别",
+  "PiWebApp.select_thinking_level.4e50eb8c": "选择思考强度",
   "PiWebApp.current.470b0064": " ✓ 当前",
   "PiWebApp.recalling_will_replace_your_unsent_draft_continue.99db6ada": "取回消息将替换未发送的草稿。是否继续？",
   "PiWebApp.this_message_s_conversation_is_no_longer.650328cc": "此消息所属的对话已不可用。",
@@ -359,17 +359,17 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "PiWebApp.sessions.326a773f": "会话",
   "PiWebApp.chat.66fa795b": "对话",
   "PiWebApp.no_reasoning.34ab682d": "不进行推理",
-  "PiWebApp.very_brief_reasoning_k_tokens.4a351058": "极简推理（约 1k token）",
-  "PiWebApp.light_reasoning_k_tokens.cfef40d8": "轻度推理（约 2k token）",
-  "PiWebApp.moderate_reasoning_k_tokens.c46b6830": "中度推理（约 8k token）",
-  "PiWebApp.deep_reasoning_k_tokens.04b7b4dc": "深度推理（约 16k token）",
-  "PiWebApp.maximum_reasoning_k_tokens.721e91f4": "最高推理（约 32k token）",
+  "PiWebApp.very_brief_reasoning_k_tokens.4a351058": "极简推理（约 1k Token）",
+  "PiWebApp.light_reasoning_k_tokens.cfef40d8": "轻度推理（约 2k Token）",
+  "PiWebApp.moderate_reasoning_k_tokens.c46b6830": "中度推理（约 8k Token）",
+  "PiWebApp.deep_reasoning_k_tokens.04b7b4dc": "深度推理（约 16k Token）",
+  "PiWebApp.maximum_reasoning_k_tokens.721e91f4": "最高推理（约 32k Token）",
   "ProjectDialog.add_project.d38cd98d": "添加项目",
   "ProjectList.no_project_selected.edb7a30b": "未选择项目",
   "ProjectList.unread_sessions_in_this_project.3eaa893c": "此项目有未读会话",
   "ProjectList.project_terminal_active.ccf696aa": "项目终端正在运行",
   "ProjectList.project_active.af61b42e": "项目正在运行",
-  "PromptEditor.message_pi_use_for_commands_for_tracked.a1b5c004": "给 pi 发消息… / 选择命令，@ 选择已跟踪文件，@ 加空格选择所有文件，# 选择模型",
+  "PromptEditor.message_pi_use_for_commands_for_tracked.a1b5c004": "给 Pi 发消息… / 选择命令，@ 选择已跟踪文件，@ 加空格选择所有文件，# 选择模型",
   "PromptEditor.excluded_from_context.77ba9e69": " · 不计入上下文",
   "PromptEditor.queue_until_the_current_activity_finishes.2420ce17": "排队等待当前活动结束",
   "PromptEditor.send_message.0a862bc3": "发送消息",
@@ -426,8 +426,8 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "SessionList.sending_message.bfa55fb9": "正在发送消息",
   "SessionList.session_active.2d07f465": "会话正在运行",
   "SessionList.unread_session_activity.73c05494": "会话有未读动态",
-  "SessionTreeNavigator.user.b4295872": "用户",
-  "SessionTreeNavigator.assistant.ce040ec2": "助手",
+  "SessionTreeNavigator.user.b4295872": "你",
+  "SessionTreeNavigator.assistant.ce040ec2": "Pi",
   "SessionTreeNavigator.tool_result.05478b0a": "工具结果",
   "SessionTreeNavigator.custom_message.3638712f": "自定义消息",
   "SessionTreeNavigator.compaction.ac3f049c": "上下文压缩",
@@ -541,7 +541,7 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "AppPanelEdgeControl.collapse_panel.1b6c19aa": "折叠面板",
   "AppRefreshControl.full_page_reload.9009dfc6": "重新加载整个页面",
   "NavigationDialog.navigation.81259b67": "导航",
-  "NavigationDialog.no_destinations_found.d366459a": "未找到目标。",
+  "NavigationDialog.no_destinations_found.d366459a": "没有匹配的页面或工具",
   "errorBanner.error.710302f2": "错误",
   "errorBanner.warning.1f79dfb1": "警告",
   "errorBanner.info.36338f90": "信息",
@@ -677,8 +677,8 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "keyboardShortcuts.shortcut_chords_must_include_a_key.96ba3ebf": "快捷键组合必须包含按键。",
   "keyboardShortcuts.each_shortcut_chord_can_include_only_one.2647de8c": "每组快捷键只能包含一个非修饰键。",
   "keyboardShortcuts.shortcut_chords_must_include_a_key.b9b58318": "快捷键组合必须包含按键。",
-  "actions.show_actions.16f031e0": "显示操作",
-  "actions.open_the_command_palette.ed5bc715": "打开命令面板",
+  "actions.show_actions.16f031e0": "打开搜索",
+  "actions.open_the_command_palette.ed5bc715": "搜索页面、命令和设置",
   "actions.general.aab6fc30": "常规",
   "actions.focus_prompt.95dd8a2a": "聚焦输入框",
   "actions.move_keyboard_focus_to_the_message_composer.8061da86": "将键盘焦点移至消息输入框",
@@ -701,7 +701,7 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "actions.run_login_without_tying_authentication_to_a.7350c3ae": "运行 /login，无需将身份验证绑定到会话",
   "actions.general.4a28eb0e": "常规",
   "actions.remove_provider_authentication.8c6be5d7": "移除服务商身份验证",
-  "actions.run_logout_for_stored_pi_credentials.b6eae4f6": "运行 /logout，移除已保存的 pi 凭据",
+  "actions.run_logout_for_stored_pi_credentials.b6eae4f6": "运行 /logout，移除已保存的 Pi 凭据",
   "actions.general.d13363df": "常规",
   "actions.select_theme.1691df69": "选择主题",
   "actions.choose_the_pi_web_color_theme.8d40c8bb": "选择 PI WEB 配色主题",
@@ -712,7 +712,7 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "actions.full_page_reload.3a887143": "重新加载页面",
   "actions.reload_the_pi_web_browser_page.7c4fd84f": "重新加载 PI WEB 浏览器页面",
   "actions.general.60f84447": "常规",
-  "actions.go_to_chat.68fd294f": "转到聊天",
+  "actions.go_to_chat.68fd294f": "打开对话",
   "actions.navigation.13f63e98": "导航",
   "actions.remove_workspace.16f6abb1": "移除工作区",
   "actions.run_the_owning_provider_s_workspace_removal.cd7c5df2": "执行所属服务商的工作区移除操作",
@@ -771,8 +771,8 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "settings.language.apply": "应用并刷新",
   "settings.language.hint": "切换语言将刷新页面。",
   "settings.language.saveFailed": "无法保存语言偏好，请检查浏览器存储设置。",
-  "ui.role.user": "用户",
-  "ui.role.assistant": "助手",
+  "ui.role.user": "你",
+  "ui.role.assistant": "Pi",
   "ui.role.tool": "工具",
   "ui.thinking.off": "关闭",
   "ui.thinking.minimal": "极低",
@@ -807,7 +807,7 @@ export const templates = {
       "\n        .label=",
       "\n        @keydown=",
       "\n      >\n        <header>\n          <input\n            .value=",
-      "\n            placeholder=\"搜索操作…\"\n            @input=",
+      "\n            placeholder=\"搜索页面和命令…\"\n            @input=",
       "\n          >\n          <button title=\"关闭\" aria-label=\"关闭\" @click=",
       ">×</button>\n        </header>\n        <div class=\"options\">\n          ",
       "\n        </div>\n      </modal-surface>\n    "
@@ -827,7 +827,7 @@ export const templates = {
     "sourceHash": 559077592,
     "valueCount": 0,
     "strings": [
-      "<div class=\"empty\">未找到操作。</div>"
+      "<div class=\"empty\">没有匹配的页面或命令。</div>"
     ],
     "order": []
   },
@@ -1540,7 +1540,7 @@ export const templates = {
     "sourceHash": 1823223639,
     "valueCount": 2,
     "strings": [
-      "\n      <div class=\"msg-actions\" aria-label=\"消息操作\">\n        ",
+      "\n      <div class=\"msg-actions\" aria-label=\"消息工具栏\">\n        ",
       "\n        ",
       "\n      </div>\n    "
     ],
@@ -1553,7 +1553,7 @@ export const templates = {
     "sourceHash": 3334821674,
     "valueCount": 7,
     "strings": [
-      "<details class=\"part\"><summary>思考</summary><formatted-text .imagesEnabled=",
+      "<details class=\"part\"><summary>思考过程</summary><formatted-text .imagesEnabled=",
       " .codeBlocks=",
       " .intentKey=",
       " .contentRendering=",
@@ -1603,8 +1603,8 @@ export const templates = {
     "sourceHash": 1732213095,
     "valueCount": 2,
     "strings": [
-      "\n      <div class=\"part skill-read\">\n        <strong>已加载 ",
-      "</strong>\n        <small>read ",
+      "\n      <div class=\"part skill-read\">\n        <strong>技能参考：",
+      "</strong>\n        <small>来源：",
       "</small>\n      </div>\n    "
     ],
     "order": [
@@ -2660,7 +2660,7 @@ export const templates = {
       "\n      <label class=\"check\">\n        <input type=\"checkbox\" .checked=",
       " ?disabled=",
       " @change=",
-      " />\n        <span>信任此项目</span>\n      </label>\n      <small class=\"trust-hint\">\n        信任后，pi 可以加载此项目的 .pi 设置、扩展、技能和软件包。\n        <a href=\"https://pi.dev/docs/latest/security\" target=\"_blank\" rel=\"noreferrer\">了解项目信任</a>\n      </small>\n      ",
+      " />\n        <span>信任此项目</span>\n      </label>\n      <small class=\"trust-hint\">\n        信任后，Pi 可以加载此项目的 .pi 设置、扩展、技能和软件包。\n        <a href=\"https://pi.dev/docs/latest/security\" target=\"_blank\" rel=\"noreferrer\">了解项目信任</a>\n      </small>\n      ",
       "\n    "
     ],
     "order": [
@@ -2867,7 +2867,7 @@ export const templates = {
       " @drop=",
       ">\n        ",
       "\n        <div class=\"editor-wrap\">\n          <div class=\"editor-row\">\n          <div class=\"editor-input\">\n            <div class=",
-      " aria-label=\"给 pi 发消息\" aria-disabled=",
+      " aria-label=\"给 Pi 发消息\" aria-disabled=",
       "></div>\n            <input class=\"attachment-input\" type=\"file\" multiple hidden @change=",
       " />\n            ",
       "\n          </div>\n          <div class=\"composer-buttons\">\n            <button class=\"icon-button composer-action send-button ",
@@ -2994,7 +2994,7 @@ export const templates = {
     "sourceHash": 1018245417,
     "valueCount": 1,
     "strings": [
-      "思考级别： ",
+      "思考强度： ",
       ""
     ],
     "order": [
@@ -3005,7 +3005,7 @@ export const templates = {
     "sourceHash": 1018245417,
     "valueCount": 1,
     "strings": [
-      "思考级别： ",
+      "思考强度： ",
       ""
     ],
     "order": [
@@ -3543,9 +3543,9 @@ export const templates = {
       "</span>",
       "</span>\n          <small class=\"session-secondary\"><span class=\"session-meta\">",
       "",
-      " messages</span>",
+      " 条消息</span>",
       "</small>\n          ",
-      "\n        </div>\n        <div class=\"action-menu\">\n          <button class=\"action-menu-toggle\" title=\"会话操作\" @click=",
+      "\n        </div>\n        <div class=\"action-menu\">\n          <button class=\"action-menu-toggle\" title=\"会话菜单\" @click=",
       ">⋯</button>\n        </div>\n      </div>\n      ",
       "\n    "
     ],
@@ -4273,7 +4273,7 @@ export const templates = {
     "valueCount": 3,
     "strings": [
       "\n      <details class=\"text-body\" ?open=",
-      ">\n        <summary>详情</summary>\n        ",
+      ">\n        <summary>输入与结果</summary>\n        ",
       "\n        ",
       "\n      </details>\n    "
     ],
@@ -4620,7 +4620,7 @@ export const templates = {
     "sourceHash": 382929393,
     "valueCount": 1,
     "strings": [
-      "\n      <button type=\"button\" class=\"context-action-button\" title=\"显示操作\" aria-label=\"显示操作\" @click=",
+      "\n      <button type=\"button\" class=\"context-action-button\" title=\"搜索页面和命令\" aria-label=\"搜索页面和命令\" @click=",
       ">\n        <svg class=\"context-action-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\">\n          <path d=\"M13 2 4 14h7l-1 8 10-13h-7V2Z\"></path>\n        </svg>\n      </button>\n    "
     ],
     "order": [
@@ -4820,7 +4820,7 @@ export const templates = {
     "sourceHash": 1886338450,
     "valueCount": 0,
     "strings": [
-      "<div class=\"empty\">未找到目标。</div>"
+      "<div class=\"empty\">没有匹配的页面或工具。</div>"
     ],
     "order": []
   },
@@ -6575,7 +6575,7 @@ export const templates = {
     "valueCount": 1,
     "strings": [
       "复制",
-      "消息"
+      "的消息"
     ],
     "order": [
       0
@@ -6586,7 +6586,7 @@ export const templates = {
     "valueCount": 1,
     "strings": [
       "已复制",
-      "消息"
+      "的消息"
     ],
     "order": [
       0

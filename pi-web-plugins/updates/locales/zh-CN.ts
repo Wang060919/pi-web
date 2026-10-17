@@ -28,7 +28,7 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "updatesLogic.installation_unknown.18c85529": "安装方式未知",
   "updatesLogic.pi_package.716145a9": "Pi 包",
   "updatesLogic.global_npm_package.d87a26a9": "全局 npm 包",
-  "updatesLogic.local_checkout.e5505e31": "本地检出",
+  "updatesLogic.local_checkout.e5505e31": "本地源码",
   "updatesLogic.docker_development_runtime.ff5d1b2d": "Docker 开发环境",
   "updatesLogic.docker_runtime.4726dda4": "Docker 运行环境",
   "updatesLogic.installation_unknown.27bc9914": "安装方式未知",

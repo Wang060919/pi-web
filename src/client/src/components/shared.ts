@@ -505,7 +505,7 @@ export const chatStyles = css`
   .msg-fork-icon { font-size: 17px; }
   .msg:hover > .msg-header .msg-actions, .msg:focus-within > .msg-header .msg-actions, .group-msg:hover > .msg-header .msg-actions, .group-msg:focus-within > .msg-header .msg-actions { opacity: 1; }
   .label { display: block; color: var(--pi-muted); font-size: 12px; font-weight: 500; line-height: 16px; text-transform: uppercase; }
-  .msg-header .label { flex: 0 0 auto; margin: 0; white-space: nowrap; }
+  .msg-header .label { flex: 0 0 auto; margin: 0; white-space: nowrap; text-transform: none; }
   .msg-meta { min-width: 0; opacity: .7; border: 0; background: transparent; color: var(--pi-dim); padding: 0; font: 400 11px/16px var(--pi-font-family, system-ui, sans-serif); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .12s ease; cursor: pointer; user-select: text; -webkit-user-select: text; }
   .msg:hover > .msg-header .msg-meta, .msg:focus-within > .msg-header .msg-meta, .group-msg:hover > .msg-header .msg-meta, .group-msg:focus-within > .msg-header .msg-meta, .msg-meta:focus, .msg-meta.expanded { opacity: 1; }
   .msg-meta.expanded { flex: 1 1 auto; max-width: 100%; white-space: normal; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; }
