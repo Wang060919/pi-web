@@ -16,6 +16,7 @@ const originalDockerMode = process.env["PI_WEB_DOCKER_MODE"];
 const originalDockerInstallDir = process.env["PI_WEB_DOCKER_INSTALL_DIR"];
 const originalDockerDevRepoRoot = process.env["PI_WEB_DOCKER_DEV_REPO_ROOT"];
 const originalAgentDir = process.env["PI_WEB_AGENT_DIR"];
+const originalIsolatedDevelopment = process.env["PI_WEB_ISOLATED_DEVELOPMENT"];
 
 function shellQuote(value: string): string {
   return `'${value.replaceAll("'", "'\\''")}'`;
@@ -30,6 +31,7 @@ afterEach(() => {
   restoreEnv("PI_WEB_DOCKER_INSTALL_DIR", originalDockerInstallDir);
   restoreEnv("PI_WEB_DOCKER_DEV_REPO_ROOT", originalDockerDevRepoRoot);
   restoreEnv("PI_WEB_AGENT_DIR", originalAgentDir);
+  restoreEnv("PI_WEB_ISOLATED_DEVELOPMENT", originalIsolatedDevelopment);
   vi.restoreAllMocks();
 });
 
@@ -393,6 +395,33 @@ describe("PI WEB status", () => {
       { kind: "npm-global", path: "/opt/pi-web" },
       { activeAgentProfile: activeProfile("/opt/pi/state"), hasCommand: () => Promise.resolve(true) },
     )).toBe(`PI_CODING_AGENT_DIR=${shellQuote("/opt/pi/state")} ${shellQuote(process.execPath)} ${shellQuote(join("/opt/pi-web", "dist", "cli.js"))} update`);
+  });
+
+  it.skipIf(process.platform !== "linux").each([false, true])("keeps native service commands outside isolated previews (isolated=%s)", async (isolated) => {
+    process.env["PI_WEB_SKIP_VERSION_CHECK"] = "1";
+    process.env["PI_WEB_ISOLATED_DEVELOPMENT"] = isolated ? "1" : "0";
+    disableDockerRuntimeEnv();
+    const home = await tempHome();
+    const binDir = await tempHome();
+    try {
+      process.env["HOME"] = home;
+      await installExecutable(binDir, "systemctl");
+      process.env["PATH"] = `${binDir}:${process.env["PATH"] ?? ""}`;
+      await installSystemdServiceFiles(home, ["pi-web.service", "pi-web-sessiond.service"]);
+
+      const status = await getPiWebStatus(daemonWithRuntime(runningSessiondRuntime()));
+
+      if (isolated) {
+        expect(status.commands).toEqual({});
+        expect(status.messages.every((message) => message.command === undefined)).toBe(true);
+      } else {
+        expect(status.commands.restart).toBe("systemd-run --user --collect --unit=pi-web-restart -- systemctl --user restart pi-web.service pi-web-sessiond.service");
+        expect(status.commands.restartWeb).toContain("systemctl --user restart pi-web.service");
+        expect(status.commands.restartSessiond).toContain("systemctl --user restart pi-web-sessiond.service");
+      }
+    } finally {
+      await Promise.all([rm(home, { recursive: true, force: true }), rm(binDir, { recursive: true, force: true })]);
+    }
   });
 
   it.skipIf(process.platform !== "linux")("suggests native systemd commands for local development services", async () => {

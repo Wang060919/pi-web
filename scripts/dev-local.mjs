@@ -8,6 +8,7 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { seedDevelopmentDemo } from "./dev-demo-data.mjs";
 
 const script = fileURLToPath(import.meta.url);
 const root = resolve(dirname(script), "..");
@@ -40,6 +41,8 @@ export function developmentEnvironment(repoRoot, socketPath, source = process.en
     PI_WEB_OFFLINE: "1",
     PI_OFFLINE: "1",
     PI_WEB_SKIP_VERSION_CHECK: "1",
+    // This process tree is owned by this script, never the user's native units.
+    PI_WEB_ISOLATED_DEVELOPMENT: "1",
   };
 }
 
@@ -270,9 +273,15 @@ async function main(command, token) {
     if (!ready) process.exitCode = 1;
     return;
   }
-  if (command !== "start" && command !== "stop") throw new Error("Usage: node scripts/dev-local.mjs start|stop|status");
+  if (command !== "start" && command !== "stop" && command !== "demo") throw new Error("Usage: node scripts/dev-local.mjs start|stop|status|demo");
   await initialize();
   await withActionLock(async () => {
+    if (command === "demo") {
+      const catalog = await seedDevelopmentDemo(root);
+      const url = new URL(catalog.url, `http://127.0.0.1:${UI_PORT}/`).href;
+      console.log(`Demo data ready: ${url}\n${catalog.projects.length} projects, ${catalog.sessions.length} sessions. Existing files and sessions were preserved.`);
+      return;
+    }
     if (command === "start") { await start(); return; }
     const record = await ownedRecord();
     if (record === undefined) { console.log("Already stopped."); return; }

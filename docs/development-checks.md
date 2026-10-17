@@ -2,6 +2,21 @@
 
 Use focused checks for local feedback; use CI and delivery gates for broad confidence. Pick checks by the boundary changed, not by a habit of running every command before every handoff.
 
+## Local demonstration data
+
+The isolated development instance at `http://127.0.0.1:8515/` has a **Test data** button. Choose **Load example data**, then open a sample conversation. The examples cover Markdown, tool results, file previews and Git diffs, reasoning, long conversations, and token usage across two projects.
+
+You can also prepare the examples from the checkout:
+
+```sh
+node scripts/dev-local.mjs demo
+node scripts/dev-local.mjs start
+```
+
+The first command prints a link to the welcome conversation. Loading examples creates missing files under `.local/dev/` and registers the sample projects in the isolated project list. Repeating it preserves existing projects, conversations, and edits to sample files. A running development instance picks up the examples on refresh; no session daemon restart is needed.
+
+Conversation content and usage values are synthetic historical data for browsing. Sending a new prompt uses the ordinary session runtime and requires a configured model; these examples do not provide generated or scripted replies. The browser loader is available only in the isolated Vite instance and is excluded from production builds.
+
 For incremental chat UX changes, see [composing chat behavior](chat-behaviors.md) for capability ownership and internal configuration.
 
 ## Fast local feedback

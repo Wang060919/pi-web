@@ -5,6 +5,7 @@
     "src/plugin-api.ts",
     "src/server-plugin-api.ts",
     "src/client/src/api.ts",
+    "src/client/src/previews/usageOverviewPreview.ts",
     "src/shared/apiTypes.ts",
     "src/server/types.ts",
     "src/server/sessiond.ts",

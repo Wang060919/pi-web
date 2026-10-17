@@ -438,6 +438,9 @@ async function commandsFor(components: PiWebStatusResponse["components"], option
   activeAgentProfile: ActiveAgentProfileDescriptor | undefined;
   hasCommand: (command: string) => Promise<boolean>;
 }): Promise<PiWebStatusResponse["commands"]> {
+  // dev-local owns these processes independently of any native PI WEB services
+  // installed for the same user. Never expose their commands in this instance.
+  if (process.env["PI_WEB_ISOLATED_DEVELOPMENT"] === "1") return {};
   const installation = preferredInstallation(components);
   if (installation?.kind === "docker") return dockerCommands(installation);
 

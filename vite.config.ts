@@ -8,12 +8,14 @@ import { defineConfig, normalizePath } from "vite";
 import { effectivePiWebConfig } from "./src/config";
 import { DEPLOYMENT_MANIFEST_CONTENT_TYPE, DEPLOYMENT_MANIFEST_PATH, createDeploymentFlavorResolver, deploymentIdentityAssetForPath, deploymentManifestForFlavor, isDeploymentIdentityAssetPath } from "./src/server/deploymentIdentity";
 import { detectPiWebInstallation } from "./src/server/piWebStatus";
+import { developmentDemoPlugin } from "./scripts/dev-demo-plugin.mjs";
 
 const { config } = effectivePiWebConfig();
 const apiPort = config.port ?? 8504;
 const docsRoot = resolve("docs");
 const docsPrefix = "/site";
 const clientPublicRoot = resolve("src/client/public");
+const developmentDemoEnabled = process.env["PI_WEB_DATA_DIR"] === resolve(".local/dev/state");
 
 // The dev deployment gets the dev brand identity even when the UI is served
 // by the Vite dev server (production serving does the same swap in Fastify).
@@ -193,7 +195,8 @@ function manualRefreshPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [devDocsPlugin(), devDeploymentIdentityPlugin(), manualRefreshPlugin()],
+  plugins: [developmentDemoPlugin(resolve("."), developmentDemoEnabled), devDocsPlugin(), devDeploymentIdentityPlugin(), manualRefreshPlugin()],
+  define: { "import.meta.env.PI_WEB_DEVELOPMENT_DEMO": JSON.stringify(developmentDemoEnabled) },
   root: "src/client",
   base: "./",
   build: {
