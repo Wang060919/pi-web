@@ -29,11 +29,12 @@ describe("shouldShowMachinesSection", () => {
 });
 
 describe("header identity", () => {
-  it("shows the plain brand without an icon or address", async () => {
+  it("pairs the brand name with a decorative Pi mark", async () => {
     const panel = await mountHeaderPanel([machine("local")]);
 
     expect(panel.shadowRoot?.querySelector("header strong")?.textContent).toBe("PI WEB");
-    expect(panel.shadowRoot?.querySelector(".brand-icon")).toBeNull();
+    expect(panel.shadowRoot?.querySelector(".brand .pi-mark")?.getAttribute("aria-hidden")).toBe("true");
+    expect(panel.shadowRoot?.querySelector(".brand svg")).not.toBeNull();
     expect(panel.shadowRoot?.querySelector(".brand-domain")).toBeNull();
   });
 

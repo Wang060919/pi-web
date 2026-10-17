@@ -195,6 +195,11 @@ export const appStyles = css`
   button:not(:disabled):not(.selected):hover { background: var(--pi-surface-hover); }
   button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
   .empty { margin: auto; color: var(--pi-muted); }
+  .welcome { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; box-sizing: border-box; width: min(520px, 100%); padding: 32px; }
+  .welcome .pi-mark { color: var(--pi-text); margin-bottom: 4px; }
+  .welcome h1 { margin: 0; color: var(--pi-text); font-size: 24px; line-height: 32px; font-weight: 500; letter-spacing: -.02em; }
+  .welcome p { margin: 0; font-size: 14px; line-height: 22px; }
+  .welcome button { margin-top: 4px; background: var(--pi-selection-bg); }
   .error { display: flex; gap: 8px; align-items: flex-start; padding: 10px 16px; border-bottom: 1px solid var(--pi-border); color: var(--pi-danger); }
   .error.warning { border-bottom-color: var(--pi-warning-border); color: var(--pi-warning); background: var(--pi-warning-surface); }
   .error.info { border-bottom-color: var(--pi-accent-border); color: var(--pi-text); background: var(--pi-selection-bg); }

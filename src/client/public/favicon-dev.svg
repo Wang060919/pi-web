@@ -1,8 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
-  <title id="title">PI WEB dev mark</title>
-  <desc id="desc">A horizontal brand bar in the dev-deployment purple.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-labelledby="title desc" shape-rendering="crispEdges">
+  <title id="title">PI WEB dev</title>
+  <desc id="desc">Pi's pixel mark with a purple development indicator.</desc>
   <style>
-    .bar { fill: #a371f7; }
+    .mark { fill: #151515; }
+    @media (prefers-color-scheme: dark) { .mark { fill: #efeeeb; } }
   </style>
-  <rect class="bar" x="128" y="448" width="768" height="128"/>
+  <g class="mark" transform="translate(4 4) scale(6)"><g id="pi-mark">
+    <rect x="0" y="0" width="1" height="1"/>
+    <rect x="1" y="0" width="1" height="1"/>
+    <rect x="2" y="0" width="1" height="1"/>
+    <rect x="0" y="1" width="1" height="1"/>
+    <rect x="2" y="1" width="1" height="1"/>
+    <rect x="0" y="2" width="1" height="1"/>
+    <rect x="1" y="2" width="1" height="1"/>
+    <rect x="3" y="2" width="1" height="1"/>
+    <rect x="0" y="3" width="1" height="1"/>
+    <rect x="3" y="3" width="1" height="1"/>
+  </g></g>
+  <rect x="24" y="5" width="3" height="3" fill="#a371f7"/>
 </svg>

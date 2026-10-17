@@ -11,6 +11,7 @@ import type { KeyboardNavigableSection } from "../navigationFocus";
 import "../ModalSurface";
 import type { ModalSurface } from "../ModalSurface";
 import { navigationContextStyles } from "./navigationContextStyles";
+import { piMark } from "../PiMark";
 import "../MachineList";
 import "../MachineSwitcher";
 import "../ProjectList";
@@ -164,7 +165,7 @@ export class AppNavigationPanel extends LitElement {
   override render() {
     return localizedTemplate("AppNavigationPanel.pi_web_actions.a6cbb6f6", html)`
       <header>
-        <strong>PI WEB</strong>
+        <div class="brand">${piMark()}<strong>PI WEB</strong></div>
         <machine-switcher
           .machines=${this.machines}
           .selected=${this.selectedMachine}
@@ -392,7 +393,8 @@ export class AppNavigationPanel extends LitElement {
     :host { --navigation-panel-bg: light-dark(color-mix(in srgb, var(--pi-bg) 98%, var(--pi-text)), color-mix(in srgb, var(--pi-bg) 86%, #000)); display: flex; flex-direction: column; min-height: 0; overflow: hidden; background: var(--navigation-panel-bg); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     :host([compact]) { flex: 1 1 auto; }
     header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 0; }
-    header strong { flex: 0 0 auto; font-weight: 600; }
+    .brand { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; color: var(--pi-text); }
+    header strong { font-size: 13px; line-height: 18px; font-weight: 500; }
     machine-switcher { flex: 1 1 auto; min-width: 0; }
     :host([compact]) header { display: none; }
     .header-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }

@@ -64,6 +64,7 @@ import { resolvePluginNavigation } from "../pluginNavigation";
 import { readSettingsSection, writeSettingsSection, type SettingsSection } from "../settingsRoute";
 import { applyActiveShortcutPreferences } from "../shortcutPreferences";
 import { loadNavigationPreferences, saveNavigationPreferences, pinnedNavigationTabs, type NavigationPreferences } from "../navigationPreferences";
+import { piMark } from "./PiMark";
 import "./appShell/NavigationDialog";
 import { canDeleteWorkspace, isWorkspaceDeletionPending, isWorkspaceDeletionRunPending, latestWorkspaceDeletionRuns, pendingWorkspaceDeletionIds, targetWorkspaceIdForRun, workspaceDeletionRunFilter, workspaceRemovalConfirmation } from "../workspaceDeletion";
 import "./MachineList";
@@ -2359,6 +2360,17 @@ export class PiWebApp extends LitElement {
     return t("PiWebApp.select_a_project_and_workspace_to_start.ef065409");
   }
 
+  private renderSessionEmptyState() {
+    const message = this.sessionEmptyMessage();
+    if (this.contentError() !== "" || this.state.isLoadingProjects) return html`<div class="empty">${message}</div>`;
+    return html`<div class="empty welcome">
+      ${piMark(32)}
+      <h1>${t("ui.welcome.title")}</h1>
+      <p>${message}</p>
+      ${this.state.selectedWorkspace === undefined ? null : html`<button type="button" @click=${this.navigationActions.startSession}>${t("ui.welcome.start")}</button>`}
+    </div>`;
+  }
+
   private workspaceLabelItems(workspace: Workspace): WorkspaceLabelItem[] {
     return this.plugins.getWorkspaceLabelItems(this.createWorkspaceLabelContext(workspace));
   }
@@ -3989,7 +4001,7 @@ export class PiWebApp extends LitElement {
             ${state.commandDialog !== undefined ? html`<command-picker .title=${state.commandDialog.title} .options=${state.commandDialog.options} .onPick=${(value: string) => this.sessions.respondToCommand(state.commandDialog?.requestId ?? "", value)} .onCancel=${() => { this.sessions.cancelCommand(); }}></command-picker>` : null}
             ${this.renderModelDialog()}
             ${this.renderComposerContextPicker()}
-          ` : html`<div class="empty">${this.sessionEmptyMessage()}</div>`}
+          ` : this.renderSessionEmptyState()}
         </main>
         ${this.renderWorkspacePanelEdgeControl()}
         ${guard(this.workspaceSurfaceInputs(), () => this.renderWorkspacePanel())}

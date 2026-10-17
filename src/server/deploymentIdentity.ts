@@ -3,7 +3,7 @@ import type { PiWebInstallationInfo } from "../shared/apiTypes.js";
 /**
  * Deployment identity: how a PI WEB instance presents itself in browser chrome
  * and installed PWAs. Dev deployments (Docker dev mode, source checkouts) get a
- * purple recolor of the brand assets and a "(dev)" manifest name so users can
+ * small purple mark on brand assets and a "(dev)" manifest name so users can
  * tell instances apart where no URL bar is visible.
  */
 export type PiWebDeploymentFlavor = "stable" | "dev";
@@ -53,8 +53,8 @@ export const DEPLOYMENT_MANIFEST_PATH = "/manifest.webmanifest";
 export const DEPLOYMENT_MANIFEST_CONTENT_TYPE = "application/manifest+json";
 
 const DEV_MANIFEST_NAME = "PI WEB (dev)";
-/** A dark purple tint (the dark theme's purple surface) for the PWA title bar. */
-const DEV_MANIFEST_THEME_COLOR = "#21132f";
+/** Keep the PWA title bar aligned with the neutral application canvas. */
+const DEV_MANIFEST_THEME_COLOR = "#1c1c1c";
 
 /**
  * The dev variant of a brand asset for a request path, or undefined when the

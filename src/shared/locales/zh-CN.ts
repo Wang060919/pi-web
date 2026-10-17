@@ -16,6 +16,8 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "navigation.expanded": "展开",
   "navigation.collapsed": "折叠",
   "navigation.more": "更多",
+  "ui.welcome.title": "想做些什么？",
+  "ui.welcome.start": "开始新会话",
 
   "ui.fileCards.heading": "相关文件",
   "ui.fileCards.open": "打开预览",
@@ -4619,10 +4621,11 @@ export const templates = {
     ]
   },
   "AppNavigationPanel.pi_web_actions.a6cbb6f6": {
-    "sourceHash": 47372042,
-    "valueCount": 49,
+    "sourceHash": 1614841777,
+    "valueCount": 50,
     "strings": [
-      "\n      <header>\n        <strong>PI WEB</strong>\n        <machine-switcher\n          .machines=",
+      "\n      <header>\n        <div class=\"brand\">",
+      "<strong>PI WEB</strong></div>\n        <machine-switcher\n          .machines=",
       "\n          .selected=",
       "\n          .locationIndicator=",
       "\n          .statuses=",
@@ -4632,8 +4635,8 @@ export const templates = {
       "\n          .onFocusNextSection=",
       "\n          .onCancelKeyboardNavigation=",
       "\n        ></machine-switcher>\n        <div class=\"header-actions\">\n          ",
-      "\n          <button title=\"显示操作\" aria-label=\"显示操作\" @click=",
-      ">操作</button>\n        </div>\n      </header>\n      ",
+      "\n          <button title=\"搜索页面和命令\" aria-label=\"搜索页面和命令\" @click=",
+      ">搜索</button>\n        </div>\n      </header>\n      ",
       "\n      ",
       "\n      <session-list\n        .sessions=",
       "\n        .pinnedRootIds=",
@@ -4722,7 +4725,8 @@ export const templates = {
       45,
       46,
       47,
-      48
+      48,
+      49
     ]
   },
   "AppPanelEdgeControl.double_click_or_double_tap_to_reset.5f010e5a": {

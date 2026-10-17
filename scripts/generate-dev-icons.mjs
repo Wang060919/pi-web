@@ -1,11 +1,9 @@
 #!/usr/bin/env node
 /**
- * Regenerate the dev-deployment brand icons from the stock artwork.
- *
- * Dev deployments serve purple identity assets (see src/server/deploymentIdentity.ts).
- * The stock PWA icons are flat two-color PNGs, so the dev variants are a pure
- * pixel recolor of the teal brand bar to the purple accent — no rasterizer and
- * no image dependency involved. Run after changing the stock icons:
+ * Regenerate stable and dev application icons from public/pi-mark.svg.
+ * The same trusted pixel glyph is embedded in the UI. PWA artwork stays inside
+ * the maskable safe circle; dev artwork adds a small purple pixel indicator.
+ * No rasterizer or image dependency is needed for the integer-aligned glyph.
  *
  *   node scripts/generate-dev-icons.mjs
  */
@@ -16,15 +14,59 @@ import { deflateSync, inflateSync } from "node:zlib";
 
 const PUBLIC_DIR = fileURLToPath(new URL("../src/client/public/", import.meta.url));
 
-/** Teal brand bar in the stock artwork; recolored to the purple accent. */
-const SOURCE_BAR = [0x00, 0xf0, 0xd8];
-const DEV_BAR = [0xa3, 0x71, 0xf7];
+const DOCS_DIR = fileURLToPath(new URL("../docs/assets/", import.meta.url));
+const BACKGROUND = [0x1c, 0x1c, 0x1c, 0xff];
+const FOREGROUND = [0xef, 0xee, 0xeb, 0xff];
+const DEV_INDICATOR = [0xa3, 0x71, 0xf7, 0xff];
 
 const ICONS = [
-  ["pwa-icon-192.png", "pwa-icon-dev-192.png"],
-  ["pwa-icon-512.png", "pwa-icon-dev-512.png"],
-  ["apple-touch-icon.png", "apple-touch-icon-dev.png"],
+  [192, "pwa-icon-192.png", "pwa-icon-dev-192.png"],
+  [512, "pwa-icon-512.png", "pwa-icon-dev-512.png"],
+  [180, "apple-touch-icon.png", "apple-touch-icon-dev.png"],
 ];
+
+/** Read the deliberately limited rect-based source format, failing on artwork drift. */
+export function readPiMark(publicDir = PUBLIC_DIR) {
+  const source = readFileSync(join(publicDir, "pi-mark.svg"), "utf8");
+  const body = /<g id="pi-mark">[\s\S]*?<\/g>/.exec(source)?.[0];
+  if (body === undefined || !source.includes('viewBox="0 0 4 4"')) throw new Error("Pi mark must use the 4 by 4 pixel grid");
+  const cellPattern = /<rect x="([0-3])" y="([0-3])" width="1" height="1"\s*\/>/g;
+  const cells = [...body.matchAll(cellPattern)]
+    .map((match) => [Number(match[1]), Number(match[2])]);
+  const remainder = body.replace('<g id="pi-mark">', "").replace("</g>", "").replace(cellPattern, "").trim();
+  if (cells.length === 0 || remainder !== "") throw new Error("Pi mark contains unsupported cells");
+  return { body, cells };
+}
+
+export function renderBrandIcon(size, dev = false, glyph = readPiMark()) {
+  const pixels = Buffer.alloc(size * size * 4);
+  for (let offset = 0; offset < pixels.length; offset += 4) pixels.set(BACKGROUND, offset);
+  // A centered square of <= 56% of the canvas fits inside the maskable 80% circle.
+  const unit = Math.floor(size * 0.14);
+  const origin = Math.floor((size - unit * 4) / 2);
+  const square = (x, y, width, color) => {
+    for (let row = y; row < y + width; row += 1) {
+      for (let column = x; column < x + width; column += 1) pixels.set(color, (row * size + column) * 4);
+    }
+  };
+  for (const [x, y] of glyph.cells) square(origin + x * unit, origin + y * unit, unit, FOREGROUND);
+  // The upper-right grid cell is empty in Pi's mark, leaving room for a dev pixel.
+  if (dev) square(origin + unit * 3 + Math.floor(unit / 4), origin + Math.floor(unit / 4), Math.ceil(unit / 2), DEV_INDICATOR);
+  return { width: size, height: size, pixels };
+}
+
+export function renderFavicon(dev = false, glyph = readPiMark()) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-labelledby="title desc" shape-rendering="crispEdges">
+  <title id="title">PI WEB${dev ? " dev" : ""}</title>
+  <desc id="desc">Pi's pixel mark${dev ? " with a purple development indicator" : ""}.</desc>
+  <style>
+    .mark { fill: #151515; }
+    @media (prefers-color-scheme: dark) { .mark { fill: #efeeeb; } }
+  </style>
+  <g class="mark" transform="translate(4 4) scale(6)">${glyph.body}</g>${dev ? '\n  <rect x="24" y="5" width="3" height="3" fill="#a371f7"/>' : ""}
+</svg>
+`;
+}
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const COLOR_TYPE_RGBA = 6;
@@ -141,32 +183,21 @@ function pngChunk(type, data) {
   return chunk;
 }
 
-/** Recolor the brand bar, tolerating anti-aliasing edges by hue proximity. */
-export function recolorBar(pixels, source = SOURCE_BAR, target = DEV_BAR) {
-  let recolored = 0;
-  for (let offset = 0; offset < pixels.length; offset += 4) {
-    const [red, green, blue] = source;
-    const matches = Math.abs(pixels[offset] - red) + Math.abs(pixels[offset + 1] - green) + Math.abs(pixels[offset + 2] - blue) < 240;
-    if (!matches) continue;
-    pixels[offset] = target[0];
-    pixels[offset + 1] = target[1];
-    pixels[offset + 2] = target[2];
-    recolored += 1;
-  }
-  if (recolored === 0) throw new Error("No brand-bar pixels found; the source artwork changed");
-}
-
-export function generateDevIcons(publicDir = PUBLIC_DIR) {
+export function generateBrandIcons(publicDir = PUBLIC_DIR, docsDir = DOCS_DIR) {
+  const glyph = readPiMark(publicDir);
   const written = [];
-  for (const [sourceName, devName] of ICONS) {
-    const image = decodePng(readFileSync(join(publicDir, sourceName)));
-    recolorBar(image.pixels);
-    writeFileSync(join(publicDir, devName), encodePng(image));
-    written.push(devName);
+  for (const [size, stableName, devName] of ICONS) {
+    writeFileSync(join(publicDir, stableName), encodePng(renderBrandIcon(size, false, glyph)));
+    writeFileSync(join(publicDir, devName), encodePng(renderBrandIcon(size, true, glyph)));
+    written.push(stableName, devName);
   }
-  return written;
+  const favicon = renderFavicon(false, glyph);
+  writeFileSync(join(publicDir, "favicon.svg"), favicon);
+  writeFileSync(join(publicDir, "favicon-dev.svg"), renderFavicon(true, glyph));
+  writeFileSync(join(docsDir, "favicon.svg"), favicon);
+  return [...written, "favicon.svg", "favicon-dev.svg", "docs/assets/favicon.svg"];
 }
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  for (const name of generateDevIcons()) console.log(`wrote ${name}`);
+  for (const name of generateBrandIcons()) console.log(`wrote ${name}`);
 }

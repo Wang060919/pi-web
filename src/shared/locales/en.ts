@@ -14,6 +14,8 @@ export const messages = {
   "navigation.expanded": "Expanded",
   "navigation.collapsed": "Collapsed",
   "navigation.more": "More",
+  "ui.welcome.title": "What would you like to work on?",
+  "ui.welcome.start": "Start a conversation",
 
   "ui.fileCards.heading": "Related files",
   "ui.fileCards.open": "Open preview",
