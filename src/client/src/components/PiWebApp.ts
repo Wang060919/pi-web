@@ -3635,7 +3635,7 @@ export class PiWebApp extends LitElement {
           return false;
         }
       }
-      if (!hasAttachments && streamingBehavior === undefined && this.auth.handleSlashCommand(text)) return false;
+      if (!hasAttachments && streamingBehavior === undefined && this.auth.handleSlashCommand(text)) return true;
       return this.sessions.send(text, streamingBehavior, attachments, delivery, folder);
     }
     const target = chips[0]?.target;

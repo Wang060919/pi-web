@@ -51,6 +51,7 @@ describe("composer send behavior", () => {
     press(editor, "Enter", { ctrlKey: true });
     if (editor.onSend === undefined) throw new Error("Missing send callback");
     expect(vi.mocked(editor.onSend).mock.calls[0]?.[1]).toBe(expected);
+    await vi.waitFor(() => { expect(editor.view?.state.doc.toString()).toBe(""); });
     editor.replaceText("Next message");
     const button = editor.shadowRoot?.querySelector<HTMLButtonElement>(".send-button");
     expect(button?.getAttribute("aria-label")).toBe(streaming || compacting ? "Queue message" : "Send message");

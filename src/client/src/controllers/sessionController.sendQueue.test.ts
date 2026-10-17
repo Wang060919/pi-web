@@ -4,6 +4,28 @@ import { SessionController } from "./sessionController";
 import { emptyTranscriptApi as defaultApi, deferred, emptyPage, FakeSocket, oldSession, replacementSession, sessionLookupId, status, workspace, type AppState, type Deferred, type PromptAttachment, type SessionInfo } from "./sessionController.testSupport";
 
 describe("SessionController send queue", () => {
+  it.each(["hello", "/help", "!pwd"])("reports acceptance and failure consistently for %s", async (text) => {
+    let state: AppState = { ...initialAppState(), selectedWorkspace: workspace, selectedSession: oldSession, sessions: [oldSession] };
+    let failed = false;
+    const rejectIfFailed = () => { if (failed) throw new Error("Delivery failed"); };
+    const controller = new SessionController(
+      () => state,
+      (patch) => { state = { ...state, ...patch }; },
+      () => undefined,
+      undefined,
+      { socket: new FakeSocket(), api: {
+        ...defaultApi,
+        prompt: () => { rejectIfFailed(); return Promise.resolve({ accepted: true }); },
+        runCommand: () => { rejectIfFailed(); return Promise.resolve({ type: "done" }); },
+        shell: () => { rejectIfFailed(); return Promise.resolve({ accepted: true }); },
+      } },
+    );
+    await expect(controller.send(text)).resolves.toBe(true);
+    failed = true;
+    await expect(controller.send(text)).resolves.toBe(false);
+    controller.dispose();
+  });
+
   it("toggles the per-session sending state around an inline attachment send and forwards attachments", async () => {
     let resolvePrompt: (() => void) | undefined;
     let promptArgs: { attachments?: PromptAttachment[] } | undefined;
@@ -196,8 +218,8 @@ describe("SessionController send queue", () => {
     const temporaryId = state.selectedSession?.id;
     if (temporaryId === undefined) throw new Error("Expected temporary session id");
 
-    await controller.send("first");
-    await controller.send("second", "steer");
+    await expect(controller.send("first")).resolves.toBe(true);
+    await expect(controller.send("second", "steer")).resolves.toBe(true);
 
     expect(promptCalls).toEqual([]);
     expect(state.clientQueuedSessionMessages[temporaryId]).toEqual([
@@ -261,10 +283,10 @@ describe("SessionController send queue", () => {
     const temporaryId = state.selectedSession?.id;
     if (temporaryId === undefined) throw new Error("Expected temporary session id");
 
-    await controller.send("/help");
-    await controller.send("!pwd");
-    await controller.send("look", undefined, attachments, "inline");
-    await controller.send("save", undefined, attachments, "folder", "project-attachments");
+    await expect(controller.send("/help")).resolves.toBe(true);
+    await expect(controller.send("!pwd")).resolves.toBe(true);
+    await expect(controller.send("look", undefined, attachments, "inline")).resolves.toBe(true);
+    await expect(controller.send("save", undefined, attachments, "folder", "project-attachments")).resolves.toBe(true);
 
     expect(calls).toEqual([]);
     expect(state.clientQueuedSessionMessages[temporaryId]).toEqual([

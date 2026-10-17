@@ -16,7 +16,7 @@ import { machineSessionKey } from "../machineKeys";
 import type { StagedPromptChip } from "../promptChips";
 import { detectPromptCompletionTrigger, fileCompletionInsertText, modelCompletionChoices, type PromptCompletionTrigger } from "../promptCompletions";
 import { promptArgumentHintExtension, setPromptArgumentHint } from "../promptArgumentHint";
-import { clearDraft, loadDraft, saveDraft } from "../promptDraftStorage";
+import { beginDraftSubmission, clearDraft, consumeDraft, isDraftSubmissionPending, loadDraft, saveDraft, subscribeDraftSubmissions } from "../promptDraftStorage";
 import { beginStagedAttachmentCapture, clearStagedAttachments, loadStagedAttachments, saveStagedAttachments, subscribeStagedAttachments, type PendingAttachment } from "../promptAttachmentStaging";
 import { loadAttachmentDelivery, saveAttachmentDelivery } from "../attachmentPreferences";
 import { createMobilePromptEnterMedia, shouldUsePromptEnterShiftShortcut } from "../promptEnterBehavior";
@@ -46,8 +46,7 @@ function createPromptPlaceholder(): HTMLElement {
 }
 
 type PromptSendArgs = [text: string, streamingBehavior?: "steer" | "followUp", attachments?: PromptAttachment[], delivery?: PromptAttachmentDelivery, folder?: string, chips?: readonly StagedPromptChip[]];
-// Existing composer consumers may still send fire-and-forget; only a boolean
-// promise confirms the new chip-bearing submission path.
+// Legacy ordinary consumers may return void; chip submissions require explicit acceptance.
 type PromptSendHandler = ((...args: PromptSendArgs) => void | Promise<void>) | ((...args: PromptSendArgs) => Promise<boolean>);
 
 @customElement("prompt-editor")
@@ -100,9 +99,9 @@ export class PromptEditor extends LitElement {
   @state() private attachmentDelivery: PromptAttachmentDelivery = loadAttachmentDelivery();
   @state() private attachmentError: string | undefined = undefined;
   @state() private previewAttachmentId: string | undefined = undefined;
-  @state() private chipSendingKey: string | undefined = undefined;
-  @state() private chipError: string | undefined = undefined;
+  @state() private submissionError: string | undefined = undefined;
   private unsubscribeStagedAttachments: (() => void) | undefined;
+  private unsubscribeDraftSubmissions: (() => void) | undefined;
   private requestVersion = 0;
   private editor: EditorView | undefined;
   private readonly editableCompartment = new Compartment();
@@ -112,15 +111,22 @@ export class PromptEditor extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.connectStagedAttachments();
+    this.connectComposerStorage();
   }
 
-  private connectStagedAttachments(): void {
+  private connectComposerStorage(): void {
     this.unsubscribeStagedAttachments?.();
     this.unsubscribeStagedAttachments = undefined;
+    this.unsubscribeDraftSubmissions?.();
+    this.unsubscribeDraftSubmissions = undefined;
     const key = draftStorageKey(this.machineId, this.sessionId);
     this.attachments = key === undefined ? [] : loadStagedAttachments(key);
     if (key !== undefined && this.isConnected) {
+      this.unsubscribeDraftSubmissions = subscribeDraftSubmissions(key, (event) => {
+        if (!this.isConnected || key !== this.composerKey()) return;
+        if (event.type === "consumed" && this.draft === event.draft) this.replaceText("");
+        this.requestUpdate();
+      });
       this.unsubscribeStagedAttachments = subscribeStagedAttachments(key, (attachments) => {
         if (this.isConnected && key === draftStorageKey(this.machineId, this.sessionId)) this.attachments = attachments;
       });
@@ -136,10 +142,10 @@ export class PromptEditor extends LitElement {
     if (previousKey !== undefined) saveDraft(previousKey, this.draft);
     const currentKey = draftStorageKey(this.machineId, this.sessionId);
     this.draft = currentKey !== undefined ? loadDraft(currentKey) : "";
-    this.connectStagedAttachments();
+    this.connectComposerStorage();
     this.previewAttachmentId = undefined;
     this.attachmentError = undefined;
-    this.chipError = undefined;
+    this.submissionError = undefined;
     this.currentInputMode = inputModeForDraft(this.draft);
     this.completions = [];
     this.selectedIndex = 0;
@@ -174,6 +180,8 @@ export class PromptEditor extends LitElement {
   override disconnectedCallback(): void {
     this.unsubscribeStagedAttachments?.();
     this.unsubscribeStagedAttachments = undefined;
+    this.unsubscribeDraftSubmissions?.();
+    this.unsubscribeDraftSubmissions = undefined;
     this.editor?.destroy();
     this.editor = undefined;
     super.disconnectedCallback();
@@ -184,7 +192,7 @@ export class PromptEditor extends LitElement {
     const shellMode = shellInputMode !== undefined;
     const queuesInput = this.canSteer || this.isCompacting;
     const keyboardSteers = this.defaultSendBehavior() === "steer";
-    const submissionPending = this.sending || this.chipSendingKey === this.composerKey();
+    const submissionPending = this.sending || this.isSubmitting();
     const busy = this.disabled || submissionPending || this.hasProcessingImage();
     const folderLabel = this.cwd?.split("/").filter((segment) => segment !== "").at(-1) ?? this.cwd;
     return html`
@@ -288,7 +296,7 @@ export class PromptEditor extends LitElement {
   }
 
   private renderPromptChips() {
-    if (this.promptChips.length === 0 && this.chipError === undefined) return null;
+    if (this.promptChips.length === 0 && this.submissionError === undefined) return null;
     return localizedTemplate("PromptEditor.template.d78f42ad", html)`
       <div class="prompt-chips" aria-label="Pending plugin context">
         ${this.promptChips.map((chip) => html`
@@ -297,7 +305,7 @@ export class PromptEditor extends LitElement {
             <button type="button" aria-label=${localizedText("PromptEditor.remove.2ff51610")`Remove ${chip.label}`} ?disabled=${this.disabled} @click=${() => this.onRemoveChip?.(chip)}>×</button>
           </div>
         `)}
-        ${this.chipError === undefined ? null : html`<div class="chip-error" role="alert">${this.chipError}</div>`}
+        ${this.submissionError === undefined ? null : html`<div class="chip-error" role="alert">${this.submissionError}</div>`}
       </div>
     `;
   }
@@ -765,7 +773,7 @@ export class PromptEditor extends LitElement {
   }
 
   private send(streamingBehavior?: "steer" | "followUp") {
-    if (this.disabled || this.sending || this.chipSendingKey === this.composerKey() || this.hasProcessingImage()) return;
+    if (this.disabled || this.sending || this.isSubmitting() || this.hasProcessingImage()) return;
     const text = this.draft.trim();
     const pending = this.attachments;
     const chips = this.promptChips;
@@ -777,41 +785,53 @@ export class PromptEditor extends LitElement {
     // (the uploads pattern): the save lands exactly where the label pointed,
     // independent of how the session cwd would resolve its own project config.
     const folder = attachments !== undefined && delivery === "folder" ? this.attachmentsFolder : undefined;
-    if (chips.length > 0) {
-      void this.sendWithChips(text, behavior, attachments, attachments === undefined ? undefined : delivery, folder, chips);
-      return;
-    }
-    this.resetComposer();
-    // Sending is owned by the controller (it drives the chat activity dock and,
-    // for folder mode, orchestrates the upload + reference rewrite), so this is
-    // fire-and-forget here.
-    void this.onSend?.(text, behavior, attachments, attachments === undefined ? undefined : delivery, folder);
+    void this.submitPrompt(text, behavior, attachments, attachments === undefined ? undefined : delivery, folder, chips);
   }
 
   private composerKey(): string {
     return machineSessionKey(this.machineId, this.sessionId ?? "");
   }
 
-  private async sendWithChips(text: string, behavior: "steer" | "followUp" | undefined, attachments: PromptAttachment[] | undefined, delivery: PromptAttachmentDelivery | undefined, folder: string | undefined, chips: readonly StagedPromptChip[]): Promise<void> {
-    const key = this.composerKey();
+  private isSubmitting(): boolean {
+    return isDraftSubmissionPending(this.composerKey());
+  }
+
+  private async submitPrompt(text: string, behavior: "steer" | "followUp" | undefined, attachments: PromptAttachment[] | undefined, delivery: PromptAttachmentDelivery | undefined, folder: string | undefined, chips: readonly StagedPromptChip[]): Promise<void> {
+    const owner = beginDraftSubmission(this.composerKey());
     const draft = this.draft;
     const pending = this.attachments;
-    this.chipSendingKey = key;
-    this.chipError = undefined;
+    const send = this.onSend;
+    this.requestUpdate();
+    this.submissionError = undefined;
     try {
-      const accepted = await this.onSend?.(text, behavior, attachments, delivery, folder, chips);
-      if (key !== this.composerKey() || !this.isConnected) return;
-      if (accepted === true) {
-        // Do not erase edits made during delivery, or the next conversation.
-        if (draft === this.draft && pending === this.attachments) this.resetComposer();
-      } else {
-        this.chipError = t("PromptEditor.message_not_submitted_context_kept_for_retry.9e178614");
+      const accepted = await send?.(text, behavior, attachments, delivery, folder, ...(chips.length > 0 ? [chips] as const : []));
+      // Settle any session-property update before consuming the original draft.
+      if (this.isConnected) await this.updateComplete;
+      if (send !== undefined && (accepted === true || (accepted === undefined && chips.length === 0))) {
+        this.consumeSubmittedPrompt(owner.key, draft, pending);
+      } else if (this.isConnected && owner.key === this.composerKey()) {
+        this.submissionError = t("PromptEditor.message_not_submitted_context_kept_for_retry.9e178614");
       }
     } catch (error) {
-      if (key === this.composerKey()) this.chipError = localizedText("PromptEditor.message_not_submitted.85a8ed36")`Message not submitted: ${String(error)}`;
+      if (this.isConnected && owner.key === this.composerKey()) this.submissionError = localizedText("PromptEditor.message_not_submitted.85a8ed36")`Message not submitted: ${String(error)}`;
     } finally {
-      if (this.chipSendingKey === key) this.chipSendingKey = undefined;
+      owner.dispose();
+      this.requestUpdate();
     }
+  }
+
+  private consumeSubmittedPrompt(key: string, draft: string, pending: readonly PendingAttachment[]): void {
+    const current = this.isConnected && key === this.composerKey();
+    if (current && draft === this.draft && pending === this.attachments) {
+      this.resetComposer();
+      return;
+    }
+    consumeDraft(key, draft);
+    // Storage may be unavailable; the connected editor still owns its live text.
+    if (current && draft === this.draft) this.replaceText("");
+    const attachments = loadStagedAttachments(key);
+    const remaining = attachments.filter((attachment) => !pending.includes(attachment));
+    if (remaining.length !== attachments.length) saveStagedAttachments(key, remaining);
   }
 
   private resetComposer() {

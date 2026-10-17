@@ -3,6 +3,7 @@ import { LitElement } from "lit";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { api, type Machine, type SessionInfo, type Workspace } from "../api";
 import { initialAppState, type AppState } from "../appState";
+import { AuthController } from "../controllers/authController";
 import { SessionController } from "../controllers/sessionController";
 import { PluginRegistry } from "../plugins/registry";
 import { loadDraft } from "../promptDraftStorage";
@@ -148,5 +149,19 @@ describe("HTML export from the composer", () => {
     await host.app.updateComplete;
     expect(send).not.toHaveBeenCalled();
     expect(host.app.renderRoot.textContent).toContain("Transcript unavailable");
+  });
+});
+
+describe("local authentication commands from the composer", () => {
+  it("accepts /login without submitting a model prompt", async () => {
+    const host = await mountedApp();
+    const send = vi.spyOn(host.controller, "send");
+    if (host.editor.onSend === undefined) throw new Error("Expected wired composer send handler");
+    await expect(host.editor.onSend("/login")).resolves.toBe(true);
+    expect(send).not.toHaveBeenCalled();
+    const auth: unknown = Reflect.get(host.app, "auth");
+    if (!(auth instanceof AuthController)) throw new Error("Expected authentication controller");
+    auth.closeDialog();
+    await host.app.updateComplete;
   });
 });
