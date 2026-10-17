@@ -37,7 +37,7 @@ describe("StatusBar compact usage and warnings", () => {
     await bar.updateComplete;
     expect(bar.hasAttribute("compact")).toBe(true);
     const toggle = bar.renderRoot.querySelector<HTMLButtonElement>(".usage-toggle");
-    expect(toggle?.getAttribute("aria-label")).toBe("View usage details: context unknown");
+    expect(toggle?.getAttribute("aria-label")).toBe("View context and usage: context unknown");
     toggle?.click();
     await bar.updateComplete;
     expect(bar.renderRoot.querySelector("usage-details")).not.toBeNull();
@@ -79,7 +79,7 @@ describe("StatusBar compact usage and warnings", () => {
   it.each([undefined, { tokens: 500, contextWindow: 1000, percent: null }, { tokens: 500, contextWindow: 1000, percent: Number.NaN }])("preserves unknown context percentages without inferring a value from token counts (%j)", async (contextUsage) => {
     const statusBar = await mount((element) => { element.status = { ...status(), ...(contextUsage === undefined ? {} : { contextUsage }) }; });
     expect(usageToggle(statusBar).textContent).toContain("context unknown");
-    expect(usageToggle(statusBar).getAttribute("aria-label")).toBe("View usage details: context unknown");
+    expect(usageToggle(statusBar).getAttribute("aria-label")).toBe("View context and usage: context unknown");
     expect(statusBar.shadowRoot?.querySelector(".context-ring-value")).toBeNull();
   });
 
@@ -100,7 +100,7 @@ describe("StatusBar usage details", () => {
       };
     });
     const details = await openDetails(statusBar);
-    expect(dialogSection(details).getAttribute("aria-label")).toBe("Usage details");
+    expect(dialogSection(details).getAttribute("aria-label")).toBe("Context and usage");
     expect(dialogSection(details).getAttribute("aria-modal")).toBe("true");
     expect(detailRows(details)).toEqual({
       Usage: "27.0%", "Used tokens": (34567).toLocaleString(), "Context window": (128000).toLocaleString(),
@@ -121,6 +121,18 @@ describe("StatusBar usage details", () => {
     expect(statusBar.shadowRoot?.querySelector("usage-details")).toBeNull();
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     expect(deepActiveElement()).toBe(trigger);
+  });
+
+  it("passes the loaded transcript and incomplete-history boundary to the context view", async () => {
+    const statusBar = await mount((element) => {
+      element.historyPartial = true;
+      element.messages = [{ role: "skill", parts: [{ type: "skillRead", name: "review", path: "/skills/review/SKILL.md" }] }];
+    });
+    const details = await openDetails(statusBar);
+
+    expect(details.shadowRoot?.querySelector(".history-partial")?.textContent).toContain("Earlier messages are not loaded");
+    expect(details.shadowRoot?.querySelector(".observations")?.textContent).toContain("Read requested");
+    expect(details.shadowRoot?.querySelector(".observations")?.textContent).toContain("/skills/review/SKILL.md");
   });
 
   it("updates an open dialog in place and keeps unavailable context values unknown", async () => {

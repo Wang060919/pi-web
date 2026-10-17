@@ -706,6 +706,45 @@ describe("API parsers", () => {
     }
   });
 
+  it("preserves context resource metadata through status and realtime events without copying bodies", () => {
+    const contextSources = {
+      source: "runtime-resource-loader",
+      agentFiles: [{ path: "/workspace/AGENTS.md" }],
+      systemPromptFiles: [{ path: "/agent/SYSTEM.md", kind: "system" }, { path: "/agent/APPEND_SYSTEM.md", kind: "append-system" }],
+      availableSkills: [{ name: "review", path: "/skills/review/SKILL.md", description: "Review changes", modelInvocation: false }, { name: "legacy" }],
+    };
+    const wire = {
+      ...statusWire(),
+      contextSources: { ...contextSources, agentFiles: [{ path: "/workspace/AGENTS.md", content: "private instructions" }], systemPrompt: "private prompt" },
+    };
+
+    expect(parseSessionStatus(wire).contextSources).toEqual(contextSources);
+    expect(parseRealtimeStreamEvent({ type: "status.update", status: wire })).toMatchObject({ status: { contextSources } });
+  });
+
+  it("keeps missing context collections unknown and accepts statuses from older daemons", () => {
+    expect(parseSessionStatus(statusWire())).not.toHaveProperty("contextSources");
+    const unknown = { source: "runtime-resource-loader" };
+    expect(parseSessionStatus({ ...statusWire(), contextSources: unknown }).contextSources).toEqual(unknown);
+    const empty = { ...unknown, agentFiles: [], systemPromptFiles: [], availableSkills: [] };
+    expect(parseSessionStatus({ ...statusWire(), contextSources: empty }).contextSources).toEqual(empty);
+  });
+
+  it.each([
+    null,
+    { source: "filesystem-scan" },
+    { source: "runtime-resource-loader", agentFiles: {} },
+    { source: "runtime-resource-loader", agentFiles: [{ path: 1 }] },
+    { source: "runtime-resource-loader", agentFiles: [{ path: "" }] },
+    { source: "runtime-resource-loader", systemPromptFiles: [{ path: "/SYSTEM.md", kind: "inferred" }] },
+    { source: "runtime-resource-loader", availableSkills: [{ name: "" }] },
+    { source: "runtime-resource-loader", availableSkills: [{ name: "review", path: null }] },
+    { source: "runtime-resource-loader", availableSkills: [{ name: "review", description: false }] },
+    { source: "runtime-resource-loader", availableSkills: [{ name: "review", modelInvocation: "yes" }] },
+  ])("rejects malformed optional context resource metadata: %j", (contextSources) => {
+    expect(() => parseSessionStatus({ ...statusWire(), contextSources })).toThrow();
+  });
+
   it("preserves the optional queue compatibility reason and accepts older statuses", () => {
     expect(parseSessionStatus(statusWire())).not.toHaveProperty("queueMessageActionsUnavailable");
     for (const queueMessageActionsUnavailable of ["SDK queue layout is incompatible", ""]) {

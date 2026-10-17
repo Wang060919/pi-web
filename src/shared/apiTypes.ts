@@ -1147,6 +1147,19 @@ export interface SessionWarning {
   dismiss?: { id: string };
 }
 
+/**
+ * Metadata from the active runtime's loaded resource collections. This is not
+ * the complete prompt sent on every turn: extensions may change that prompt.
+ * An absent collection is unknown/unsupported; an empty one is known empty.
+ * Skill availability does not mean its full instructions have been read.
+ */
+export interface SessionContextSources {
+  source: "runtime-resource-loader";
+  agentFiles?: { path: string }[];
+  systemPromptFiles?: { path: string; kind: "system" | "append-system" }[];
+  availableSkills?: { name: string; path?: string; description?: string; modelInvocation?: boolean }[];
+}
+
 export interface SessionStatus {
   sessionId: string;
   /** True when the server has verified a backing session file exists; false when known transient. */
@@ -1170,6 +1183,8 @@ export interface SessionStatus {
   tokens: { input: number; output: number; cacheRead: number; cacheWrite: number; total: number };
   cost: number;
   contextUsage?: { tokens: number | null; contextWindow: number; percent: number | null };
+  /** Loaded runtime resource metadata, without instruction or system-prompt contents. */
+  contextSources?: SessionContextSources;
   /**
    * Live, runtime-scoped warnings for this session (skill/resource diagnostics,
    * extension load errors, Anthropic subscription-auth billing notice, etc.).

@@ -117,6 +117,7 @@ import { plainTextTheme } from "./plainTextTheme.js";
 import { projectTranscriptMarkdown } from "./transcriptMarkdown.js";
 import { SessionUnreadStore, type SessionUnreadMutation } from "./sessionUnreadStore.js";
 import { applyEnabledModelToggle, catalogWithEnabledFirst, modelScopeId, persistedEnabledModelPatterns, resolveEnabledModelIds, resolveSessionModelOptions, scopedModelsFromEnabledIds, type EnabledModelCatalogEntry } from "./sessionModelScope.js";
+import { sessionContextSources, type RuntimeContextResourceLoader } from "./sessionContextSources.js";
 
 /**
  * Minimal structured-logging seam, shaped like Fastify's logger so sessiond can
@@ -502,7 +503,7 @@ export interface PiAgentSession {
     setUIContext(uiContext?: ExtensionUIContext, mode?: "rpc"): void;
   };
   promptTemplates: readonly { name: string; description?: string; argumentHint?: string }[];
-  resourceLoader: { getSkills(): { skills: readonly { name: string; description?: string }[] } };
+  resourceLoader: RuntimeContextResourceLoader;
   subscribe(listener: (event: unknown) => void): () => void;
   bindExtensions(bindings: PiExtensionBindings): Promise<void>;
   compact(instructions?: string): Promise<{ summary: string; tokensBefore: number }>;
@@ -4971,6 +4972,7 @@ export class PiSessionService implements SessionRouteService {
       tokens: stats.tokens,
       cost: stats.cost,
       ...(contextUsage === undefined ? {} : { contextUsage }),
+      contextSources: sessionContextSources(session.resourceLoader),
       ...(warnings.length === 0 ? {} : { warnings }),
       ...(pendingDialogs.length === 0 ? {} : { pendingDialogs }),
       ...(suggestedInput === undefined ? {} : { suggestedInput }),

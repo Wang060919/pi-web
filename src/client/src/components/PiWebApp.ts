@@ -3810,7 +3810,7 @@ export class PiWebApp extends LitElement {
   private renderStatusBar(state: AppState) {
     const warningCount = this.sessionWarningVisibility.warningCount;
     return html`
-      <status-bar slot="status" .compact=${true} .status=${state.status} .warningCount=${warningCount} .warningsExpanded=${warningCount > 0 && !this.sessionWarningVisibility.collapsed} .onToggleWarnings=${this.handleToggleWarnings}></status-bar>
+      <status-bar slot="status" .compact=${true} .status=${state.status} .messages=${state.messages} .historyPartial=${state.messagePageStart > 0} .warningCount=${warningCount} .warningsExpanded=${warningCount > 0 && !this.sessionWarningVisibility.collapsed} .onToggleWarnings=${this.handleToggleWarnings}></status-bar>
     `;
   }
 

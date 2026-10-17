@@ -3,6 +3,7 @@ import { LitElement, css, html, svg, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { SessionStatus } from "../api";
 import { renderSessionWarningIcon, statusBarStyles } from "./shared";
+import type { ChatLine } from "./shared";
 import "./UsageDetails";
 
 export interface StatusBarWarningControlContent {
@@ -23,6 +24,8 @@ export function statusBarWarningControlContent(count: number, expanded: boolean)
 export class StatusBar extends LitElement {
   @property({ type: Boolean, reflect: true }) compact = false;
   @property({ attribute: false }) status: SessionStatus | undefined = undefined;
+  @property({ attribute: false }) messages: readonly ChatLine[] = [];
+  @property({ type: Boolean }) historyPartial = false;
   @property({ type: Number }) warningCount = 0;
   @property({ type: Boolean }) warningsExpanded = false;
   @property({ attribute: false }) onToggleWarnings?: () => void;
@@ -76,7 +79,7 @@ export class StatusBar extends LitElement {
         </button>
         ${status.pendingMessageCount > 0 ? localizedTemplate("StatusBar.queued.aa0b8a9a", html)`<span>${String(status.pendingMessageCount)} queued</span>` : null}
       </div>
-      ${this.usageOpen ? html`<usage-details .status=${status} .onClose=${() => { this.usageOpen = false; }}></usage-details>` : nothing}
+      ${this.usageOpen ? html`<usage-details .status=${status} .messages=${this.messages} .historyPartial=${this.historyPartial} .onClose=${() => { this.usageOpen = false; }}></usage-details>` : nothing}
     `;
   }
 

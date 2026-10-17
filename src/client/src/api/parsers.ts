@@ -8,6 +8,7 @@ import { PI_WEB_PLUGIN_RECOVERY_COMMANDS, pluginDisableRecoveryCommand } from ".
 import { parseServerNoticeScope } from "../../../shared/serverNoticeContract";
 import { requireDefaultThemePreference } from "../../../shared/themePreference";
 import { requireDefaultStreamingBehavior } from "../../../shared/streamingBehavior";
+import type { SessionContextSources } from "../../../shared/apiTypes";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -526,6 +527,39 @@ function optionalNonEmptyString(record: Record<string, unknown>, key: string): s
   return value;
 }
 
+function parseSessionContextPath(value: unknown): { path: string } {
+  return { path: requireNonEmptyString(requireRecord(value), "path") };
+}
+
+function parseSessionContextPromptFile(value: unknown): NonNullable<SessionContextSources["systemPromptFiles"]>[number] {
+  const record = requireRecord(value);
+  const kind = record["kind"];
+  if (kind !== "system" && kind !== "append-system") throw new Error("Invalid context prompt source kind");
+  return { path: requireNonEmptyString(record, "path"), kind };
+}
+
+function parseSessionContextSkill(value: unknown): NonNullable<SessionContextSources["availableSkills"]>[number] {
+  const record = requireRecord(value);
+  return {
+    name: requireNonEmptyString(record, "name"),
+    ...optionalField("path", optionalNonEmptyString(record, "path")),
+    ...optionalField("description", optionalString(record, "description")),
+    ...optionalField("modelInvocation", parseOptionalBoolean(record["modelInvocation"], "modelInvocation")),
+  };
+}
+
+function optionalSessionContextSources(value: unknown): SessionContextSources | undefined {
+  if (value === undefined) return undefined;
+  const record = requireRecord(value);
+  if (record["source"] !== "runtime-resource-loader") throw new Error("Invalid session context source");
+  return {
+    source: "runtime-resource-loader",
+    ...(record["agentFiles"] === undefined ? {} : { agentFiles: arrayOf(parseSessionContextPath)(record["agentFiles"]) }),
+    ...(record["systemPromptFiles"] === undefined ? {} : { systemPromptFiles: arrayOf(parseSessionContextPromptFile)(record["systemPromptFiles"]) }),
+    ...(record["availableSkills"] === undefined ? {} : { availableSkills: arrayOf(parseSessionContextSkill)(record["availableSkills"]) }),
+  };
+}
+
 export function parseSessionStatus(value: unknown): SessionStatus {
   const record = requireRecord(value);
   const warnings = record["warnings"] === undefined ? undefined : arrayOf(parseSessionWarning)(record["warnings"]);
@@ -545,6 +579,7 @@ export function parseSessionStatus(value: unknown): SessionStatus {
     cost: requireNumber(record, "cost"),
     ...optionalModel(record["model"]),
     ...optionalContextUsage(record["contextUsage"]),
+    ...optionalField("contextSources", optionalSessionContextSources(record["contextSources"])),
     ...optionalField("thinkingLevel", optionalString(record, "thinkingLevel")),
     ...optionalField("warnings", warnings?.filter((warning) => !isLegacyOtherInstanceActivityWarning(warning))),
     ...optionalPendingDialogs(record["pendingDialogs"]),
