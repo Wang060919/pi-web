@@ -200,7 +200,7 @@ describe("bundled Git workspace provider", () => {
     })).resolves.toMatchObject({ staged: false, truncated: true });
     expect(execFile).toHaveBeenCalledWith({
       file: "git",
-      args: ["diff", "--no-ext-diff", "--color=never"],
+      args: ["--literal-pathspecs", "diff", "--no-ext-diff", "--color=never"],
       cwd: "/repo",
       unsetEnv: gitLocalEnvironmentKeys,
       timeoutMs: 10_000,

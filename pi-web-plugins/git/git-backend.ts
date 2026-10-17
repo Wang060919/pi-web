@@ -458,7 +458,9 @@ function diffPeerResponse(diff: GitDiffResponse): JsonValue {
 function createGitRunner(context: ServerPluginActivationContext, signal: AbortSignal): RunGit {
   return async (cwd, args) => commandResult(await context.execFile({
     file: "git",
-    args,
+    // Every path comes from a selected file or a configured submodule, never a
+    // caller-supplied glob. `--` alone still lets Git interpret pathspec magic.
+    args: ["--literal-pathspecs", ...args],
     cwd,
     unsetEnv: GIT_LOCAL_ENV_VARS,
     timeoutMs: GIT_COMMAND_TIMEOUT_MS,

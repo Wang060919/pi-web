@@ -141,6 +141,46 @@ describe("Git changes backend", { timeout: FIXTURE_TEST_TIMEOUT_MS }, () => {
       .rejects.toThrow("Path traversal is not allowed");
     expect(execFile).not.toHaveBeenCalled();
   });
+
+  it.each(["", "HARL"])("treats bracket filenames literally for staged and unstaged diffs in '%s'", async (prefix) => {
+    const { dir } = createFixture();
+    const cwd = join(dir, prefix);
+    for (const path of ["[id].ts", "i.ts"]) writeFileSync(join(cwd, path), "initial\n");
+    git(cwd, ["add", "-A"]);
+    git(cwd, ["commit", "-m", "literal path fixtures"]);
+    writeFileSync(join(cwd, "[id].ts"), "initial\nselected staged\n");
+    writeFileSync(join(cwd, "i.ts"), "initial\nother staged\n");
+    git(cwd, ["add", "-A"]);
+    writeFileSync(join(cwd, "[id].ts"), "initial\nselected staged\nselected unstaged\n");
+    writeFileSync(join(cwd, "i.ts"), "initial\nother staged\nother unstaged\n");
+    const path = prefix === "" ? "[id].ts" : `${prefix}/[id].ts`;
+
+    const [staged, unstaged] = await Promise.all([
+      gitDiff(dir, { path, staged: true }),
+      gitDiff(dir, { path }),
+    ]);
+
+    expect(staged.diff).toContain("+selected staged");
+    expect(staged.diff).not.toContain("+other staged");
+    expect(unstaged.diff).toContain("+selected unstaged");
+    expect(unstaged.diff).not.toContain("+other unstaged");
+  });
+
+  // Colons are valid Unix filenames but unavailable on Windows.
+  it.skipIf(process.platform === "win32").each(["", "HARL"])("reads untracked pathspec-magic filenames literally in '%s'", async (prefix) => {
+    const { dir } = createFixture();
+    const name = ":(literal)untracked.ts";
+    const cwd = join(dir, prefix);
+    writeFileSync(join(cwd, name), "literal untracked content\n");
+    writeFileSync(join(cwd, "other.ts"), "other untracked content\n");
+    const path = prefix === "" ? name : `${prefix}/${name}`;
+
+    const result = await gitDiff(dir, { path });
+
+    expect(result.path).toBe(path);
+    expect(result.diff).toContain("+literal untracked content");
+    expect(result.diff).not.toContain("+other untracked content");
+  });
 });
 
 describe("Git command failures", () => {
@@ -400,7 +440,7 @@ async function mappedSubmoduleStatus(fixture: { top: string; gitlink?: string; i
   });
   for (const response of responses) {
     execFile.mockImplementationOnce((request) => {
-      expect(request).toMatchObject({ file: "git", cwd: response.cwd, args: response.args });
+      expect(request).toMatchObject({ file: "git", cwd: response.cwd, args: ["--literal-pathspecs", ...response.args] });
       return Promise.resolve(commandResult({ stdout: response.stdout }));
     });
   }
