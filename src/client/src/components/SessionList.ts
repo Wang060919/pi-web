@@ -218,17 +218,45 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
   }
 
   private readonly onDocumentClick = (event: MouseEvent) => {
-    if (event.composedPath().includes(this)) return;
+    if (this.openMenuSessionId === undefined) return;
+    const path = event.composedPath();
+    const panel = this.renderRoot.querySelector(".action-menu-panel");
+    if (panel !== null && path.includes(panel)) return;
+    if (path.some((target) => target instanceof HTMLElement && target.classList.contains("action-menu-toggle") && target.getRootNode() === this.renderRoot)) return;
     this.openMenuSessionId = undefined;
+  };
+
+  private readonly onMenuFocusOut = (event: Event) => {
+    if (!(event instanceof FocusEvent) || this.openMenuSessionId === undefined) return;
+    const next = event.relatedTarget;
+    const panel = this.renderRoot.querySelector(".action-menu-panel");
+    if (next instanceof Node && panel?.contains(next) === true) return;
+    if (next instanceof HTMLElement && next.classList.contains("action-menu-toggle") && next.getRootNode() === this.renderRoot) return;
+    this.openMenuSessionId = undefined;
+  };
+
+  private readonly onDocumentKeydown = (event: KeyboardEvent) => {
+    if (event.key !== "Escape" || this.openMenuSessionId === undefined) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const row = [...this.renderRoot.querySelectorAll<HTMLElement>(".action-row")].find((item) => item.dataset["sessionId"] === this.openMenuSessionId);
+    this.openMenuSessionId = undefined;
+    row?.querySelector<HTMLElement>(".action-menu-toggle")?.focus({ preventScroll: true });
   };
 
   override connectedCallback(): void {
     super.connectedCallback();
-    document.addEventListener("click", this.onDocumentClick);
+    document.addEventListener("click", this.onDocumentClick, true);
+    // Focus transitions between sibling shadow trees can be hidden at document
+    // after retargeting, so dismiss at the menu's own shadow boundary.
+    this.renderRoot.addEventListener("focusout", this.onMenuFocusOut, true);
+    document.addEventListener("keydown", this.onDocumentKeydown, true);
   }
 
   override disconnectedCallback(): void {
-    document.removeEventListener("click", this.onDocumentClick);
+    document.removeEventListener("click", this.onDocumentClick, true);
+    this.renderRoot.removeEventListener("focusout", this.onMenuFocusOut, true);
+    document.removeEventListener("keydown", this.onDocumentKeydown, true);
     super.disconnectedCallback();
   }
 
@@ -376,7 +404,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
   }
 
   private renderCleanupButton() {
-    return localizedTemplate("SessionList.clean_up.11e8938e", html)`<button class="cleanup-entry" title="Preview session cleanup" @click=${(event: MouseEvent) => { event.stopPropagation(); this.onCleanup?.(); }}>Clean up</button>`;
+    return localizedTemplate("SessionList.clean_up.11e8938e", html)`<button class="cleanup-entry" title="Preview session cleanup" @click=${(event: MouseEvent) => { event.stopPropagation(); this.openMenuSessionId = undefined; this.onCleanup?.(); }}>Clean up</button>`;
   }
 
   private renderStartButton() {
