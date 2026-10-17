@@ -24,12 +24,15 @@ export interface WorkspaceRouteIdentity {
 export interface AppRoute extends AppRouteLocation {
   tool: QualifiedContributionId | undefined;
   view: MainView | undefined;
+  /** Explicit welcome surface; ordinary routes keep their session restore behavior. */
+  overview?: true;
 }
 
 /** Raw URL values are retained so invalid destinations can be explained without rewriting them. */
 export interface ParsedAppRoute extends AppRouteLocation {
   tool: string | undefined;
   view: string | undefined;
+  overview?: true;
 }
 
 export type WorkspacePanelRouteResolver = (value: string) => QualifiedContributionId | undefined;
@@ -48,6 +51,7 @@ export function readRoute(): ParsedAppRoute {
     sessionId: nonEmpty(params.get("session")),
     tool: nonEmpty(params.get("tool")),
     view: nonEmpty(params.get("view")),
+    ...(params.get("overview") === "1" && nonEmpty(params.get("session")) === undefined ? { overview: true } : {}),
   };
 }
 
@@ -59,6 +63,7 @@ export function resolveAppRoute(route: ParsedAppRoute, resolveWorkspacePanel: Wo
     sessionId: route.sessionId,
     tool: route.tool === undefined ? undefined : resolveWorkspacePanelRouteValue(route.tool, resolveWorkspacePanel),
     view: parseMainView(route.view),
+    ...(route.overview === true && route.sessionId === undefined ? { overview: true } : {}),
   };
 }
 
@@ -83,12 +88,14 @@ export function writeRoute(route: ParsedAppRoute, options?: { replace?: boolean 
   url.searchParams.delete("session");
   url.searchParams.delete("tool");
   url.searchParams.delete("view");
+  url.searchParams.delete("overview");
   if (route.machineId !== undefined && route.machineId !== "" && route.machineId !== "local") url.searchParams.set("machine", route.machineId);
   if (route.projectId !== undefined && route.projectId !== "") url.searchParams.set("project", route.projectId);
   if (route.workspaceId !== undefined && route.workspaceId !== "") url.searchParams.set("workspace", route.workspaceId);
   if (route.sessionId !== undefined && route.sessionId !== "") url.searchParams.set("session", route.sessionId);
   if (route.tool !== undefined && route.tool !== "") url.searchParams.set("tool", route.tool);
   if (route.view !== undefined && route.view !== "") url.searchParams.set("view", route.view);
+  if (route.overview === true && (route.sessionId === undefined || route.sessionId === "")) url.searchParams.set("overview", "1");
   if (options?.contributionQuery !== undefined) {
     replaceContributionQueryParams(url.searchParams, normalizeContributionQueryRecord(options.contributionQuery));
   }

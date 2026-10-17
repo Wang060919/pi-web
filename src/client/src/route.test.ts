@@ -42,6 +42,44 @@ function resolveWorkspacePanel(value: string): AppRoute["tool"] {
 }
 
 describe("route helpers", () => {
+  it("round-trips an explicit workspace overview without choosing a conversation", () => {
+    const { pushed } = installWindow("http://localhost/app?session=old#usage");
+    writeRoute({ machineId: undefined, projectId: "p1", workspaceId: "w1", sessionId: undefined, tool: undefined, view: "chat", overview: true });
+
+    expect(pushed).toHaveLength(1);
+    installWindow(pushed[0] ?? "");
+    expect(resolveAppRoute(readRoute(), resolveWorkspacePanel)).toEqual({
+      machineId: undefined, projectId: "p1", workspaceId: "w1", sessionId: undefined,
+      tool: undefined, view: "chat", overview: true,
+    });
+    expect(window.location.hash).toBe("#usage");
+  });
+
+  it.each(["0", "true", "", "2"])("does not treat overview=%j as an explicit overview", (value) => {
+    installWindow(`http://localhost/app?project=p1&workspace=w1&overview=${value}`);
+    expect(readRoute().overview).toBeUndefined();
+  });
+
+  it("gives explicit session destinations precedence over an overview and clears the old flag", () => {
+    installWindow("http://localhost/app?project=p1&workspace=w1&session=s1&overview=1");
+    expect(readRoute()).toMatchObject({ sessionId: "s1" });
+    expect(readRoute().overview).toBeUndefined();
+    const route: AppRoute = { machineId: undefined, projectId: "p1", workspaceId: "w1", sessionId: "s1", tool: undefined, view: "chat", overview: true };
+    expect(resolveAppRoute(route, resolveWorkspacePanel).overview).toBeUndefined();
+
+    const { pushed } = installWindow("http://localhost/app?project=p1&workspace=w1&overview=1");
+    writeRoute(route);
+    const query = new URL(pushed[0] ?? "").searchParams;
+    expect(query.get("session")).toBe("s1");
+    expect(query.has("overview")).toBe(false);
+  });
+
+  it("clears explicit overview when returning to ordinary workspace navigation", () => {
+    const { pushed } = installWindow("http://localhost/app?project=p1&workspace=w1&overview=1");
+    writeRoute({ machineId: undefined, projectId: "p1", workspaceId: "w1", sessionId: undefined, tool: undefined, view: "chat" });
+    expect(new URL(pushed[0] ?? "").searchParams.has("overview")).toBe(false);
+  });
+
   it("reads only supported route fields from the current URL", () => {
     installWindow("http://localhost/app?machine=remote&project=p1&workspace=w1&session=s1&tool=git%3Aworkspace.git&view=workspace&core.workspace.files--file=src%2Fmain.ts&git.workspace.git--diff=README.md");
 

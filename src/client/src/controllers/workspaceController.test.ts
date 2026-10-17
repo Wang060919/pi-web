@@ -61,6 +61,8 @@ interface Harness {
   controller: WorkspaceController;
   state: () => AppState;
   clearActiveSession: ReturnType<typeof vi.fn>;
+  preferredSession: ReturnType<typeof vi.fn>;
+  selectSession: ReturnType<typeof vi.fn>;
   updateUrl: ReturnType<typeof vi.fn>;
   backgroundErrors: { message: string; error: unknown }[];
   setState: (patch: Partial<AppState>) => void;
@@ -80,10 +82,12 @@ function harness(
   let state: AppState = { ...initialAppState(), ...initial };
   const setState = (patch: Partial<AppState>) => { state = { ...state, ...patch }; };
   const clearActiveSession = vi.fn();
+  const preferredSession = vi.fn<SessionController["preferredSession"]>();
+  const selectSession = vi.fn<SessionController["selectSession"]>();
   const sessions: Pick<SessionController, "clearActiveSession" | "preferredSession" | "selectSession"> = {
     clearActiveSession,
-    preferredSession: vi.fn(),
-    selectSession: vi.fn(),
+    preferredSession,
+    selectSession,
   };
   const updateUrl = vi.fn();
   const backgroundErrors: { message: string; error: unknown }[] = [];
@@ -107,7 +111,7 @@ function harness(
       topologyRefreshDebounceMs: options.topologyRefreshDebounceMs ?? 0,
     },
   );
-  return { controller, state: () => state, clearActiveSession, updateUrl, backgroundErrors, setState };
+  return { controller, state: () => state, clearActiveSession, preferredSession, selectSession, updateUrl, backgroundErrors, setState };
 }
 
 afterEach(() => {
@@ -115,6 +119,43 @@ afterEach(() => {
 });
 
 describe("WorkspaceController route selection freshness", () => {
+  it.each(["project", "workspace"] as const)("loads %s overview lists without restoring the remembered conversation", async (destination) => {
+    const repo = project("p1", "/repo");
+    const main = workspace(repo.id, repo.path, { isMain: true });
+    const conversation = session(main.path);
+    const loadWorkspaces = vi.fn<LoadWorkspaces>().mockResolvedValue([main]);
+    const loadSessions = vi.fn<LoadSessions>().mockResolvedValue([conversation]);
+    const test = harness({ selectedMachine: machine("local"), projects: [repo], selectedProject: repo }, loadWorkspaces, { loadSessions });
+    test.preferredSession.mockReturnValue(conversation);
+
+    const target = { suppressSessionSelection: true, updateUrl: false };
+    const error = destination === "project"
+      ? await test.controller.selectProject(repo, target)
+      : await test.controller.selectWorkspace(main, target);
+
+    expect(error).toBeUndefined();
+    expect(test.state().selectedWorkspace).toEqual(main);
+    expect(test.state().sessions).toEqual([conversation]);
+    expect(loadSessions).toHaveBeenCalledExactlyOnceWith(main.path, "local");
+    expect(loadWorkspaces).toHaveBeenCalledTimes(destination === "project" ? 1 : 0);
+    expect(test.preferredSession).not.toHaveBeenCalled();
+    expect(test.selectSession).not.toHaveBeenCalled();
+    expect(test.updateUrl).not.toHaveBeenCalled();
+  });
+
+  it("continues restoring the remembered conversation for ordinary workspace navigation", async () => {
+    const repo = project("p1", "/repo");
+    const main = workspace(repo.id, repo.path, { isMain: true });
+    const conversation = session(main.path);
+    const test = harness({ selectedMachine: machine("local"), selectedProject: repo }, vi.fn().mockResolvedValue([main]), { loadSessions: vi.fn().mockResolvedValue([conversation]) });
+    test.preferredSession.mockReturnValue(conversation);
+
+    await test.controller.selectWorkspace(main, { updateUrl: false });
+
+    expect(test.preferredSession).toHaveBeenCalledExactlyOnceWith(main.path, [conversation], undefined);
+    expect(test.selectSession).toHaveBeenCalledExactlyOnceWith(conversation, { updateUrl: false });
+  });
+
   it("keeps the newest project and workspace after overlapping project responses complete out of order", async () => {
     const firstProject = project("p1", "/first");
     const secondProject = project("p2", "/second");

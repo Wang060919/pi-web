@@ -29,6 +29,30 @@ describe("shouldShowMachinesSection", () => {
 });
 
 describe("header identity", () => {
+  it("opens usage from the Pi mark only when a workspace is selected and uses the latest callback", async () => {
+    const panel = await mountHeaderPanel([machine("local")]);
+    const firstOpen = vi.fn();
+    panel.onShowOverview = firstOpen;
+    const mark = panel.shadowRoot?.querySelector<HTMLButtonElement>("button.brand-mark");
+    if (mark == null) throw new Error("Expected overview entry on the Pi mark");
+    expect(mark.disabled).toBe(true);
+    expect(mark.getAttribute("aria-label")).toBe("Workspace overview");
+    mark.click();
+    expect(firstOpen).not.toHaveBeenCalled();
+
+    panel.selectedWorkspace = workspace("ws-1", "project-1");
+    await panel.updateComplete;
+    expect(mark.disabled).toBe(false);
+    mark.click();
+    expect(firstOpen).toHaveBeenCalledOnce();
+
+    const latestOpen = vi.fn();
+    panel.onShowOverview = latestOpen;
+    mark.click();
+    expect(latestOpen).toHaveBeenCalledOnce();
+    expect(firstOpen).toHaveBeenCalledOnce();
+  });
+
   it("pairs the brand name with a decorative Pi mark", async () => {
     const panel = await mountHeaderPanel([machine("local")]);
 
@@ -201,6 +225,34 @@ describe("navigation order controls", () => {
 });
 
 describe("desktop context selectors", () => {
+  it("offers one desktop new-session entry and keeps the original control in compact navigation", async () => {
+    const panel = await mountDesktopPanel();
+    const sessions = section(panel, "session-list", SessionList);
+    await sessions.updateComplete;
+    const start = panel.renderRoot.querySelector<HTMLButtonElement>(".new-session");
+    if (start === null) throw new Error("Expected the desktop new-session entry");
+    expect(start.disabled).toBe(true);
+    expect(sessions.shadowRoot?.querySelector(".start-session-button")).toBeNull();
+
+    const first = vi.fn();
+    panel.onStartSession = first;
+    panel.canStartSession = true;
+    await panel.updateComplete;
+    start.click();
+    expect(first).toHaveBeenCalledOnce();
+    const latest = vi.fn();
+    panel.onStartSession = latest;
+    start.click();
+    expect(latest).toHaveBeenCalledOnce();
+    expect(first).toHaveBeenCalledOnce();
+
+    panel.compact = true;
+    await panel.updateComplete;
+    await sessions.updateComplete;
+    expect(panel.shadowRoot?.querySelector(".new-session")).toBeNull();
+    expect(sessions.shadowRoot?.querySelector(".start-session-button")).not.toBeNull();
+  });
+
   it("keeps project and workspace summaries above the session list until a selector opens", async () => {
     const panel = await mountDesktopPanel();
 

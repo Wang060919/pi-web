@@ -55,6 +55,8 @@ export class AppNavigationPanel extends LitElement {
   @property({ type: Number }) startingSessionCount = 0;
   @property({ type: Boolean }) canStartSession = false;
   @property({ attribute: false }) onShowActions?: () => void;
+  @property({ attribute: false }) onSearchHistory?: () => void;
+  @property({ attribute: false }) onShowOverview?: () => void;
   @property({ attribute: false }) onToggleMachines?: () => void;
   @property({ attribute: false }) onToggleProjects?: () => void;
   @property({ attribute: false }) onToggleWorkspaces?: () => void;
@@ -165,7 +167,7 @@ export class AppNavigationPanel extends LitElement {
   override render() {
     return localizedTemplate("AppNavigationPanel.pi_web_actions.a6cbb6f6", html)`
       <header>
-        <div class="brand">${piMark()}<strong>PI WEB</strong></div>
+        <div class="brand">${this.renderBrandMark()}<strong>PI WEB</strong></div>
         <machine-switcher
           .machines=${this.machines}
           .selected=${this.selectedMachine}
@@ -179,7 +181,8 @@ export class AppNavigationPanel extends LitElement {
         ></machine-switcher>
         <div class="header-actions">
           ${this.refreshControl}
-          <button title="Show Actions" aria-label="Show Actions" @click=${() => { this.onShowActions?.(); }}>Actions</button>
+          ${this.onSearchHistory ? html`<button class="history-search" title=${t("ui.sessionSearch.title")} aria-label=${t("ui.sessionSearch.title")} @click=${this.onSearchHistory}><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m16 16 4 4"></path></svg></button>` : null}
+          <button class="palette-button" title="Show Actions" aria-label="Show Actions" @click=${() => { this.onShowActions?.(); }}><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="5" height="5" rx="1"></rect><rect x="15" y="4" width="5" height="5" rx="1"></rect><rect x="4" y="15" width="5" height="5" rx="1"></rect><rect x="15" y="15" width="5" height="5" rx="1"></rect></svg>Actions</button>
         </div>
       </header>
       ${this.compact && shouldShowMachinesSection(this.machines) ? html`
@@ -197,7 +200,7 @@ export class AppNavigationPanel extends LitElement {
           .onCancelKeyboardNavigation=${() => { this.cancelKeyboardNavigation(); }}
         ></machine-list>
       ` : null}
-      ${this.compact ? html`${this.renderProjectList()}${this.renderWorkspaceList()}` : this.renderContextSwitcher()}
+      ${this.compact ? html`${this.renderProjectList()}${this.renderWorkspaceList()}` : html`${this.renderQuickActions()}${this.renderContextSwitcher()}`}
       <session-list
         .sessions=${this.sessions}
         .pinnedRootIds=${this.pinnedRootIds}
@@ -213,6 +216,7 @@ export class AppNavigationPanel extends LitElement {
         .sessionLabelItems=${this.sessionLabelItems}
         .startingCount=${this.startingSessionCount}
         .canStart=${this.canStartSession}
+        .hideStartButton=${!this.compact}
         .collapsible=${this.collapsible}
         .collapsed=${this.sessionsCollapsed}
         .onToggleCollapsed=${this.childCallbacks.toggleSessions}
@@ -237,6 +241,15 @@ export class AppNavigationPanel extends LitElement {
       ></session-list>
       ${this.renderContextPicker()}
     `;
+  }
+
+  private renderBrandMark() {
+    return html`<button class="brand-mark" type="button" aria-label=${t("ui.usageOverview.open")} title=${t("ui.usageOverview.open")} ?disabled=${this.selectedWorkspace === undefined} @click=${() => { this.onShowOverview?.(); }}>${piMark()}</button>`;
+  }
+
+  private renderQuickActions() {
+    const title = this.startingSessionCount > 0 ? t("SessionList.start_another_session.9a41bfa8") : t("SessionList.start_a_new_session.7f8ab8f8");
+    return html`<div class="quick-actions"><button class="new-session" type="button" title=${title} ?disabled=${!this.canStartSession} @click=${this.childCallbacks.startSession}><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"></path></svg><span>${t("ui.navigation.newSession")}</span></button></div>`;
   }
 
   private renderProjectList() {
@@ -292,8 +305,9 @@ export class AppNavigationPanel extends LitElement {
           aria-expanded=${String(this.contextPicker === "projects")}
           @click=${() => { void this.openContextPicker("projects"); }}
         >
+          <span class="context-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10H3Z"></path></svg></span>
           <span class="context-copy"><small>${t("ui.navigation.project")}</small><span>${this.selectedProject?.name ?? t("ui.navigation.chooseProject")}</span></span>
-          <span class="context-chevron" aria-hidden="true">⌄</span>
+          <svg class="context-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m8 10 4 4 4-4"></path></svg>
         </button>
         <button
           class="context-select"
@@ -304,8 +318,9 @@ export class AppNavigationPanel extends LitElement {
           aria-expanded=${String(this.contextPicker === "workspaces")}
           @click=${() => { void this.openContextPicker("workspaces"); }}
         >
+          <span class="context-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="6" cy="5" r="2"></circle><circle cx="6" cy="19" r="2"></circle><circle cx="18" cy="6" r="2"></circle><path d="M6 7v10m0-5h5a7 7 0 0 0 7-4"></path></svg></span>
           <span class="context-copy"><small>${t("ui.navigation.workspace")}</small><span>${this.selectedWorkspace?.label ?? t("ui.navigation.chooseWorkspace")}</span></span>
-          <span class="context-chevron" aria-hidden="true">⌄</span>
+          <svg class="context-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m8 10 4 4 4-4"></path></svg>
         </button>
       </div>
     `;
@@ -392,12 +407,22 @@ export class AppNavigationPanel extends LitElement {
   static override styles = [css`
     :host { --navigation-panel-bg: light-dark(color-mix(in srgb, var(--pi-bg) 98%, var(--pi-text)), color-mix(in srgb, var(--pi-bg) 86%, #000)); display: flex; flex-direction: column; min-height: 0; overflow: hidden; background: var(--navigation-panel-bg); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     :host([compact]) { flex: 1 1 auto; }
-    header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 0; }
+    header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; padding: 12px; border-bottom: 0; }
     .brand { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; color: var(--pi-text); }
-    header strong { font-size: 13px; line-height: 18px; font-weight: 500; }
+    .brand-mark { display: inline-flex; align-items: center; justify-content: center; padding: 0; border-radius: 4px; }
+    header strong { font-size: 13px; line-height: 18px; font-weight: 500; letter-spacing: .01em; white-space: nowrap; }
     machine-switcher { flex: 1 1 auto; min-width: 0; }
     :host([compact]) header { display: none; }
-    .header-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+    .header-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; }
+    .header-actions button { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 28px; border: 0; border-radius: 6px; color: var(--pi-muted); }
+    .header-actions .history-search { width: 30px; padding: 0; }
+    .header-actions .palette-button { width: 28px; padding: 0; gap: 0; font-size: 0; }
+    .header-actions button:hover { color: var(--pi-text); }
+    .header-actions svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .quick-actions { flex: 0 0 auto; padding: 0 12px 12px; }
+    .new-session { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 34px; padding: 7px 10px; text-align: start; background: var(--pi-selection-bg); border-radius: 7px; }
+    .new-session svg { flex: 0 0 auto; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+    .new-session:disabled { opacity: .45; cursor: default; }
     /* Expanded sections share the panel height equally, so collapsing one
        section distributes its space to every remaining section, not just the
        session list. Collapsed sections keep only their heading height. */

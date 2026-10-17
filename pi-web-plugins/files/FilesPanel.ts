@@ -482,7 +482,7 @@ export class WorkspaceFilesPanel extends LitElement {
     .upload-file-main span, .upload-file-main small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .upload-file-status { font-size: 12px; white-space: nowrap; }
     .upload-actions { justify-content: end; }
-    dialog.upload-dialog { box-sizing: border-box; width: min(560px, calc(100% - 40px)); max-height: min(720px, calc(100% - 40px)); max-height: min(720px, calc(100dvh - 40px)); margin: auto; padding: 0; border: 1px solid var(--pi-border); border-radius: 14px; background: var(--pi-bg); color: var(--pi-text); box-shadow: 0 18px 70px var(--pi-shadow-strong); overflow: hidden; }
+    dialog.upload-dialog { box-sizing: border-box; width: min(560px, calc(100% - 40px)); max-height: min(720px, calc(100% - 40px)); max-height: min(720px, calc(100dvh - 40px)); margin: auto; padding: 0; border: 1px solid var(--pi-border-muted); border-radius: 12px; background: light-dark(var(--pi-surface), var(--pi-bg)); color: var(--pi-text); box-shadow: 0 20px 60px var(--pi-shadow-strong); overflow: hidden; }
     dialog.upload-dialog[open] { display: flex; flex-direction: column; }
     dialog.upload-dialog::backdrop { background: var(--pi-overlay); }
     .upload-dialog header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 0; }

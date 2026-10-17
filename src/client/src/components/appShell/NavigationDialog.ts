@@ -1,11 +1,13 @@
 import { localizedTemplate, localizedText, t } from "../../../../shared/i18n";
 import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { repeat } from "lit/directives/repeat.js";
 import { paletteStyles } from "../paletteStyles";
 import { scrollWhenSelected } from "../scrollWhenSelected";
 import { pinnedNavigationTabs, toggleNavigationPin, type NavigationPreferences } from "../../navigationPreferences";
 import type { AppMobileMainTab } from "./AppMobileMainTabs";
-import "../ModalSurface";
+import { ModalSurface } from "../ModalSurface";
+import { deepActiveElement } from "../modalLayerRegistry";
 
 @customElement("navigation-dialog")
 export class NavigationDialog extends LitElement {
@@ -20,20 +22,21 @@ export class NavigationDialog extends LitElement {
 
   @state() private query = "";
   @state() private selectedIndex = 0;
+  private focusAfterReorder: HTMLButtonElement | undefined;
 
-  private filteredTabs() {
+  private filteredTabs(tabs = this.tabs, preferences = this.preferences) {
     const query = this.query.trim().toLowerCase();
-    const tabs = this.tabs.filter((tab) => `${tab.label} ${tab.id}`.toLowerCase().includes(query));
-    const pinnedIds = this.pinnedTabIds();
-    return [...tabs.filter((tab) => pinnedIds.has(tab.id)), ...tabs.filter((tab) => !pinnedIds.has(tab.id))];
+    const matching = tabs.filter((tab) => `${tab.label} ${tab.id}`.toLowerCase().includes(query));
+    const pinnedIds = this.pinnedTabIds(tabs, preferences);
+    return [...matching.filter((tab) => pinnedIds.has(tab.id)), ...matching.filter((tab) => !pinnedIds.has(tab.id))];
   }
 
-  private pinnedTabIds(): Set<string> {
-    const tabs = (this.pinUniverse ?? this.tabs.map((tab) => tab.id)).map((id) => ({ id }));
-    const useDefaultPins = this.preferences.useDefaultPins === true;
+  private pinnedTabIds(tabs = this.tabs, preferences = this.preferences): Set<string> {
+    const universe = (this.pinUniverse ?? tabs.map((tab) => tab.id)).map((id) => ({ id }));
+    const useDefaultPins = preferences.useDefaultPins === true;
     return new Set([
-      ...pinnedNavigationTabs(tabs, this.preferences.pinnedIds, useDefaultPins),
-      ...pinnedNavigationTabs(this.tabs, this.preferences.pinnedIds, useDefaultPins),
+      ...pinnedNavigationTabs(universe, preferences.pinnedIds, useDefaultPins),
+      ...pinnedNavigationTabs(tabs, preferences.pinnedIds, useDefaultPins),
     ].map((tab) => tab.id));
   }
 
@@ -45,11 +48,30 @@ export class NavigationDialog extends LitElement {
     });
   }
 
-  protected override willUpdate(changed: PropertyValues) {
+  protected override willUpdate(changed: PropertyValues<this>) {
+    const changedProperties: ReadonlyMap<PropertyKey, unknown> = changed;
     if (changed.has("selectedTab")) {
       this.selectedIndex = Math.max(0, this.filteredTabs().findIndex((tab) => tab.id === this.selectedTab));
+    } else if (!changedProperties.has("query") && (changed.has("tabs") || changed.has("preferences"))) {
+      const previousTabs = changed.has("tabs") ? changed.get("tabs") ?? [] : this.tabs;
+      const previousPreferences = changed.has("preferences") ? changed.get("preferences") ?? this.preferences : this.preferences;
+      const selectedId = this.filteredTabs(previousTabs, previousPreferences)[this.selectedIndex]?.id;
+      const index = this.filteredTabs().findIndex((tab) => tab.id === selectedId);
+      if (index >= 0) this.selectedIndex = index;
+    }
+    if (this.isConnected && (changed.has("tabs") || changed.has("preferences"))) {
+      const focused = deepActiveElement(this.ownerDocument);
+      if (focused instanceof HTMLButtonElement && this.renderRoot.contains(focused) && focused.closest(".destination") !== null) this.focusAfterReorder = focused;
     }
     this.selectedIndex = Math.min(this.selectedIndex, Math.max(0, this.filteredTabs().length - 1));
+  }
+
+  protected override updated(): void {
+    const target = this.focusAfterReorder;
+    this.focusAfterReorder = undefined;
+    if (!this.isConnected) return;
+    const surface = this.renderRoot.querySelector("modal-surface");
+    if (target?.isConnected === true && surface instanceof ModalSurface) surface.focusDialog(target);
   }
 
   private select(tab: AppMobileMainTab) {
@@ -76,7 +98,7 @@ export class NavigationDialog extends LitElement {
         <p>${t("navigation.description")}</p>
         <nav class="options" aria-label=${t("navigation.destinations")}>
           ${tabs.length === 0 ? localizedTemplate("NavigationDialog.no_destinations_found.afa3249e", html)`<div class="empty">No destinations found.</div>` : nothing}
-          ${tabs.map((tab, index) => html`
+          ${repeat(tabs, (tab) => tab.id, (tab, index) => html`
             ${index === 0 || pinnedIds.has(tab.id) !== pinnedIds.has(tabs[index - 1]?.id ?? "")
               ? html`<h3>${t(pinnedIds.has(tab.id) ? "navigation.pinned" : "navigation.more_tools")}</h3>` : nothing}
             <div class="destination">

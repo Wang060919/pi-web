@@ -3,8 +3,6 @@ import type { AskUserOutcome, AskUserRequest } from "../../../shared/apiTypes";
 import type { ImageDimensions, SessionMediaReference } from "../../../shared/sessionMedia";
 import type { SessionWarningSeverity } from "../api";
 
-/** Shared downstream shadow for content passing beneath sticky scroll controls. */
-export const scrollHideShadow = css`0 6px 12px color-mix(in srgb, var(--pi-shadow-soft) 35%, transparent)`;
 /** Directional navigation shadow that avoids a halo above the fixed heading edge. */
 export const scrollBoundaryShadow = css`0 8px 18px -8px var(--pi-shadow-soft)`;
 
@@ -195,11 +193,16 @@ export const appStyles = css`
   button:not(:disabled):not(.selected):hover { background: var(--pi-surface-hover); }
   button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
   .empty { margin: auto; color: var(--pi-muted); }
-  .welcome { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; box-sizing: border-box; width: min(520px, 100%); padding: 32px; }
-  .welcome .pi-mark { color: var(--pi-text); margin-bottom: 4px; }
+  .welcome { display: flex; flex: 1 1 auto; flex-direction: column; align-items: stretch; gap: 16px; box-sizing: border-box; width: min(544px, 100%); min-height: 0; margin: 0 auto; padding: 48px 32px 32px; overflow-y: auto; }
+  .welcome-heading { display: flex; align-items: center; justify-content: flex-start; gap: 12px; padding: 0; }
+  .welcome .pi-mark { color: var(--pi-text); }
   .welcome h1 { margin: 0; color: var(--pi-text); font-size: 24px; line-height: 32px; font-weight: 500; letter-spacing: -.02em; }
+  .welcome-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
   .welcome p { margin: 0; font-size: 14px; line-height: 22px; }
-  .welcome button { margin-top: 4px; background: var(--pi-selection-bg); }
+  .welcome-actions p { flex: 1 1 200px; }
+  .welcome-actions button { flex: 0 0 auto; background: var(--pi-selection-bg); }
+  .welcome welcome-usage-overview { flex: 0 0 auto; margin-top: 8px; }
+  @media (max-width: 420px) { .welcome { padding: 24px 16px; } }
   .error { display: flex; gap: 8px; align-items: flex-start; padding: 10px 16px; border-bottom: 1px solid var(--pi-border); color: var(--pi-danger); }
   .error.warning { border-bottom-color: var(--pi-warning-border); color: var(--pi-warning); background: var(--pi-warning-surface); }
   .error.info { border-bottom-color: var(--pi-accent-border); color: var(--pi-text); background: var(--pi-selection-bg); }

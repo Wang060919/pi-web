@@ -26,7 +26,7 @@ interface WorkspaceMutationGuard {
   isCurrent?: (() => boolean) | undefined;
 }
 
-type WorkspaceSelectionTarget = RouteTarget & WorkspaceMutationGuard;
+type WorkspaceSelectionTarget = RouteTarget & WorkspaceMutationGuard & { suppressSessionSelection?: boolean | undefined };
 
 export class WorkspaceController {
   private readonly api: Pick<typeof defaultApi, "sessions" | "workspaces" | "workspaceResolution">;
@@ -88,7 +88,7 @@ export class WorkspaceController {
       this.setState({ workspaces, workspacesByProjectId: { ...this.getState().workspacesByProjectId, [project.id]: workspaces }, isLoadingWorkspaces: false });
       const workspace = selectPreferredWorkspace(workspaces, { targetWorkspaceId: target?.workspaceId, latestWorkspaceId: this.workspaceSelection.latestWorkspaceId(machineProjectKey(machineId, project.id)) });
       if (workspace) {
-        return await this.selectWorkspace(workspace, { sessionId: target?.sessionId, updateUrl: target?.updateUrl, navigation });
+        return await this.selectWorkspace(workspace, { sessionId: target?.sessionId, updateUrl: target?.updateUrl, navigation, suppressSessionSelection: target?.suppressSessionSelection });
       }
       if (target?.workspaceId !== undefined && target.workspaceId !== "") {
         this.browserErrors.report(errorScope, localizedText("workspaceController.workspace_not_found.2c6716a6")`Workspace not found: ${target.workspaceId}`);
@@ -125,6 +125,10 @@ export class WorkspaceController {
         || this.getState().selectedWorkspace?.id !== workspace.id
         || this.getState().selectedProject?.id !== workspace.projectId) return;
       this.setState({ sessions });
+      if (target?.suppressSessionSelection === true) {
+        if (target.updateUrl !== false) this.updateUrl();
+        return undefined;
+      }
       const session = this.sessions.preferredSession(workspace.path, sessions, target?.sessionId);
       if (!this.navigationIsCurrent(navigation) || !workspaceMutationIsCurrent(target)) return;
       if (session) await this.sessions.selectSession(session, { updateUrl: target?.updateUrl, ...(navigation === undefined ? {} : { navigation }) });

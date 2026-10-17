@@ -187,6 +187,33 @@ it("groups essential destinations before other tools and materializes their pins
   expect(dialog.shadowRoot?.querySelector('button[aria-label="Pin Info"]')?.getAttribute("aria-pressed")).toBe("false");
 });
 
+it("keeps the same tool controls, keyboard selection, and focus when pinning reorders destinations", async () => {
+  const dialog = new NavigationDialog();
+  dialog.tabs = [{ id: "test:a", label: "Alpha" }, { id: "test:b", label: "Beta" }, { id: "test:c", label: "Gamma" }];
+  dialog.preferences = { pinnedIds: ["test:a"], mobileCollapsed: false };
+  dialog.onPreferencesChange = (preferences) => { dialog.preferences = preferences; };
+  document.body.append(dialog);
+  await dialog.updateComplete;
+  await dialog.shadowRoot?.querySelector<ModalSurface>("modal-surface")?.updateComplete;
+  const destination = [...dialog.renderRoot.querySelectorAll<HTMLButtonElement>(".destination-button")].find((button) => button.textContent === "Gamma");
+  const pin = dialog.renderRoot.querySelector<HTMLButtonElement>('button[aria-label="Pin Gamma"]');
+  if (destination === undefined || pin === null) throw new Error("Expected Gamma controls");
+  destination.focus();
+  pin.focus();
+  pin.click();
+  await dialog.updateComplete;
+  expect(dialog.renderRoot.querySelector('button[aria-label="Pin Gamma"]')).toBe(pin);
+  expect(deepActiveElement(document)).toBe(pin);
+  expect(dialog.renderRoot.querySelector(".destination-button.selected")).toBe(destination);
+  expect(dialog.renderRoot.querySelector('[role="status"]')?.textContent).toBe("Gamma, 2 of 3");
+
+  pin.click();
+  await dialog.updateComplete;
+  expect(dialog.preferences.pinnedIds).toEqual(["test:a"]);
+  expect(deepActiveElement(document)).toBe(pin);
+  expect(dialog.renderRoot.querySelector(".destination-button.selected")).toBe(destination);
+});
+
 it("searches contribution IDs as well as labels without making hidden tools permanent", async () => {
   const dialog = new NavigationDialog();
   dialog.tabs = [{ id: "chat", label: "Chat" }, { id: "tasks:workspace.tasks", label: "任务" }];

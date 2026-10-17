@@ -4813,8 +4813,8 @@ export const templates = {
     ]
   },
   "AppNavigationPanel.pi_web_actions.a6cbb6f6": {
-    "sourceHash": 1614841777,
-    "valueCount": 50,
+    "sourceHash": 2393678192,
+    "valueCount": 52,
     "strings": [
       "\n      <header>\n        <div class=\"brand\">",
       "<strong>PI WEB</strong></div>\n        <machine-switcher\n          .machines=",
@@ -4827,8 +4827,9 @@ export const templates = {
       "\n          .onFocusNextSection=",
       "\n          .onCancelKeyboardNavigation=",
       "\n        ></machine-switcher>\n        <div class=\"header-actions\">\n          ",
-      "\n          <button title=\"搜索页面和命令\" aria-label=\"搜索页面和命令\" @click=",
-      ">搜索</button>\n        </div>\n      </header>\n      ",
+      "\n          ",
+      "\n          <button class=\"palette-button\" title=\"搜索页面和命令\" aria-label=\"搜索页面和命令\" @click=",
+      "><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><rect x=\"4\" y=\"4\" width=\"5\" height=\"5\" rx=\"1\"></rect><rect x=\"15\" y=\"4\" width=\"5\" height=\"5\" rx=\"1\"></rect><rect x=\"4\" y=\"15\" width=\"5\" height=\"5\" rx=\"1\"></rect><rect x=\"15\" y=\"15\" width=\"5\" height=\"5\" rx=\"1\"></rect></svg>命令</button>\n        </div>\n      </header>\n      ",
       "\n      ",
       "\n      <session-list\n        .sessions=",
       "\n        .pinnedRootIds=",
@@ -4844,6 +4845,7 @@ export const templates = {
       "\n        .sessionLabelItems=",
       "\n        .startingCount=",
       "\n        .canStart=",
+      "\n        .hideStartButton=",
       "\n        .collapsible=",
       "\n        .collapsed=",
       "\n        .onToggleCollapsed=",
@@ -4918,7 +4920,9 @@ export const templates = {
       46,
       47,
       48,
-      49
+      49,
+      50,
+      51
     ]
   },
   "AppPanelEdgeControl.double_click_or_double_tap_to_reset.5f010e5a": {

@@ -59,6 +59,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
   @property({ attribute: false }) sessionLabelItems: (session: SessionInfo) => SessionLabelItem[] = () => [];
   @property({ type: Number }) startingCount = 0;
   @property({ type: Boolean }) canStart = false;
+  @property({ type: Boolean }) hideStartButton = false;
   @property({ type: Boolean, reflect: true }) collapsible = false;
   @property({ type: Boolean, reflect: true }) collapsed = false;
   @property({ attribute: false }) onSelect?: (session: SessionInfo) => void;
@@ -315,6 +316,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
           <div class="list-body">
             ${this.renderCurrentSelectionToolbar(tree.currentSelectableSessions)}
             ${this.startingCount > 0 ? this.renderStartingSession() : null}
+            ${currentRows.length === 0 && this.startingCount === 0 ? html`<p class="empty-sessions">${t("ui.navigation.noRecentSessions")}</p>` : null}
             ${pinnedRowCount > 0 ? localizedTemplate("SessionList.pinned.0087f9b7", html)`<h2 class="subheading pin-heading">Pinned</h2>` : null}
             ${repeat(currentRows, (row) => row.session.id, (row, index) => html`
               ${pinnedRowCount > 0 && index === pinnedRowCount ? localizedTemplate("SessionList.recent.7eb63d1a", html)`<h2 class="subheading pin-heading">Recent</h2>` : null}
@@ -378,6 +380,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
   }
 
   private renderStartButton() {
+    if (this.hideStartButton) return null;
     const title = this.startingCount > 0 ? t("SessionList.start_another_session.9a41bfa8") : t("SessionList.start_a_new_session.7f8ab8f8");
     return html`<button class="start-session-button" title=${title} aria-label=${title} ?disabled=${!this.canStart} @click=${(event: MouseEvent) => { event.stopPropagation(); this.onStart?.(); }}>+</button>`;
   }
@@ -746,14 +749,46 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
   }
 
   static override styles = [listStyles, css`
-    h2 { min-height: 30px; }
+    section { padding: 0 8px 12px; }
+    h2 { min-height: 30px; gap: 6px; font-size: 12px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+    section > h2 { margin: 0 4px; padding: 0 0 6px; }
+    .section-toggle { flex: 0 1 auto; width: auto; min-height: 28px; padding: 0 4px; border-radius: 6px; }
+    .section-toggle:not(:disabled):not(.selected):hover { background: transparent; color: var(--pi-text); }
+    .plain-heading { margin-inline-start: 4px; margin-inline-end: auto; }
+    h2 > .section-count { display: inline-grid; place-items: center; min-width: 12px; height: 18px; box-sizing: border-box; padding: 0 2px; background: transparent; font-size: 11px; font-variant-numeric: tabular-nums; }
+    h2 > .section-count { order: 1; margin-inline-end: auto; }
+    h2 > .section-unread-count { order: 2; }
+    h2 > .bulk-select-entry { order: 3; }
+    h2 > .cleanup-entry { order: 4; }
+    h2 > .start-session-button { order: 5; }
+    :host([collapsed]) section > h2 { padding: 6px 0 34px; border: 0; background: transparent; }
+    :host([collapsed]) .section-title { display: block; overflow: visible; }
+    :host([collapsed]) .section-toggle .section-selected { position: absolute; inset-inline: 10px; bottom: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--pi-text-secondary); font-size: 12px; font-weight: 400; line-height: 18px; }
+    .subheading { justify-content: flex-start; margin: 16px 4px 4px; padding-top: 0; border-top: 0; }
+    .list-body > .subheading:first-child { margin-top: 8px; }
+    .subheading .section-toggle { order: 0; min-height: 24px; }
+    .subheading .section-count { order: 1; margin-inline-end: auto; }
+    .subheading .bulk-select-entry { order: 2; }
     /* Keep positioned/animated session content in the scroller's paint hierarchy. */
     .list-body { isolation: isolate; }
-    h2 > .section-count { flex: 0 0 auto; display: inline; color: var(--pi-muted); font-size: inherit; }
+    .empty-sessions { margin: 0; padding: 12px 10px; color: var(--pi-muted); font-size: 12px; line-height: 18px; }
+    h2 > .section-count { flex: 0 0 auto; color: var(--pi-muted); }
     h2 > .section-unread-count { flex: 0 0 auto; display: inline; color: var(--pi-accent); font-size: inherit; text-transform: none; }
     .bulk-select-entry { box-sizing: border-box; flex: 0 0 auto; display: inline-grid; place-items: center; width: 30px; height: 30px; padding: 0; font-size: 13px; line-height: 1; text-transform: none; }
-    .start-session-button { box-sizing: border-box; flex: 0 0 auto; display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 9px; }
-    .cleanup-entry { flex: 0 0 auto; padding: 5px 7px; font-size: 12px; text-transform: none; }
+    .start-session-button { box-sizing: border-box; flex: 0 0 auto; display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); font-size: 19px; font-weight: 400; line-height: 1; }
+    .start-session-button:not(:disabled):hover { background: var(--pi-surface-hover); }
+    .start-session-button:disabled { opacity: .4; cursor: default; }
+    .cleanup-entry { flex: 0 0 auto; padding: 5px 7px; color: var(--pi-muted); font-size: 11px; text-transform: none; }
+    .action-row { margin: 2px 0; border-radius: 7px; }
+    .action-row.selected { background: var(--pi-selection-bg); box-shadow: none; }
+    .action-row:not(.selected):hover { background: var(--pi-surface-hover); }
+    .action-row.selected .action-main, .action-row.selected .action-menu-toggle, .action-row:not(.selected):hover .action-main { background: transparent; }
+    .action-main { padding-top: 7px; padding-bottom: 7px; padding-inline-start: calc(10px + var(--depth, 0) * 16px); border-radius: 7px 0 0 7px; }
+    .action-row.archived .action-name { color: var(--pi-text-secondary); }
+    .action-menu-toggle { width: 28px; min-width: 28px; border-radius: 0 7px 7px 0; opacity: 0; transition: opacity 150ms ease; }
+    .action-row:hover .action-menu-toggle, .action-row:focus-within .action-menu-toggle { opacity: 1; }
+    @media (hover: none), (pointer: coarse) { .action-menu-toggle { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .action-menu-toggle { transition: none; } }
     .bulk-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 6px; }
     .bulk-row button { padding: 5px 7px; font-size: 12px; white-space: nowrap; }
     .bulk-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; margin-left: auto; }
@@ -761,7 +796,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
     .action-name { display: block; max-height: none; line-height: normal; white-space: nowrap; text-overflow: ellipsis; }
     .action-row.unread .action-name { color: var(--pi-text-bright); font-weight: 600; }
     .plain-heading { min-width: 0; }
-    .session-secondary { display: flex; align-items: baseline; gap: 5px; min-width: 0; margin-top: 2px; font-size: 11px; line-height: 16px; }
+    .session-secondary { display: flex; align-items: baseline; gap: 5px; min-width: 0; margin-top: 2px; color: var(--pi-muted); font-size: 11px; line-height: 16px; }
     .session-meta, .session-label-separator { flex: 0 0 auto; }
     .session-labels { min-width: 0; display: inline-flex; align-items: baseline; gap: 5px; max-width: 100%; overflow: hidden; white-space: nowrap; }
     .session-label-item, .session-label-render { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -780,7 +815,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
     .selection-toolbar .bulk-row.selecting { position: relative; z-index: 1; margin-bottom: 0; padding: 6px; border: 1px solid var(--pi-border-muted); border-radius: 8px; background: var(--pi-surface); box-shadow: ${scrollBoundaryShadow}; }
     button.danger, .action-menu-panel button.danger { color: var(--pi-danger); }
     button.danger:hover, .action-menu-panel button.danger:hover { background: color-mix(in srgb, var(--pi-danger) 14%, transparent); }
-    .action-row.bulk-selected .action-main { border-color: var(--pi-accent); box-shadow: inset 3px 0 0 var(--pi-accent); }
+    .action-row.bulk-selected, .action-row.bulk-selected:not(.selected):hover { background: var(--pi-selection-bg); }
     .pending-session-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); margin: 6px 0; cursor: default; }
     .pending-session-row.starting-session .action-main { border-radius: 8px; border-style: dashed; color: var(--pi-muted); }
     .pending-session-row.starting-session .action-name { display: flex; align-items: center; gap: 6px; max-height: none; -webkit-line-clamp: 1; }
@@ -791,7 +826,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
     .agent-subsession-toggle { position: relative; display: block; box-sizing: border-box; width: calc(100% - 24px - 2 * var(--agent-offset, 0px)); margin: 0 calc(12px + var(--agent-offset, 0px)) 8px; padding: 4px 22px; border-top: 0; border-radius: 0 0 8px 8px; font-size: 12px; text-align: center; color: var(--pi-muted); }
     /* Keep activity out of text flow so status changes cannot wrap or resize the chip. */
     .agent-subsession-toggle .action-activity { top: 50%; right: 8px; z-index: auto; transform: translateY(-50%); pointer-events: none; }
-    .agent-subsession-toggle[aria-expanded="true"] { margin-bottom: 0; color: var(--pi-accent); border-color: var(--pi-accent-border); }
+    .agent-subsession-toggle[aria-expanded="true"] { margin-bottom: 0; color: var(--pi-text); }
     .action-row.linked-agent-child { margin-inline: var(--agent-offset); }
     .agent-subsession-toggle:hover, .agent-subsession-toggle:focus-visible { color: var(--pi-text); background: var(--pi-surface-hover); }
     .agent-subsession-toggle:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
