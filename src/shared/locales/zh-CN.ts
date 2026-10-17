@@ -4122,13 +4122,15 @@ export const templates = {
     ]
   },
   "SettingsDialog.settings_pi_web.760f578b": {
-    "sourceHash": 1462966424,
-    "valueCount": 9,
+    "sourceHash": 3348257532,
+    "valueCount": 11,
     "strings": [
       "\n      <modal-surface .onClose=",
       " .label=",
       ">\n        <header class=\"settings-header\">\n          <div>\n            <span class=\"eyebrow\">设置</span>\n            <h1>PI WEB</h1>\n          </div>\n          <button class=\"close-button\" title=\"关闭设置\" aria-label=\"关闭设置\" @click=",
       ">×</button>\n        </header>\n        <div class=\"settings-body\">\n          <nav class=\"settings-nav\" aria-label=\"设置分类\">\n            ",
+      "\n            ",
+      "\n            ",
       "\n            ",
       "\n            ",
       "\n            ",
@@ -4145,7 +4147,9 @@ export const templates = {
       5,
       6,
       7,
-      8
+      8,
+      9,
+      10
     ]
   },
   "SettingsDialog.failed_to_load_file_access_upload_config.b5ad76ea": {

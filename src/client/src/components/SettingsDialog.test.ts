@@ -4,6 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { configApi, piPackagesApi, pluginsApi } from "../api";
 import { deepActiveElement, dialogSection, dialogSurface, pressKey, requiredElement, settleRenderedDialog, surfaceBackdrop } from "./modalSurfaceTestSupport";
 import { SettingsDialog } from "./SettingsDialog";
+import { modelConfigurationApi } from "../api/modelConfiguration";
+import { mcpManagementApi } from "../api/mcpManagement";
+import { SettingsModelsPanel } from "./settings/SettingsModelsPanel";
+import { SettingsMcpPanel } from "./settings/SettingsMcpPanel";
 import { configResponse, pluginsResponse } from "./SettingsDialog.testSupport";
 
 beforeEach(() => {
@@ -21,6 +25,40 @@ afterEach(() => {
 });
 
 describe("settings-dialog modal surface", () => {
+  it.each(["models", "mcp"])("routes %s to the selected machine and forwards workspace context", async (section) => {
+    if (section !== "models" && section !== "mcp") throw new Error("Unexpected settings section");
+    const models = vi.spyOn(modelConfigurationApi, "read").mockResolvedValue({ revision: "models-revision", providers: [] });
+    const mcp = vi.spyOn(mcpManagementApi, "list").mockResolvedValue({ servers: [], revisions: { global: "mcp-revision" }, projectTrusted: true, hasProject: true, errors: [], requiresReload: true });
+    const dialog = new SettingsDialog();
+    dialog.section = section;
+    dialog.machine = { id: "remote", name: "Remote machine", kind: "remote", createdAt: "now", updatedAt: "now" };
+    dialog.projectId = "project";
+    dialog.workspaceId = "workspace";
+    dialog.onNavigate = vi.fn();
+    document.body.append(dialog);
+    await settleRenderedDialog(dialog);
+    if (section === "models") {
+      const panel = dialog.renderRoot.querySelector("settings-models-panel");
+      if (!(panel instanceof SettingsModelsPanel)) throw new Error("Model settings panel missing");
+      await panel.updateComplete;
+      expect(panel.machineId).toBe("remote");
+      expect(models.mock.calls[0]?.[0]).toBe("remote");
+      expect(dialog.renderRoot.querySelector("settings-mcp-panel")).toBeNull();
+    } else {
+      const panel = dialog.renderRoot.querySelector("settings-mcp-panel");
+      if (!(panel instanceof SettingsMcpPanel)) throw new Error("MCP settings panel missing");
+      await panel.updateComplete;
+      expect(panel.machineId).toBe("remote");
+      expect(panel.projectId).toBe("project");
+      expect(panel.workspaceId).toBe("workspace");
+      expect(mcp).toHaveBeenCalledWith("remote", { projectId: "project", workspaceId: "workspace" });
+      expect(dialog.renderRoot.querySelector("settings-models-panel")).toBeNull();
+    }
+    const selected = dialog.renderRoot.querySelector<HTMLButtonElement>('.settings-nav button[aria-current="page"]');
+    selected?.click();
+    expect(dialog.onNavigate).toHaveBeenCalledExactlyOnceWith(section);
+  });
+
   it("moves focus into the labelled dialog when opened", async () => {
     const dialog = await mountDialog();
 

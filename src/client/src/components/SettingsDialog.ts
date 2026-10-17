@@ -4,6 +4,8 @@ import { customElement, property, state } from "lit/decorators.js";
 import type { AppAction } from "../actions";
 import { configApi, piPackagesApi, pluginsApi, type Machine, type MachineRuntime, type PiPackageMutationResponse, type PiPackageScope, type PiPackagesResponse, type PiWebConfigResponse, type PiWebConfigValues, type PiWebPluginsResponse } from "../api";
 import type { SettingsSection } from "../settingsRoute";
+import "./settings/SettingsModelsPanel";
+import "./settings/SettingsMcpPanel";
 import "./ModalSurface";
 import "./settings/SettingsGeneralPanel";
 import "./settings/SettingsThemePanel";
@@ -23,6 +25,9 @@ import { mergeSelectedMachineSessiondConfig } from "./settings/settingsSessiondC
 
 @customElement("settings-dialog")
 export class SettingsDialog extends LitElement {
+  @property() projectId: string | undefined;
+  @property() workspaceId: string | undefined;
+  @property({ attribute: false }) onModelsSaved?: () => void | Promise<void>;
   @property({ attribute: false }) section: SettingsSection = "general";
   @property({ attribute: false }) actions: AppAction[] = [];
   @property({ attribute: false }) themes: readonly QualifiedThemeContribution[] = [];
@@ -117,6 +122,8 @@ export class SettingsDialog extends LitElement {
         <div class="settings-body">
           <nav class="settings-nav" aria-label="Settings sections">
             ${this.renderNavButton("general", t("SettingsDialog.general.9d6707b6"), t("SettingsDialog.gateway_selected_machine.97827f75"))}
+            ${this.renderNavButton("models", t("modelsSettings.heading"), t("SettingsDialog.selected_machine.60ce1c88"))}
+            ${this.renderNavButton("mcp", t("ui.settings.mcp"), t("SettingsDialog.selected_machine.60ce1c88"))}
             ${this.renderNavButton("sessiond", t("SettingsDialog.session_daemon.a8a7922c"), t("SettingsDialog.selected_machine.60ce1c88"))}
             ${this.renderNavButton("packages", t("SettingsDialog.pi_packages.91f80e11"), t("SettingsDialog.selected_machine.600984f6"))}
             ${this.renderNavButton("plugins", t("SettingsDialog.pi_web_plugins.e0e9e6b6"), t("SettingsDialog.selected_machine.17c9b7b9"))}
@@ -131,6 +138,8 @@ export class SettingsDialog extends LitElement {
   }
 
   private renderActiveSection(): TemplateResult {
+    if (this.section === "models") return html`<settings-models-panel .machineId=${this.settingsTarget().id} .targetLabel=${settingsMachineTargetLabel(this.settingsTarget())} .onConfigurationSaved=${this.onModelsSaved}></settings-models-panel>`;
+    if (this.section === "mcp") return html`<settings-mcp-panel .machineId=${this.settingsTarget().id} .projectId=${this.projectId} .workspaceId=${this.workspaceId}></settings-mcp-panel>`;
     // Keep the section -> panel routing in sync with the public
     // `activeSettingsPanelTag` seam below, which tests assert against instead of
     // scraping this template's markup.
@@ -680,6 +689,8 @@ function errorMessage(error: unknown): string {
 }
 
 export type SettingsPanelTag =
+  | "settings-models-panel"
+  | "settings-mcp-panel"
   | "settings-general-panel"
   | "settings-sessiond-panel"
   | "settings-packages-panel"
@@ -696,6 +707,8 @@ export type SettingsPanelTag =
  */
 export function activeSettingsPanelTag(section: SettingsSection): SettingsPanelTag {
   switch (section) {
+    case "models": return "settings-models-panel";
+    case "mcp": return "settings-mcp-panel";
     case "sessiond":
       return "settings-sessiond-panel";
     case "packages":

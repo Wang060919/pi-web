@@ -76,6 +76,22 @@ describe("settings config drafts", () => {
     expect(gatewayServerConfigFromDraft(draft)).not.toHaveProperty("defaultStreamingBehavior");
   });
 
+  it("preserves the default theme while replacing or clearing only the gateway fields", () => {
+    const base = {
+      host: "old.local", port: 8504, allowedHosts: ["old.local"],
+      defaultTheme: { themeId: "themes:pi-web-light", auto: true },
+      plugins: { info: { enabled: false } },
+    };
+    expect(gatewayServerConfigFromDraft({ host: "new.local", port: "9000", allowedHostsMode: "all", allowedHostsText: "" }, base)).toEqual({
+      ...base, host: "new.local", port: 9000, allowedHosts: true,
+    });
+    expect(gatewayServerConfigFromDraft({ host: "", port: "", allowedHostsMode: "list", allowedHostsText: "" }, base)).toEqual({
+      defaultTheme: base.defaultTheme, plugins: base.plugins, allowedHosts: [],
+    });
+    expect(base.host).toBe("old.local");
+    expect(base.port).toBe(8504);
+  });
+
   it("builds selected-machine access/upload patches only from selected-machine-safe fields", () => {
     const patch = machineAccessConfigPatchFromDraft({
       allowedPathsText: "/tmp\n~/SDKs\n",

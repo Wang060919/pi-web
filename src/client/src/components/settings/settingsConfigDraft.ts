@@ -40,7 +40,10 @@ export function machineAccessDraftFromConfig(config: PiWebConfigValues): Machine
 }
 
 export function gatewayServerConfigFromDraft(draft: GatewayServerConfigDraft, baseConfig: PiWebConfigValues = {}): PiWebConfigValues {
-  const config = preservedGatewayConfigRemainder(baseConfig);
+  // Gateway saves replace the complete config; clear only fields this draft owns.
+  const config = { ...baseConfig };
+  delete config.host;
+  delete config.port;
   const host = draft.host.trim();
   const port = draft.port.trim();
   if (host !== "") config.host = host;
@@ -61,22 +64,6 @@ export function machineAccessConfigPatchFromDraft(draft: MachineAccessConfigDraf
     pathAccess: { allowedPaths },
     uploads: uploadDefaultFolder === "" ? {} : { defaultFolder: uploadDefaultFolder },
     attachments: attachmentDefaultFolder === "" ? {} : { defaultFolder: attachmentDefaultFolder },
-  };
-}
-
-function preservedGatewayConfigRemainder(baseConfig: PiWebConfigValues): PiWebConfigValues {
-  return {
-    ...(baseConfig.shortcuts === undefined ? {} : { shortcuts: baseConfig.shortcuts }),
-    ...(baseConfig.defaultStreamingBehavior === undefined ? {} : { defaultStreamingBehavior: baseConfig.defaultStreamingBehavior }),
-    ...(baseConfig.plugins === undefined ? {} : { plugins: baseConfig.plugins }),
-    ...(baseConfig.pathAccess === undefined ? {} : { pathAccess: baseConfig.pathAccess }),
-    ...(baseConfig.uploads === undefined ? {} : { uploads: baseConfig.uploads }),
-    ...(baseConfig.attachments === undefined ? {} : { attachments: baseConfig.attachments }),
-    ...(baseConfig.maxUploadBytes === undefined ? {} : { maxUploadBytes: baseConfig.maxUploadBytes }),
-    ...(baseConfig.spawnSessions === undefined ? {} : { spawnSessions: baseConfig.spawnSessions }),
-    ...(baseConfig.subsessions === undefined ? {} : { subsessions: baseConfig.subsessions }),
-    ...(baseConfig.askUser === undefined ? {} : { askUser: baseConfig.askUser }),
-    ...(baseConfig.agent === undefined ? {} : { agent: baseConfig.agent }),
   };
 }
 
