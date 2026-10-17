@@ -2,7 +2,8 @@ import { Readable } from "node:stream";
 import Fastify, { type FastifyInstance } from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
 import { WebSocket, WebSocketServer } from "ws";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { SessionDaemonRequestOptions } from "../../sessiond/sessionDaemonClient.js";
 import { registerSessionProxyRoutes } from "./sessionProxyRoutes";
 
 let app: FastifyInstance;
@@ -17,6 +18,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await app.close();
   await daemon.close();
 });
@@ -53,6 +55,48 @@ describe.each(["/api", "/api/machines/local"])("project mutation proxy at %s", (
 });
 
 describe("machine-scoped session proxy routes", () => {
+  it.each(["/api", "/api/machines/local"])("cancels daemon search when the HTTP client disconnects through %s", async (prefix) => {
+    let started = (): void => undefined;
+    let release = (): void => undefined;
+    let observedAbort = (): void => undefined;
+    let signal: AbortSignal | undefined;
+    const called = new Promise<void>((resolve) => { started = resolve; });
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    const aborted = new Promise<void>((resolve) => { observedAbort = resolve; });
+    vi.spyOn(daemon, "request").mockImplementationOnce(async (_method, _path, _body, options) => {
+      signal = options?.signal;
+      signal?.addEventListener("abort", () => { observedAbort(); release(); }, { once: true });
+      started();
+      await held;
+      return { statusCode: 200, headers: { "content-type": "application/json" }, body: '{"results":[]}' };
+    });
+    await app.listen({ host: "127.0.0.1", port: 0 });
+    const controller = new AbortController();
+    const pending = fetch(`${serverUrl(app).replace("ws://", "http://")}${prefix}/sessions/search?q=needle`, { signal: controller.signal })
+      .then(() => undefined, (error: unknown) => error);
+    try {
+      await called;
+      expect(signal).toBeInstanceOf(AbortSignal);
+      expect(signal?.aborted).toBe(false);
+      controller.abort();
+      expect(await pending).toBeInstanceOf(Error);
+      await aborted;
+      expect(signal?.aborted).toBe(true);
+      expect(signal?.reason).toMatchObject({ name: "AbortError", message: "HTTP request cancelled" });
+    } finally {
+      controller.abort();
+      release();
+      await pending;
+    }
+  });
+
+  it.each(["POST", "PUT", "DELETE"] as const)("does not attach disconnect cancellation to accepted %s session mutations", async (method) => {
+    const response = await app.inject({ method, url: "/api/machines/local/sessions/session-1", payload: { cwd: "/repo" } });
+
+    expect(response.statusCode).toBe(200);
+    expect(daemon.requestOptions).toEqual([undefined]);
+  });
+
   it("strips the machine prefix before forwarding session requests", async () => {
     const response = await app.inject({ method: "GET", url: "/api/machines/local/sessions?cwd=/repo" });
 
@@ -244,6 +288,7 @@ interface FakeSessionDaemonResponse {
 
 class FakeSessionDaemon {
   readonly requests: { method: string; path: string; body: unknown }[] = [];
+  readonly requestOptions: (SessionDaemonRequestOptions | undefined)[] = [];
   readonly websocketPaths: string[] = [];
   private readonly queuedResponses: (FakeSessionDaemonResponse | Error)[] = [];
   private readonly sockets = new Set<WebSocket>();
@@ -269,8 +314,9 @@ class FakeSessionDaemon {
     this.queuedResponses.push(error);
   }
 
-  request(method: string, path: string, body?: unknown) {
+  request(method: string, path: string, body?: unknown, options?: SessionDaemonRequestOptions) {
     this.requests.push({ method, path, body });
+    this.requestOptions.push(options);
     const response = this.takeResponse();
     return Promise.resolve({ ...response, body: response.body.toString() });
   }

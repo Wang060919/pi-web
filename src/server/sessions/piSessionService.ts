@@ -1100,6 +1100,8 @@ function createPiWebEditToolDefinition(cwd: string) {
 }
 
 export interface PiSessionServiceDependencies {
+  /** Synchronous admission before any construction await or model capture. */
+  beforeRuntimeConstruction?: () => void;
   sessionEvents?: PiSessionEventConnections;
   agentDir: string;
   sessionManager: PiSessionManagerGateway;
@@ -1243,6 +1245,7 @@ export class PiSessionService implements SessionRouteService {
   private readonly createRuntime: PiWebCreateAgentSessionRuntimeFactory;
   private readonly createAgentRuntime: CreateAgentRuntime;
   private readonly modelRuntime: ModelRuntime;
+  private readonly beforeRuntimeConstruction: (() => void) | undefined;
   private readonly workspaceActivity: Pick<WorkspaceActivityService, "applySessionStatus" | "applySessionActivity" | "removeSession" | "reconcileSessionActivity"> | undefined;
   private readonly spawnTargets: SpawnTargetResolver | undefined;
   private readonly logger: PiSessionLogger;
@@ -1277,6 +1280,7 @@ export class PiSessionService implements SessionRouteService {
     this.agentDir = deps.agentDir;
     this.sessionManager = deps.sessionManager;
     this.modelRuntime = deps.modelRuntime;
+    this.beforeRuntimeConstruction = deps.beforeRuntimeConstruction;
     this.spawnTargets = deps.spawnTargets;
     this.logger = deps.logger ?? noopLogger;
     this.now = deps.now ?? (() => new Date());
@@ -4042,6 +4046,7 @@ export class PiSessionService implements SessionRouteService {
     options: CreateSessionRuntimeOptions,
     startup: SessionStartupProgressReporter,
   ): Promise<ActiveSession<PiSessionRuntime>> {
+    this.beforeRuntimeConstruction?.();
     startup.report(STARTUP_PHASE_RUNTIME);
     const delegationToolsEnabled = options.creationProvenance === undefined
       && await sessionAllowsDelegationTools(sessionManager, this.sessionManager);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { WorkspaceActivityService } from "../activity/workspaceActivityService.js";
+import { ModelConfigurationRuntimeGate } from "../models/modelConfigurationRuntimeGate.js";
 import { SessionNotificationStore } from "../sessions/sessionNotificationStore.js";
 import { SessionUnreadStore } from "../sessions/sessionUnreadStore.js";
 import { PiSessionService, type PiSessionServiceDependencies } from "../sessions/piSessionService.js";
@@ -59,6 +60,24 @@ async function startupDetails(deps: PiSessionServiceDependencies): Promise<strin
 }
 
 describe("sessiond session service dependency assembly", () => {
+  it("applies model-save admission before any session runtime is constructed", async () => {
+    const gate = new ModelConfigurationRuntimeGate(() => []);
+    const dependencies = sessionServiceDependencies(daemonCollaborators({ beforeRuntimeConstruction: () => { gate.beforeRuntimeConstruction(); } }));
+    let finishSave = () => { /* assigned by the synchronous promise executor */ };
+    const pending = new Promise<void>((resolve) => { finishSave = resolve; });
+    const save = gate.save(() => pending);
+    await expect(startupDetails(dependencies)).rejects.toThrow("Model configuration is being saved");
+    finishSave(); await save;
+    const starting = startupDetails(dependencies);
+    // Admission latches before the first construction await, while activeCount
+    // can still be zero and extension/session startup has not completed.
+    expect(() => { gate.assertTransition({ providers: { existing: { apiKey: "old-key" } } }, { providers: { existing: { apiKey: "new-key" } } }); }).toThrow("Existing provider connections cannot change");
+    await starting;
+    // Even the successfully disposed session leaves retained model identities
+    // unsafe to retarget within this daemon epoch.
+    expect(() => { gate.assertTransition({ providers: { existing: { apiKey: "old-key" } } }, { providers: { existing: { apiKey: "new-key" } } }); }).toThrow("Existing provider connections cannot change");
+  });
+
   it("reports a concurrent provider model list refresh to a waiting user", async () => {
     // The note is only reachable in the product because the assembly hands the
     // refresher to the session service. Asserting the note rather than the

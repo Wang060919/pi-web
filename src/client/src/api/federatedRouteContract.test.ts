@@ -149,12 +149,29 @@ describe("federated route contract", () => {
 
   it("allowlists model catalog reads and scope edits without a new WebSocket", () => {
     expect(FEDERATED_HTTP_ROUTES.filter((route) => route.path.includes("/models"))).toEqual([
+      { method: "GET", path: "/models/configuration" },
+      { method: "PUT", path: "/models/configuration", timeoutMs: 30_000 },
+      { method: "POST", path: "/models/configuration/discover", timeoutMs: 30_000 },
+      { method: "POST", path: "/models/configuration/test", timeoutMs: 30_000 },
       { method: "GET", path: "/sessions/:sessionId/models" },
       { method: "GET", path: "/sessions/:sessionId/models/catalog" },
       { method: "POST", path: "/sessions/:sessionId/models/enabled" },
       { method: "POST", path: "/sessions/:sessionId/models/scope" },
     ]);
     expect(FEDERATED_WEBSOCKET_ROUTES.some((path) => path.includes("models"))).toBe(false);
+  });
+
+  it("federates saved-history reads and MCP management without overlapping server and OAuth-flow paths", () => {
+    expect(FEDERATED_HTTP_ROUTES).toEqual(expect.arrayContaining([
+      { method: "GET", path: "/sessions/search", propagateCancellation: true },
+      { method: "GET", path: "/sessions/:sessionId/history-entry", propagateCancellation: true },
+      { method: "GET", path: "/sessions/:sessionId/export", responseBodyLimit: 256 * 1024 * 1024 },
+      { method: "POST", path: "/mcp/:name/test", timeoutMs: 20_000 },
+      { method: "GET", path: "/mcp/auth/flows/:flowId" },
+      { method: "POST", path: "/mcp/auth/flows/:flowId" },
+      { method: "DELETE", path: "/mcp/auth/flows/:flowId" },
+    ]));
+    expect(FEDERATED_HTTP_ROUTES.map((route) => route.path)).not.toContain("/mcp/login/:flowId");
   });
 
   it("covers machine-scoped client HTTP calls with remote proxy routes", async () => {

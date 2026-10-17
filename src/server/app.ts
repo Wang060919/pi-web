@@ -8,6 +8,9 @@ import fastifyWebsocket from "@fastify/websocket";
 import { ProjectStore } from "./storage/projectStore.js";
 import { NavigationPreferenceStore } from "./storage/navigationPreferenceStore.js";
 import { registerNavigationPreferenceRoutes } from "./navigationPreferenceRoutes.js";
+import { registerUsageOverviewProxyRoutes, registerUsageOverviewRoutes } from "./usageOverviewRoutes.js";
+import { registerMcpManagementRoutes } from "./mcpManagementRoutes.js";
+import type { UsageOverviewService } from "./sessions/usageOverviewService.js";
 import { ProjectService } from "./projects/projectService.js";
 import type { WorkspaceCatalog } from "./workspaces/workspaceCatalog.js";
 import { SessionDaemonWorkspaceCatalog } from "./workspaces/sessionDaemonWorkspaceCatalog.js";
@@ -47,6 +50,7 @@ import type { Project, WorkspaceEffectiveConfig, WorkspaceProviderResolution } f
 export interface AppDependencies {
   projects?: ProjectService;
   navigationPreferences?: Pick<NavigationPreferenceStore, "get" | "put">;
+  usageOverview?: Pick<UsageOverviewService, "read">;
   workspaceCatalog?: WorkspaceCatalog;
   machines?: MachineService;
   sessionDaemon?: SessionProxyDaemon;
@@ -235,6 +239,11 @@ export async function buildApp(deps: AppDependencies = {}): Promise<FastifyInsta
   registerNavigationPreferenceRoutes(app, navigationPreferences);
   registerNavigationPreferenceRoutes(app, navigationPreferences, "/api/machines/local");
 
+  for (const prefix of ["/api", "/api/machines/local"]) {
+    if (deps.usageOverview === undefined) registerUsageOverviewProxyRoutes(app, sessionDaemon, prefix);
+    else registerUsageOverviewRoutes(app, deps.usageOverview, prefix);
+  }
+
   registerMachineRoutes(app, machines);
   registerMachinePluginProxyRoutes(app, machines);
 
@@ -252,6 +261,9 @@ export async function buildApp(deps: AppDependencies = {}): Promise<FastifyInsta
   };
   registerProjectTrustRoutes(app, projects, workspaces, projectTrustDeps);
   registerProjectTrustRoutes(app, projects, workspaces, projectTrustDeps, "/api/machines/local");
+  const mcpManagement = { ...projectTrustDeps, projects, workspaces };
+  registerMcpManagementRoutes(app, mcpManagement);
+  registerMcpManagementRoutes(app, mcpManagement, "/api/machines/local");
   registerWorkspaceDeletionRoutes(app, sessionDaemon);
   registerWorkspaceDeletionRoutes(app, sessionDaemon, "/api/machines/local");
 

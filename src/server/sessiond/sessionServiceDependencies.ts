@@ -8,6 +8,7 @@ import type { PiSessionServiceDependencies } from "../sessions/piSessionService.
  * session service.
  */
 export interface SessionServiceDependencyInput {
+  beforeRuntimeConstruction?: NonNullable<PiSessionServiceDependencies["beforeRuntimeConstruction"]>;
   agentDir: string;
   /** Daemon-lifetime session archive, constructed against the captured daemon environment. */
   archiveStore: NonNullable<PiSessionServiceDependencies["archiveStore"]>;
@@ -47,6 +48,7 @@ export interface SessionServiceDependencyInput {
  */
 export function sessionServiceDependencies(input: SessionServiceDependencyInput): PiSessionServiceDependencies {
   return {
+    ...(input.beforeRuntimeConstruction === undefined ? {} : { beforeRuntimeConstruction: input.beforeRuntimeConstruction }),
     modelRuntime: input.modelRuntime,
     agentDir: input.agentDir,
     archiveStore: input.archiveStore,

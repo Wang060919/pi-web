@@ -8,6 +8,7 @@ import { pathToFileURL } from "node:url";
 import type { Readable } from "node:stream";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { buildTerminalPackage } from "../../../scripts/build-plugins.mjs";
+import { SessionDaemonClient } from "../../sessiond/sessionDaemonClient.js";
 
 type FixtureChild = ChildProcessByStdio<null, Readable, Readable>;
 
@@ -37,6 +38,43 @@ afterEach(async () => {
 });
 
 describe("sessiond persisted server plugin recovery", () => {
+  it("meters history using the captured daemon session directory and archive store", async () => {
+    const root = await createDaemonFixture();
+    const sessionsDir = join(root, "agent", "sessions");
+    const cwd = join(root, "workspace");
+    await mkdir(sessionsDir, { recursive: true });
+    await mkdir(join(root, "data"), { recursive: true });
+    await writeFile(join(root, "config.json"), JSON.stringify({ serverPlugins: { safeStart: "none" } }));
+    const transcript = (id: string, input: number): string => [
+      { type: "session", id, timestamp: "2026-10-16T00:00:00Z", cwd },
+      { type: "message", id: `${id}-reply`, timestamp: "2026-10-16T01:00:00Z", message: { role: "assistant", provider: "test", model: "model", content: "fixture", usage: { input, output: 0, cacheRead: 0, cacheWrite: 0 } } },
+    ].map((entry) => JSON.stringify(entry)).join("\n");
+    const archivePath = join(root, "archived.jsonl");
+    await writeFile(join(sessionsDir, "active.jsonl"), transcript("active", 111));
+    await writeFile(archivePath, transcript("archived", 222));
+    await writeFile(join(root, "data", "archived-sessions.json"), JSON.stringify({ sessions: [{
+      sessionId: "archived", cwd, archivedAt: "2026-10-16T02:00:00Z", archivePath,
+      originalPath: join(sessionsDir, "archived.jsonl"),
+    }] }));
+
+    const child = spawnFixtureDaemon(root);
+    const output = await waitForOutput(child, "Server listening at", 15_000);
+    const address = /Server listening at (http:\/\/127\.0\.0\.1:\d+)/u.exec(output)?.[1];
+    if (address === undefined) throw new Error("Expected the isolated daemon's listening address");
+    const daemon = new SessionDaemonClient({ baseUrl: address });
+    const response = await daemon.request("GET", `/usage-overview?${new URLSearchParams({ cwd, timeZone: "UTC" }).toString()}`);
+    expect(response.statusCode).toBe(200);
+    const value: unknown = JSON.parse(response.body);
+    if (!isRecord(value) || !Array.isArray(value["records"])) throw new Error("Expected usage response");
+    const records: unknown[] = value["records"];
+    const inputTokens = records.reduce<number>((sum, entry) => {
+      if (!isRecord(entry) || !isRecord(entry["tokens"]) || typeof entry["tokens"]["input"] !== "number") throw new Error("Expected input-token aggregate");
+      return sum + entry["tokens"]["input"];
+    }, 0);
+    expect(inputTokens).toBe(333);
+    expect(value["warnings"]).toEqual([]);
+  }, 30_000);
+
   it("rejects cleanup of the live Terminal bundle and unowned temporary directories", () => {
     expect(() => { assertOwnedRoot(liveTerminalRoot); }).toThrow("Refusing to clean unowned directory");
     expect(() => { assertOwnedRoot(join(tmpdir(), "pi-web-sessiond-plugin-unowned")); }).toThrow("Refusing to clean unowned directory");

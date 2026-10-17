@@ -19,9 +19,9 @@ export interface SessionProxyDaemon {
 }
 
 export function registerSessionProxyRoutes(app: FastifyInstance, daemon: SessionProxyDaemon = new SessionDaemonClient(), prefix = "/api"): void {
-  const proxy = async (request: { method: string; url: string; body?: unknown }, reply: FastifyReply) => {
+  const proxy = async (request: { method: string; url: string; body?: unknown }, reply: FastifyReply, options?: SessionDaemonRequestOptions) => {
     try {
-      const upstream = await daemon.request(request.method, stripPrefix(request.url, prefix), request.body);
+      const upstream = await daemon.request(request.method, stripPrefix(request.url, prefix), request.body, options);
       reply.code(upstream.statusCode);
       const contentType = upstream.headers["content-type"];
       if (contentType !== undefined && contentType !== "") reply.header("content-type", contentType);
@@ -31,6 +31,17 @@ export function registerSessionProxyRoutes(app: FastifyInstance, daemon: Session
       return undefined;
     }
   };
+
+  // Search is read-only and cooperatively cancellable. Keep mutation requests
+  // independent of browser disconnects once the daemon has accepted them.
+  app.get(`${prefix}/sessions/search`, async (request, reply) => {
+    const cancellation = requestCancellation(request, reply);
+    try {
+      return await proxy(request, reply, { signal: cancellation.signal });
+    } finally {
+      cancellation.dispose();
+    }
+  });
 
   // Image responses cross this boundary as bytes, never as JSON or UTF-8 text.
   app.get(`${prefix}/sessions/:sessionId/media/:mediaId`, async (request, reply) => {
@@ -52,6 +63,17 @@ export function registerSessionProxyRoutes(app: FastifyInstance, daemon: Session
   });
 
   app.get(`${prefix}/sessiond/health`, (_request, reply) => proxy({ method: "GET", url: `${prefix}/health` }, reply));
+  // HTML downloads remain text and retain their disposition across the daemon boundary.
+  app.get(`${prefix}/sessions/:sessionId/export`, async (request, reply) => {
+    try {
+      const upstream = await daemon.request("GET", stripPrefix(request.url, prefix));
+      for (const name of ["content-type", "content-disposition", "cache-control", "x-content-type-options"]) {
+        const value = upstream.headers[name];
+        if (value !== undefined && value !== "") reply.header(name, value);
+      }
+      return await reply.code(upstream.statusCode).send(upstream.body);
+    } catch (error) { requestFailed(reply, error); return undefined; }
+  });
   app.get(`${prefix}/sessiond/runtime`, (_request, reply) => proxy({ method: "GET", url: `${prefix}/runtime` }, reply));
 
   app.get<{ Params: { sessionId: string } }>(`${prefix}/sessions/:sessionId/events`, { websocket: true }, (socket, request) => {
@@ -74,6 +96,8 @@ export function registerSessionProxyRoutes(app: FastifyInstance, daemon: Session
   app.all(`${prefix}/notices/dismiss`, (request, reply) => proxy(request, reply));
   app.all(`${prefix}/auth`, (request, reply) => proxy(request, reply));
   app.all(`${prefix}/auth/*`, (request, reply) => proxy(request, reply));
+  app.all(`${prefix}/models/configuration`, (request, reply) => proxy(request, reply));
+  app.all(`${prefix}/models/configuration/*`, (request, reply) => proxy(request, reply));
   app.all(`${prefix}/sessions`, (request, reply) => proxy(request, reply));
   app.all(`${prefix}/sessions/*`, (request, reply) => proxy(request, reply));
 }

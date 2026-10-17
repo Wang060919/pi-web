@@ -20,6 +20,13 @@ import { createPiSessionManagerGateway } from "./sessions/piSessionManagerGatewa
 import { registerSessionRoutes } from "./sessions/sessionRoutes.js";
 import { SessionNotificationStore } from "./sessions/sessionNotificationStore.js";
 import { SessionArchiveStore, defaultSessionArchiveFilePath } from "./sessions/sessionArchiveStore.js";
+import { UsageOverviewService } from "./sessions/usageOverviewService.js";
+import { registerUsageOverviewRoutes } from "./usageOverviewRoutes.js";
+import { SessionHistoryService } from "./sessions/sessionHistoryService.js";
+import { registerSessionHistoryRoutes } from "./sessionHistoryRoutes.js";
+import { ModelConfigurationService } from "./models/modelConfigurationService.js";
+import { ModelConfigurationRuntimeGate } from "./models/modelConfigurationRuntimeGate.js";
+import { registerModelConfigurationRoutes } from "./modelConfigurationRoutes.js";
 import { FileSessionUnreadPersistence, SessionUnreadStore, defaultSessionUnreadFilePath } from "./sessions/sessionUnreadStore.js";
 import { ProjectScopedSpawnTargetResolver } from "./sessions/spawnTargetResolver.js";
 import { ProjectService } from "./projects/projectService.js";
@@ -247,6 +254,7 @@ async function createSessionDaemonRuntime() {
     // still mutable, then freeze every later extension-provider mutation before
     // any real session can load project resources.
     await bootstrapAndFreezeGlobalExtensionProviders(auth.runtime, activeAgentProfile.dir, app.log);
+    const modelConfigurationGate = new ModelConfigurationRuntimeGate(() => auth.runtime.getProviders().map((provider) => provider.id));
     // The shared model runtime is constructed offline so request paths never
     // wait on provider-catalog fetches; this is the single bounded network
     // refresher, and auth changes (login/logout) ask it for a prompt run. It
@@ -302,10 +310,17 @@ async function createSessionDaemonRuntime() {
     projectLifecycleForFailedConstruction = projectLifecycle;
     const projectWorkspaceDeps = { projects, workspaces: workspaceProviders };
     const spawnTargets = config.spawnSessions ? new ProjectScopedSpawnTargetResolver(projectWorkspaceDeps) : undefined;
+    const archiveStore = new SessionArchiveStore(defaultSessionArchiveFilePath(daemonEnvironment));
+    const usageOverview = new UsageOverviewService({
+      agentDir: () => Promise.resolve(activeAgentProfile.dir),
+      env: daemonEnvironment,
+      archiveStore,
+    });
     const sessions = new PiSessionService(eventHub, sessionServiceDependencies({
+      beforeRuntimeConstruction: () => { modelConfigurationGate.beforeRuntimeConstruction(); },
       modelRuntime: auth.runtime,
       agentDir: activeAgentProfile.dir,
-      archiveStore: new SessionArchiveStore(defaultSessionArchiveFilePath(daemonEnvironment)),
+      archiveStore,
       workspaceActivity,
       logger: app.log,
       ...(spawnTargets === undefined ? {} : { spawnTargets }),
@@ -415,7 +430,7 @@ async function createSessionDaemonRuntime() {
       await stateOwnership.release();
     };
     projectLifecycle.scheduleCleanup(); // One delayed pass for existing persisted unread, if any.
-    return { eventHub, machineStatus, statusAttribution, workspaceChanges, projectLifecycle, auth, sessions, serverNotices, unreadStore, activeAgentProfile, runtimeComponent, catalogRefresher, serverPlugins, projects, workspaceProviders, pluginBackends, workspaceProviderRuntime, workspaceRemovals, shutdown };
+    return { eventHub, machineStatus, statusAttribution, workspaceChanges, projectLifecycle, auth, sessions, usageOverview, serverNotices, unreadStore, activeAgentProfile, runtimeComponent, catalogRefresher, serverPlugins, projects, workspaceProviders, pluginBackends, workspaceProviderRuntime, workspaceRemovals, modelConfigurationGate, shutdown };
   } catch (error) {
     await projectLifecycleForFailedConstruction?.closeAll();
     try {
@@ -432,12 +447,33 @@ async function createSessionDaemonRuntime() {
   }
 }
 
-function registerSessionDaemonRoutes({ eventHub, machineStatus, statusAttribution, workspaceChanges, projectLifecycle, auth, sessions, serverNotices, runtimeComponent, projects, workspaceProviders, pluginBackends, workspaceProviderRuntime, workspaceRemovals }: SessionDaemonRuntime): void {
+function registerSessionDaemonRoutes({ eventHub, machineStatus, statusAttribution, workspaceChanges, projectLifecycle, auth, sessions, usageOverview, serverNotices, runtimeComponent, projects, workspaceProviders, pluginBackends, workspaceProviderRuntime, workspaceRemovals, modelConfigurationGate }: SessionDaemonRuntime): void {
   registerProjectMutationRoutes(app, projectLifecycle);
   registerMachineStatusRoutes(app, machineStatus);
   registerServerNoticeRoutes(app, serverNotices);
   registerAuthRoutes(app, auth);
+  registerModelConfigurationRoutes(app, new ModelConfigurationService({
+    agentDir: activeAgentProfile.dir,
+    runtimeGate: modelConfigurationGate,
+    onSaved: async () => { await auth.runtime.refresh({ allowNetwork: false }); },
+  }));
   registerSessionRoutes(app, sessions, eventHub);
+  registerUsageOverviewRoutes(app, usageOverview, "");
+  const historyArchives = new SessionArchiveStore(defaultSessionArchiveFilePath(daemonEnvironment));
+  registerSessionHistoryRoutes(app, new SessionHistoryService({
+    listSessions: (cwd) => sessions.list(cwd),
+    resolveTranscriptPath: async (session) => {
+      if (session.archived !== true) return session.path;
+      const archived = (await historyArchives.list()).find((item) => item.sessionId === session.id && item.cwd === session.cwd);
+      if (archived?.archivePath === undefined || archived.archivePath === "") throw new Error("Archived session transcript is unavailable");
+      return archived.archivePath;
+    },
+    listCwds: async () => {
+      const configured = await projects.list();
+      const roots = await Promise.all(configured.map(async (project) => [project.path, ...(await workspaceProviders.list(project)).map((workspace) => workspace.path)]));
+      return [...new Set(roots.flat())];
+    },
+  }));
   registerWorkspaceCatalogRoutes(app, {
     projects,
     workspaces: workspaceProviders,
