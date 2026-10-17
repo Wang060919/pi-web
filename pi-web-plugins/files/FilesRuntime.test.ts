@@ -62,6 +62,56 @@ describe("FilesRuntime tree and selection", () => {
     });
   });
 
+  it("drops disappeared expanded directories and their descendants without blocking refresh", async () => {
+    const directories: Record<string, FileTreeEntry[]> = {
+      "": [directoryEntry("src"), fileEntry("new.txt")],
+      src: [directoryEntry("src/kept"), fileEntry("src/new.ts")],
+      "src/kept": [fileEntry("src/kept/current.ts")],
+    };
+    const listFiles = vi.fn<WorkspaceFilesCapabilityV1["listFiles"]>((path) => {
+      const entries = directories[path];
+      return entries === undefined
+        ? Promise.reject(new Error(`Path does not exist: ${path}`))
+        : Promise.resolve(treeResponse(path, entries));
+    });
+    const context = createContext({ files: createFiles({ listFiles }) });
+    const runtime = new FilesRuntime();
+    const scope = runtime.snapshot(context);
+    scope.fileTree = [directoryEntry("gone"), directoryEntry("src"), fileEntry("old.txt")];
+    scope.expandedDirs = {
+      gone: [directoryEntry("gone/nested")],
+      "gone/nested": [],
+      src: [directoryEntry("src/gone"), directoryEntry("src/kept")],
+      "src/gone": [],
+      "src/kept": [fileEntry("src/kept/stale.ts")],
+    };
+    scope.treeStale = true;
+
+    await runtime.refreshFiles(context);
+    await runtime.refreshFiles(context);
+
+    expect(scope.fileTree).toEqual(directories[""]);
+    expect(scope.expandedDirs).toEqual({ src: directories["src"], "src/kept": directories["src/kept"] });
+    expect(scope.error).toBeUndefined();
+    expect(scope.treeStale).toBe(false);
+    expect(listFiles.mock.calls.map(([path]) => path)).toEqual(["", "src", "src/kept", "", "src", "src/kept"]);
+  });
+
+  it("keeps access failures visible for expanded directories still listed by their parent", async () => {
+    const listFiles = vi.fn<WorkspaceFilesCapabilityV1["listFiles"]>((path) => path === ""
+      ? Promise.resolve(treeResponse("", [directoryEntry("src")]))
+      : Promise.reject(new Error("Permission denied: src")));
+    const context = createContext({ files: createFiles({ listFiles }) });
+    const runtime = new FilesRuntime();
+    const scope = runtime.snapshot(context);
+    scope.expandedDirs = { src: [fileEntry("src/old.ts")] };
+
+    await runtime.refreshFiles(context);
+
+    expect(scope.error).toBe("Permission denied: src");
+    expect(scope.expandedDirs).toEqual({ src: [fileEntry("src/old.ts")] });
+  });
+
   it("aborts tree work when its last observer disconnects and refreshes on reconnect", async () => {
     const trees = deferredTrees();
     const context = createContext({ files: createFiles({ listFiles: trees.fn }) });

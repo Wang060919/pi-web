@@ -168,13 +168,21 @@ export class FilesRuntime {
     this.notify(scope);
     try {
       const root = await files.listFiles("", { signal: abort.signal });
-      const expandedEntries = await Promise.all(Object.keys(scope.expandedDirs).map(async (path) => {
-        const response = await files.listFiles(path, { signal: abort.signal });
-        return [path, response.entries] as const;
-      }));
+      const expandedDirs: Record<string, FileTreeEntry[]> = {};
+      // Parent listings determine which cached expansions still exist. A removed
+      // directory must not block the new tree, while real read errors still surface.
+      const refreshExpanded = async (entries: readonly FileTreeEntry[]): Promise<void> => {
+        await Promise.all(entries.map(async (entry) => {
+          if (entry.type !== "directory" || scope.expandedDirs[entry.path] === undefined || abort.signal.aborted) return;
+          const response = await files.listFiles(entry.path, { signal: abort.signal });
+          expandedDirs[entry.path] = response.entries;
+          await refreshExpanded(response.entries);
+        }));
+      };
+      await refreshExpanded(root.entries);
       if (!this.isCurrentTreeRequest(scope, generation, abort)) return;
       scope.fileTree = root.entries;
-      scope.expandedDirs = Object.fromEntries(expandedEntries);
+      scope.expandedDirs = expandedDirs;
       scope.treeStale = false;
       delete scope.error;
     } catch (error) {
