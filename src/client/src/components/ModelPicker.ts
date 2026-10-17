@@ -639,6 +639,8 @@ export class ModelPicker extends LitElement {
     :host { position: fixed; inset: 0; z-index: 10; color: var(--pi-text); font: 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     modal-surface { --modal-surface-width: min(720px, calc(100vw - 40px)); --modal-surface-max-height: min(640px, calc(100% - 40px)); }
     header { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 0; }
+    strong { font-weight: 500; }
+    header:not(.popover-header) strong { font-size: 14px; line-height: 20px; }
     .scope-toggle { display: flex; gap: 4px; margin: 10px 12px 0; padding: 3px; border: 0; border-radius: 8px; background: var(--pi-surface); }
     .scope-toggle button { flex: 1; padding: 6px 10px; border-radius: 6px; color: var(--pi-muted); }
     .scope-toggle button[aria-pressed="true"] { background: var(--pi-selection-bg); color: var(--pi-text); }

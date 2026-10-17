@@ -126,7 +126,7 @@ export class CommandPicker extends LitElement {
     .options button.selected, .options button:hover { background: var(--pi-selection-bg); }
     small { display: block; margin-top: 4px; color: var(--pi-muted); }
     .empty { padding: 24px; color: var(--pi-muted); text-align: center; }
-    button:not(:disabled):hover { background: var(--pi-surface-hover); }
+    button:not(:disabled):not(.selected):hover { background: var(--pi-surface-hover); }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
     header strong { font-size: 14px; line-height: 20px; }
     strong { font-weight: 500; }

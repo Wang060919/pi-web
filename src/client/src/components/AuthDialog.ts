@@ -290,7 +290,7 @@ export class AuthDialog extends LitElement {
     .inline-options button { display: grid; gap: 2px; text-align: left; }
     .inline-options small { color: var(--pi-muted); }
     em { color: var(--pi-success); font-style: normal; font-size: 12px; }
-    button:not(:disabled):hover { background: var(--pi-surface-hover); }
+    button:not(:disabled):not(.selected):hover { background: var(--pi-surface-hover); }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
     header strong { font-size: 14px; line-height: 20px; }
     strong { font-weight: 500; }

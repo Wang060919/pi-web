@@ -216,7 +216,7 @@ export class ProjectDialog extends LitElement {
     header button { min-width: 30px; min-height: 30px; line-height: 20px; border: 0; background: transparent; color: var(--pi-muted); font-size: 22px; padding: 0 8px; }
     .primary { background: var(--pi-selection-bg); font-weight: 500; }
     button:disabled { opacity: .5; cursor: not-allowed; }
-    button:not(:disabled):hover { background: var(--pi-surface-hover); }
+    button:not(:disabled):not(.selected):hover { background: var(--pi-surface-hover); }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
     strong { font-weight: 500; }
     small { font-size: 12px; line-height: 16px; }
