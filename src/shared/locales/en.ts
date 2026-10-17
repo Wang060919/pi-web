@@ -1,5 +1,20 @@
 // English source messages. Keys are stable at the call site.
 export const messages = {
+  "navigation.search": "Search pages and tools",
+  "navigation.search_placeholder": "Search pages and tools…",
+  "navigation.search_actions": "Search pages and actions…",
+  "navigation.close": "Close",
+  "navigation.destinations": "Pages and tools",
+  "navigation.description": "Keep everyday tools close. Open other destinations here, or pin them to the tab bar.",
+  "navigation.pinned": "Pinned",
+  "navigation.more_tools": "More tools",
+  "navigation.default_tabs": "Essential tabs",
+  "navigation.show_all_tabs": "Show all tabs",
+  "navigation.mobile": "Mobile navigation",
+  "navigation.expanded": "Expanded",
+  "navigation.collapsed": "Collapsed",
+  "navigation.more": "More",
+
   "ui.fileCards.heading": "Related files",
   "ui.fileCards.open": "Open preview",
   "ui.fileCards.file": "FILE",

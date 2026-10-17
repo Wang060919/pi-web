@@ -1754,7 +1754,9 @@ export class PiWebApp extends LitElement {
         .error=${this.workspaceContentError()}
         .tool=${this.effectiveWorkspaceTool(panels)}
         .panels=${panels}
+        .hideToolTabs=${!this.isDesktopSideBySideLayout()}
         .pinnedIds=${this.navigationPreferences.pinnedIds}
+        .useDefaultPins=${this.navigationPreferences.useDefaultPins === true}
         .onShowNavigation=${this.showNavigation}
         .onSelectTool=${(tool: QualifiedContributionId) => { this.openWorkspaceTool(tool); }}
       ></workspace-panel>
@@ -2548,7 +2550,16 @@ export class PiWebApp extends LitElement {
 
   private getDefaultActions(): AppAction[] {
     const pluginActions = this.plugins.getActions(this.createPluginRuntimeContext());
-    return [...pluginActions, ...this.workspaceSurfaceActions(), ...this.sessionActions(), ...this.navigationFocusActions(), ...this.panelLayoutActions()];
+    return [...this.navigationDestinationActions(), ...pluginActions, ...this.workspaceSurfaceActions(), ...this.sessionActions(), ...this.navigationFocusActions(), ...this.panelLayoutActions()];
+  }
+
+  private navigationDestinationActions(): AppAction[] {
+    return this.availableNavigationTabs().map((tab) => ({
+      id: `app.navigation.destination.${tab.id}`,
+      title: tab.label,
+      group: t("navigation.destinations"),
+      run: () => { this.selectNavigationTab(tab.id); },
+    }));
   }
 
   private workspaceSurfaceActions(): AppAction[] {
@@ -3848,7 +3859,7 @@ export class PiWebApp extends LitElement {
     if (this.appShell.isMobileNavigationLayout && this.navigationPreferences.mobileCollapsed) return null;
     const panels = this.visibleWorkspacePanels();
     const availableTabs = this.availableNavigationTabs(panels);
-    const pinnedTabs = pinnedNavigationTabs(availableTabs, this.navigationPreferences.pinnedIds);
+    const pinnedTabs = pinnedNavigationTabs(availableTabs, this.navigationPreferences.pinnedIds, this.navigationPreferences.useDefaultPins === true);
     const selectedTab = this.selectedNavigationTab(panels);
     return html`
       <app-mobile-main-tabs

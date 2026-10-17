@@ -161,3 +161,80 @@ it("toggles icon pins and mobile layout independently, resets tabs, and uses sha
   deepActiveElement(document)?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, composed: true }));
   expect(dialog.onClose).toHaveBeenCalledOnce();
 });
+
+it("groups essential destinations before other tools and materializes their pins when customized", async () => {
+  const dialog = new NavigationDialog();
+  dialog.tabs = [
+    { id: "tasks:workspace.tasks", label: "Tasks" }, { id: "chat", label: "Chat" },
+    { id: "files:workspace.files", label: "Files" }, { id: "pi-web.terminal:workspace.terminal", label: "Terminal" },
+    { id: "info:workspace.info", label: "Info" },
+  ];
+  dialog.pinUniverse = ["navigation", ...dialog.tabs.map((tab) => tab.id)];
+  dialog.preferences = { pinnedIds: [], useDefaultPins: true, mobileCollapsed: true };
+  dialog.onPreferencesChange = (preferences) => { dialog.preferences = preferences; };
+  document.body.append(dialog);
+  await dialog.updateComplete;
+  expect([...dialog.shadowRoot?.querySelectorAll("h3") ?? []].map((heading) => heading.textContent)).toEqual(["Pinned", "More tools"]);
+  expect([...dialog.shadowRoot?.querySelectorAll(".destination-button") ?? []].map((button) => button.textContent)).toEqual(["Chat", "Files", "Terminal", "Tasks", "Info"]);
+  const pin = dialog.shadowRoot?.querySelector<HTMLButtonElement>('button[aria-label="Pin Tasks"]');
+  expect(pin?.getAttribute("aria-pressed")).toBe("false");
+  pin?.click();
+  await dialog.updateComplete;
+  expect(dialog.preferences).toEqual({
+    pinnedIds: ["navigation", "chat", "files:workspace.files", "pi-web.terminal:workspace.terminal", "tasks:workspace.tasks"],
+    useDefaultPins: false, mobileCollapsed: true,
+  });
+  expect(dialog.shadowRoot?.querySelector('button[aria-label="Pin Info"]')?.getAttribute("aria-pressed")).toBe("false");
+});
+
+it("searches contribution IDs as well as labels without making hidden tools permanent", async () => {
+  const dialog = new NavigationDialog();
+  dialog.tabs = [{ id: "chat", label: "Chat" }, { id: "tasks:workspace.tasks", label: "任务" }];
+  dialog.preferences = { pinnedIds: [], useDefaultPins: true, mobileCollapsed: false };
+  dialog.onSelect = vi.fn();
+  dialog.onPreferencesChange = vi.fn();
+  document.body.append(dialog);
+  await dialog.updateComplete;
+  const input = dialog.shadowRoot?.querySelector("input");
+  if (input == null) throw new Error("Expected navigation search");
+  input.value = "workspace.tasks";
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  await dialog.updateComplete;
+  expect(dialog.shadowRoot?.querySelector("h3")?.textContent).toBe("More tools");
+  input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, composed: true }));
+  expect(dialog.onSelect).toHaveBeenCalledWith("tasks:workspace.tasks");
+  expect(dialog.onPreferencesChange).not.toHaveBeenCalled();
+});
+
+it("offers an essential preset without changing mobile layout or the meaning of show all", async () => {
+  const dialog = new NavigationDialog();
+  dialog.tabs = [{ id: "chat", label: "Chat" }, { id: "tasks:workspace.tasks", label: "Tasks" }];
+  dialog.preferences = { pinnedIds: ["tasks:workspace.tasks"], mobileCollapsed: true };
+  dialog.onPreferencesChange = (preferences) => { dialog.preferences = preferences; };
+  document.body.append(dialog);
+  await dialog.updateComplete;
+  const presets = [...dialog.shadowRoot?.querySelectorAll<HTMLButtonElement>(".tab-presets button") ?? []];
+  presets[1]?.click();
+  await dialog.updateComplete;
+  expect(dialog.preferences).toEqual({ pinnedIds: [], mobileCollapsed: true, useDefaultPins: true });
+  expect(dialog.shadowRoot?.querySelector('button[aria-label="Pin Tasks"]')?.getAttribute("aria-pressed")).toBe("false");
+  presets[0]?.click();
+  await dialog.updateComplete;
+  expect(dialog.preferences).toEqual({ pinnedIds: [], mobileCollapsed: true, useDefaultPins: false });
+  expect([...dialog.shadowRoot?.querySelectorAll(".pin-button") ?? []].every((button) => button.getAttribute("aria-pressed") === "true")).toBe(true);
+});
+
+it("materializes a plugin-only fallback while preserving hidden main-view pins", async () => {
+  const dialog = new NavigationDialog();
+  dialog.tabs = [{ id: "custom:workspace.one", label: "One" }, { id: "custom:workspace.two", label: "Two" }];
+  dialog.pinUniverse = ["navigation", "chat", ...dialog.tabs.map((tab) => tab.id)];
+  dialog.preferences = { pinnedIds: [], mobileCollapsed: false, useDefaultPins: true };
+  dialog.onPreferencesChange = (preferences) => { dialog.preferences = preferences; };
+  document.body.append(dialog);
+  await dialog.updateComplete;
+  const pin = dialog.shadowRoot?.querySelector<HTMLButtonElement>('button[aria-label="Pin One"]');
+  expect(pin?.getAttribute("aria-pressed")).toBe("true");
+  pin?.click();
+  await dialog.updateComplete;
+  expect(dialog.preferences).toEqual({ pinnedIds: ["navigation", "chat"], mobileCollapsed: false, useDefaultPins: false });
+});

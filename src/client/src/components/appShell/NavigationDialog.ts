@@ -3,7 +3,7 @@ import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { paletteStyles } from "../paletteStyles";
 import { scrollWhenSelected } from "../scrollWhenSelected";
-import { isNavigationPinned, toggleNavigationPin, type NavigationPreferences } from "../../navigationPreferences";
+import { pinnedNavigationTabs, toggleNavigationPin, type NavigationPreferences } from "../../navigationPreferences";
 import type { AppMobileMainTab } from "./AppMobileMainTabs";
 import "../ModalSurface";
 
@@ -23,7 +23,26 @@ export class NavigationDialog extends LitElement {
 
   private filteredTabs() {
     const query = this.query.trim().toLowerCase();
-    return this.tabs.filter((tab) => tab.label.toLowerCase().includes(query));
+    const tabs = this.tabs.filter((tab) => `${tab.label} ${tab.id}`.toLowerCase().includes(query));
+    const pinnedIds = this.pinnedTabIds();
+    return [...tabs.filter((tab) => pinnedIds.has(tab.id)), ...tabs.filter((tab) => !pinnedIds.has(tab.id))];
+  }
+
+  private pinnedTabIds(): Set<string> {
+    const tabs = (this.pinUniverse ?? this.tabs.map((tab) => tab.id)).map((id) => ({ id }));
+    const useDefaultPins = this.preferences.useDefaultPins === true;
+    return new Set([
+      ...pinnedNavigationTabs(tabs, this.preferences.pinnedIds, useDefaultPins),
+      ...pinnedNavigationTabs(this.tabs, this.preferences.pinnedIds, useDefaultPins),
+    ].map((tab) => tab.id));
+  }
+
+  private changePins(pinnedIds: string[]): void {
+    this.onPreferencesChange?.({
+      ...this.preferences,
+      ...(this.preferences.useDefaultPins === true ? { useDefaultPins: false } : {}),
+      pinnedIds,
+    });
   }
 
   protected override willUpdate(changed: PropertyValues) {
@@ -40,29 +59,32 @@ export class NavigationDialog extends LitElement {
 
   override render() {
     const tabs = this.filteredTabs();
-    return localizedTemplate("NavigationDialog.navigation_pin_destinations_to_the_tab_bars.842b25d7", html)`
+    const pinnedIds = this.pinnedTabIds();
+    return html`
       <modal-surface .label=${t("NavigationDialog.navigation.81259b67")} .initialFocus=${"input"} .onClose=${this.onClose} @keydown=${this.navigateDestinations}>
         <header>
-          <input aria-label="Search navigation" aria-describedby="navigation-selection" placeholder="Search navigation..." .value=${this.query} @input=${(event: Event) => {
+          <input aria-label=${t("navigation.search")} aria-describedby="navigation-selection" placeholder=${t("navigation.search_placeholder")} .value=${this.query} @input=${(event: Event) => {
             if (event.target instanceof HTMLInputElement) {
               this.query = event.target.value;
               this.selectedIndex = 0;
             }
           }}>
-          <button aria-label="Close" title="Close" @click=${this.onClose}>×</button>
+          <button aria-label=${t("navigation.close")} title=${t("navigation.close")} @click=${this.onClose}>×</button>
         </header>
         <span id="navigation-selection" class="sr-only" role="status" aria-live="polite" aria-atomic="true">${tabs.length === 0 ? t("NavigationDialog.no_destinations_found.d366459a") : localizedText("NavigationDialog.of.0e166819")`${tabs[this.selectedIndex]?.label ?? ""}, ${String(this.selectedIndex + 1)} of ${String(tabs.length)}`}</span>
-        <h2>Navigation</h2>
-        <p>Pin destinations to the tab bars. Removing the last pin shows all tabs.</p>
-        <nav class="options" aria-label="Destinations">
+        <h2>${t("NavigationDialog.navigation.81259b67")}</h2>
+        <p>${t("navigation.description")}</p>
+        <nav class="options" aria-label=${t("navigation.destinations")}>
           ${tabs.length === 0 ? localizedTemplate("NavigationDialog.no_destinations_found.afa3249e", html)`<div class="empty">No destinations found.</div>` : nothing}
           ${tabs.map((tab, index) => html`
+            ${index === 0 || pinnedIds.has(tab.id) !== pinnedIds.has(tabs[index - 1]?.id ?? "")
+              ? html`<h3>${t(pinnedIds.has(tab.id) ? "navigation.pinned" : "navigation.more_tools")}</h3>` : nothing}
             <div class="destination">
               <button class=${`destination-button ${index === this.selectedIndex ? "selected" : ""}`} aria-current=${tab.id === this.selectedTab ? "page" : nothing} aria-pressed=${String(tab.id === this.selectedTab)} ${scrollWhenSelected(index === this.selectedIndex, tab.id)} @focus=${() => { this.selectedIndex = index; }} @click=${() => { this.select(tab); }}>${tab.label}</button>
-              <button type="button" class="pin-button" aria-label=${localizedText("NavigationDialog.pin.e4baae6b")`Pin ${tab.label}`} title=${isNavigationPinned(tab.id, this.preferences.pinnedIds) ? localizedText("NavigationDialog.unpin.55006b08")`Unpin ${tab.label}` : localizedText("NavigationDialog.pin.9bce8597")`Pin ${tab.label}`} aria-pressed=${String(isNavigationPinned(tab.id, this.preferences.pinnedIds))} @click=${() => {
-                this.onPreferencesChange?.({ ...this.preferences, pinnedIds: toggleNavigationPin(tab.id, this.preferences.pinnedIds, this.pinUniverse ?? this.tabs.map((item) => item.id)) });
+              <button type="button" class="pin-button" aria-label=${localizedText("NavigationDialog.pin.e4baae6b")`Pin ${tab.label}`} title=${pinnedIds.has(tab.id) ? localizedText("NavigationDialog.unpin.55006b08")`Unpin ${tab.label}` : localizedText("NavigationDialog.pin.9bce8597")`Pin ${tab.label}`} aria-pressed=${String(pinnedIds.has(tab.id))} @click=${() => {
+                this.changePins(toggleNavigationPin(tab.id, this.preferences.useDefaultPins === true ? [...pinnedIds] : this.preferences.pinnedIds, this.pinUniverse ?? this.tabs.map((item) => item.id)));
               }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill=${isNavigationPinned(tab.id, this.preferences.pinnedIds) ? "currentColor" : "none"} stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill=${pinnedIds.has(tab.id) ? "currentColor" : "none"} stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M8 3h8l-1 7 4 4v2H5v-2l4-4-1-7Z"></path><path d="M12 16v6"></path>
                 </svg>
               </button>
@@ -70,16 +92,19 @@ export class NavigationDialog extends LitElement {
           `)}
         </nav>
         <footer>
-          <button @click=${() => { this.onPreferencesChange?.({ ...this.preferences, pinnedIds: [] }); }}>Show all tabs</button>
-          <div class="mobile-navigation" role="group" aria-label="Mobile navigation">
-            <span>Mobile navigation</span>
+          <div class="tab-presets">
+            <button type="button" aria-pressed=${String(this.preferences.useDefaultPins !== true && this.preferences.pinnedIds.length === 0)} @click=${() => { this.changePins([]); }}>${t("navigation.show_all_tabs")}</button>
+            <button type="button" aria-pressed=${String(this.preferences.useDefaultPins === true)} @click=${() => { this.onPreferencesChange?.({ ...this.preferences, pinnedIds: [], useDefaultPins: true }); }}>${t("navigation.default_tabs")}</button>
+          </div>
+          <div class="mobile-navigation" role="group" aria-label=${t("navigation.mobile")}>
+            <span>${t("navigation.mobile")}</span>
             <div class="toggle-options">
               <button type="button" aria-pressed=${String(!this.preferences.mobileCollapsed)} @click=${() => {
                 this.onPreferencesChange?.({ ...this.preferences, mobileCollapsed: false });
-              }}>Expanded</button>
+              }}>${t("navigation.expanded")}</button>
               <button type="button" aria-pressed=${String(this.preferences.mobileCollapsed)} @click=${() => {
                 this.onPreferencesChange?.({ ...this.preferences, mobileCollapsed: true });
-              }}>Collapsed</button>
+              }}>${t("navigation.collapsed")}</button>
             </div>
           </div>
         </footer>
@@ -133,16 +158,17 @@ export class NavigationDialog extends LitElement {
     header, footer { flex: 0 0 auto; }
     .destination, footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     h2 { margin: 0; padding: 12px 12px 4px; font-size: 14px; line-height: 20px; font-weight: 500; }
+    h3 { margin: 0; padding: 10px 12px 4px; color: var(--pi-muted); font-size: 12px; line-height: 16px; font-weight: 400; }
     p { margin: 0; padding: 0 12px 12px; color: var(--pi-muted); font-size: 12px; flex: 0 0 auto; }
     nav { overscroll-behavior: contain; }
     .destination { border-bottom: 0; gap: 0; }
     .destination-button { flex: 1; min-width: 0; overflow-wrap: anywhere; text-align: left; padding: 10px 12px; font: inherit; font-weight: 500; }
     .destination-button.selected, .destination-button:hover { background: var(--pi-selection-bg); }
     .pin-button { display: inline-flex; align-items: center; justify-content: center; padding: 10px 12px; }
-    .pin-button[aria-pressed="true"] svg { color: var(--pi-accent); }
+    .pin-button[aria-pressed="true"] svg { color: var(--pi-text-secondary); }
     footer { padding: 12px; flex-wrap: wrap; border-top: 0; }
     .mobile-navigation { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12px; }
-    .toggle-options { display: inline-flex; gap: 4px; }
+    .toggle-options, .tab-presets { display: inline-flex; gap: 4px; }
     .toggle-options button { font-size: inherit; padding: 5px 7px; }
     footer button { border: 0; border-radius: 6px; background: transparent; padding: 7px 9px; }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }

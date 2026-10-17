@@ -1,4 +1,4 @@
-import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
+import { localizedText, t } from "../../../shared/i18n";
 import { LitElement, html, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import type { Workspace } from "../api";
@@ -33,6 +33,7 @@ export class WorkspacePanel extends LitElement {
   @property({ attribute: false }) panels: WorkspaceToolPanel[] = [];
   @property({ type: Boolean }) hideToolTabs = false;
   @property({ attribute: false }) pinnedIds: string[] = [];
+  @property({ type: Boolean }) useDefaultPins = false;
   @property({ attribute: false }) onShowNavigation?: () => void;
   @property({ attribute: false }) onSelectTool: (tool: QualifiedContributionId) => void = () => undefined;
   @query(".workspace-header-strip") private workspaceHeaderStrip?: HTMLElement | null;
@@ -72,7 +73,7 @@ export class WorkspacePanel extends LitElement {
     // An unresolved route may leave a valid remembered tool, but its content is not displayed.
     const selectedPanel = this.error !== "" ? undefined
       : this.tool === undefined ? visiblePanels[0] : visiblePanels.find((panel) => panel.id === this.tool);
-    const pinnedPanels = pinnedNavigationTabs(visiblePanels, this.pinnedIds);
+    const pinnedPanels = pinnedNavigationTabs(visiblePanels, this.pinnedIds, this.useDefaultPins);
     return html`
       ${this.hideToolTabs ? null : html`
         <header>
@@ -131,7 +132,7 @@ export class WorkspacePanel extends LitElement {
   }
 
   private renderNavigationButton(hiddenActiveDestination = false) {
-    return this.onShowNavigation === undefined ? null : localizedTemplate("WorkspacePanel.template.d62c5933", html)`<button type="button" class=${`navigation-menu-button${hiddenActiveDestination ? " selected" : ""}`} title="Navigation" aria-label="Navigation" aria-haspopup="dialog" @click=${this.onShowNavigation}>${renderNavigationMenuIcon()}</button>`;
+    return this.onShowNavigation === undefined ? null : html`<button type="button" class=${`navigation-menu-button${hiddenActiveDestination ? " selected" : ""}`} title=${t("NavigationDialog.navigation.81259b67")} aria-label=${t("NavigationDialog.navigation.81259b67")} aria-haspopup="dialog" @click=${this.onShowNavigation}>${renderNavigationMenuIcon()}<span>${t("navigation.more")}</span></button>`;
   }
 
   private renderEmptyState(state: WorkspacePanelEmptyState, showNavigation = false): TemplateResult {

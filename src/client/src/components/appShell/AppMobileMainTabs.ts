@@ -1,4 +1,4 @@
-import { localizedTemplate } from "../../../../shared/i18n";
+import { t } from "../../../../shared/i18n";
 import { LitElement, css, html, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import type { QualifiedContributionId } from "../../plugins/types";
@@ -64,7 +64,7 @@ export class AppMobileMainTabs extends LitElement {
               </button>
             `;
           })}
-          ${this.onShowNavigation === undefined ? null : localizedTemplate("AppMobileMainTabs.template.c9424a44", html)`<button type="button" class=${`navigation-menu-button${this.hiddenActiveDestination ? " selected" : ""}`} title="Navigation" aria-label="Navigation" aria-haspopup="dialog" @click=${this.onShowNavigation}>${renderNavigationMenuIcon()}</button>`}
+          ${this.onShowNavigation === undefined ? null : html`<button type="button" class=${`navigation-menu-button${this.hiddenActiveDestination ? " selected" : ""}`} title=${t("NavigationDialog.navigation.81259b67")} aria-label=${t("NavigationDialog.navigation.81259b67")} aria-haspopup="dialog" @click=${this.onShowNavigation}>${renderNavigationMenuIcon()}<span>${t("navigation.more")}</span></button>`}
         </div>
       </div>
     `;

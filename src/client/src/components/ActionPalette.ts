@@ -18,7 +18,7 @@ export class ActionPalette extends LitElement {
 
   override render() {
     const actions = this.filteredActions();
-    return localizedTemplate("ActionPalette.template.6b24d700", html)`
+    return html`
       <modal-surface
         .onClose=${() => this.onCancel?.()}
         .initialFocus=${"input"}
@@ -28,7 +28,8 @@ export class ActionPalette extends LitElement {
         <header>
           <input
             .value=${this.queryText}
-            placeholder="Search actions..."
+            aria-label=${t("navigation.search_actions")}
+            placeholder=${t("navigation.search_actions")}
             @input=${(event: Event) => {
               if (event.target instanceof HTMLInputElement) {
                 this.queryText = event.target.value;
@@ -36,7 +37,7 @@ export class ActionPalette extends LitElement {
               }
             }}
           >
-          <button title="Close" aria-label="Close" @click=${() => this.onCancel?.()}>×</button>
+          <button title=${t("navigation.close")} aria-label=${t("navigation.close")} @click=${() => this.onCancel?.()}>×</button>
         </header>
         <div class="options">
           ${actions.length === 0 ? localizedTemplate("ActionPalette.no_actions_found.9d04ad76", html)`<div class="empty">No actions found.</div>` : actions.map((action, index) => html`

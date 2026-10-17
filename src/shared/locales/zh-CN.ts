@@ -2,6 +2,21 @@
 import type { messages as englishMessages } from './en';
 
 export const messages: Record<keyof typeof englishMessages, string> = {
+  "navigation.search": "搜索页面和工具",
+  "navigation.search_placeholder": "搜索页面和工具…",
+  "navigation.search_actions": "搜索页面和命令…",
+  "navigation.close": "关闭",
+  "navigation.destinations": "页面和工具",
+  "navigation.description": "保留常用入口，其他页面可在这里打开，也可固定到标签栏。",
+  "navigation.pinned": "已固定",
+  "navigation.more_tools": "更多工具",
+  "navigation.default_tabs": "精简入口",
+  "navigation.show_all_tabs": "显示所有标签页",
+  "navigation.mobile": "移动端导航",
+  "navigation.expanded": "展开",
+  "navigation.collapsed": "折叠",
+  "navigation.more": "更多",
+
   "ui.fileCards.heading": "相关文件",
   "ui.fileCards.open": "打开预览",
   "ui.fileCards.file": "文件",

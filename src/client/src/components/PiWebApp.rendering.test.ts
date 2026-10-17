@@ -46,6 +46,8 @@ const unexpectedRequest = vi.fn(() => Promise.reject(new Error("Rendering tests 
 
 beforeEach(() => {
   unexpectedRequest.mockClear();
+  // Existing rendering scenarios exercise explicit legacy "show all" layouts.
+  saveNavigationPreferences({ pinnedIds: [], mobileCollapsed: false });
   window.history.replaceState(null, "", "/");
   vi.stubGlobal("fetch", unexpectedRequest);
   // Scroll scheduling is not under test; happy-dom supplies no layout metrics.
@@ -64,6 +66,37 @@ afterEach(() => {
 });
 
 describe("application rendering boundaries", () => {
+  it("keeps a fresh layout quiet while allowing a hidden tool to open from action search", async () => {
+    localStorage.clear();
+    const app = await mountApp({ selectedWorkspace: workspace, workspaces: [workspace], mainView: "chat", actionPaletteOpen: true }, () => html`<p>Selected tool</p>`);
+    const shell: unknown = Reflect.get(app, "appShell");
+    if (!(shell instanceof AppShellController)) throw new Error("Expected shell controller");
+    shell.isDesktopSideBySideLayout = false;
+    shell.isMobileNavigationLayout = false;
+    app.requestUpdate();
+    await settle(app);
+    const tabs = app.shadowRoot?.querySelector("app-mobile-main-tabs");
+    expect(tabs?.shadowRoot?.querySelector('button[title="Chat"]')).not.toBeNull();
+    expect(tabs?.shadowRoot?.querySelector('button[title="Test"]')).toBeNull();
+    expect(tabs?.shadowRoot?.querySelector('button[aria-label="Navigation"]')?.textContent).toContain("More");
+    expect(app.shadowRoot?.querySelector<WorkspacePanel>("workspace-panel")?.useDefaultPins).toBe(true);
+    const palette = app.shadowRoot?.querySelector<ActionPalette>("action-palette");
+    const search = palette?.shadowRoot?.querySelector<HTMLInputElement>("input");
+    if (search == null) throw new Error("Expected action search input");
+    search.value = "Test";
+    search.dispatchEvent(new Event("input", { bubbles: true }));
+    await settle(app);
+    const button = [...palette?.shadowRoot?.querySelectorAll<HTMLButtonElement>(".options button") ?? []]
+      .find((candidate) => candidate.querySelector("strong")?.textContent === "Test");
+    expect(button).toBeDefined();
+    button?.click();
+    await settle(app);
+    expect(app.shadowRoot?.querySelector("action-palette")).toBeNull();
+    expect(app.shadowRoot?.querySelector(".shell")?.classList.contains("workspace-view")).toBe(true);
+    expect(app.shadowRoot?.querySelector("workspace-panel")?.shadowRoot?.textContent).toContain("Selected tool");
+    expect(loadNavigationPreferences()).toEqual({ pinnedIds: [], mobileCollapsed: false, useDefaultPins: true });
+  });
+
   it("switches a wide shell to tabbed two-column mode and restores three columns", async () => {
     const app = await mountApp({ selectedWorkspace: workspace, workspaces: [workspace], mainView: "chat" }, () => html`<p>Tool content</p>`);
     const shell: unknown = Reflect.get(app, "appShell");
@@ -75,17 +108,25 @@ describe("application rendering boundaries", () => {
     const layout = () => app.shadowRoot?.querySelector(".shell");
     const edgeButton = (label: string) => app.shadowRoot?.querySelector('app-panel-edge-control[side="workspace"]')?.shadowRoot?.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
     const tabs = () => [...app.shadowRoot?.querySelector("app-mobile-main-tabs")?.shadowRoot?.querySelectorAll<HTMLButtonElement>(".mobile-tabs button") ?? []];
+    const workspacePanel = app.shadowRoot?.querySelector<WorkspacePanel>("workspace-panel");
+    const workspaceHeader = () => workspacePanel?.shadowRoot?.querySelector("header");
     expect(layout()?.classList.contains("two-column-layout")).toBe(false);
     expect(tabs().map((button) => button.title)).not.toContain("Chat");
+    expect(workspaceHeader()?.querySelector('button[aria-label="Navigation"]')).not.toBeNull();
+    expect(workspaceHeader()?.querySelector('button[title="Test"]')).not.toBeNull();
     expect(edgeButton("Collapse workspace panel")).not.toBeNull();
     edgeButton("Collapse workspace panel")?.click();
     await settle(app);
     expect(layout()?.classList.contains("two-column-layout")).toBe(true);
+    expect(workspaceHeader()).toBeNull();
     expect(tabs().find((button) => button.title === "Chat")?.classList.contains("selected")).toBe(true);
     tabs().find((button) => button.title === "Test")?.click();
     await settle(app);
     expect(layout()?.classList.contains("workspace-view")).toBe(true);
     expect(tabs().find((button) => button.title === "Test")?.classList.contains("selected")).toBe(true);
+    expect(workspaceHeader()).toBeNull();
+    expect(workspacePanel?.shadowRoot?.querySelector(".panel-content")?.textContent).toContain("Tool content");
+    expect(app.shadowRoot?.querySelector("app-mobile-main-tabs")?.shadowRoot?.querySelector('button[aria-label="Navigation"]')).not.toBeNull();
     tabs().find((button) => button.title === "Chat")?.click();
     await settle(app);
     expect(layout()?.classList.contains("chat-view")).toBe(true);
@@ -94,6 +135,8 @@ describe("application rendering boundaries", () => {
     await settle(app);
     expect(layout()?.classList.contains("two-column-layout")).toBe(false);
     expect(tabs().map((button) => button.title)).not.toContain("Chat");
+    expect(workspaceHeader()?.querySelector('button[aria-label="Navigation"]')).not.toBeNull();
+    expect(workspaceHeader()?.querySelector('button[title="Test"]')?.getAttribute("aria-pressed")).toBe("true");
     expect(app.shadowRoot?.querySelector("workspace-panel")?.shadowRoot?.textContent).toContain("Tool content");
   });
   it("reactively filters navigation at both layout boundaries without losing hidden pins", async () => {
@@ -119,6 +162,7 @@ describe("application rendering boundaries", () => {
     if (dialog == null) throw new Error("Expected open navigation");
     const destinations = () => dialog.tabs.map((tab) => tab.id);
     const tabIds = () => [...app.shadowRoot?.querySelector("app-mobile-main-tabs")?.shadowRoot?.querySelectorAll<HTMLButtonElement>('.mobile-tabs button') ?? []].map((button) => button.title);
+    const workspacePanel = app.shadowRoot?.querySelector<WorkspacePanel>("workspace-panel");
     const resize = async (next: number) => {
       const previous = new Map([...media].map(([query]) => [query, matches(query)]));
       width = next;
@@ -145,6 +189,13 @@ describe("application rendering boundaries", () => {
       expect(dialog.selectedTab).toBe(next > 1180 ? "render-test:panel" : "chat");
       const labels: Record<string, string> = { navigation: "Sessions", chat: "Chat", "render-test:panel": "Test" };
       expect(tabIds()).toEqual([...expected.map((id) => labels[id]), "Navigation"]);
+      if (next > 1180) {
+        expect(workspacePanel?.shadowRoot?.querySelector('header button[aria-label="Navigation"]')).not.toBeNull();
+      } else {
+        expect(workspacePanel?.shadowRoot?.querySelector("header")).toBeNull();
+        expect(app.shadowRoot?.querySelector("app-mobile-main-tabs")?.shadowRoot?.querySelector('button[aria-label="Navigation"]')).not.toBeNull();
+      }
+      expect(workspacePanel?.shadowRoot?.querySelector(".panel-content")?.textContent).toContain("Tool");
       expect(loadNavigationPreferences().pinnedIds).toEqual([]);
     }
     const search = dialog.shadowRoot?.querySelector("input");
@@ -245,7 +296,7 @@ describe("application rendering boundaries", () => {
   it("selects workspace tools from Navigation without confusing tool IDs with views", async () => {
     const app = await mountApp({ selectedWorkspace: workspace, workspaces: [workspace], mainView: "chat" }, () => html`<p>Tool content</p>`);
     await settle(app);
-    app.shadowRoot?.querySelector("workspace-panel")?.shadowRoot?.querySelector<HTMLButtonElement>('button[aria-label="Navigation"]')?.click();
+    app.shadowRoot?.querySelector("app-mobile-main-tabs")?.shadowRoot?.querySelector<HTMLButtonElement>('button[aria-label="Navigation"]')?.click();
     await settle(app);
     const dialog = app.shadowRoot?.querySelector<NavigationDialog>("navigation-dialog");
     const tool = [...dialog?.shadowRoot?.querySelectorAll<HTMLButtonElement>(".destination-button") ?? []].find((button) => button.textContent === "Test");
@@ -283,6 +334,11 @@ describe("application rendering boundaries", () => {
   });
   it("updates both tab surfaces from pin controls without changing selected content, and reloads preferences", async () => {
     const app = await mountApp({ selectedWorkspace: workspace, workspaces: [workspace], workspaceTool: "render-test:panel", mainView: "workspace" }, () => html`<p>Selected tool content</p>`);
+    const shell: unknown = Reflect.get(app, "appShell");
+    if (!(shell instanceof AppShellController)) throw new Error("Expected shell controller");
+    shell.isDesktopSideBySideLayout = true;
+    shell.isMobileNavigationLayout = false;
+    app.requestUpdate();
     await settle(app);
     const workspacePanel = app.shadowRoot?.querySelector("workspace-panel");
     const open = workspacePanel?.shadowRoot?.querySelector<HTMLButtonElement>('button[aria-label="Navigation"]');
@@ -618,6 +674,14 @@ describe("application rendering boundaries", () => {
       return html`<p>${label}: ${next.state.selectedSession?.name ?? "no session"}</p>`;
     });
     const app = await mountApp({ selectedWorkspace: workspace, workspaces: [workspace] }, panelRender, () => label);
+    // The inline workspace list is the mobile surface; desktop uses a picker.
+    const shell: unknown = Reflect.get(app, "appShell");
+    if (!(shell instanceof AppShellController)) throw new Error("Expected shell controller");
+    shell.isMobileNavigationLayout = true;
+    shell.isDesktopSideBySideLayout = false;
+    app.requestUpdate();
+    await settle(app);
+    app.shadowRoot?.querySelector("app-navigation-panel")?.shadowRoot?.querySelector("workspace-list")?.shadowRoot?.querySelector<HTMLButtonElement>(".section-toggle")?.click();
     await settle(app);
     panelRender.mockClear();
 
