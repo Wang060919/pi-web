@@ -8,11 +8,15 @@ import updatesPlugin from "../../../../pi-web-plugins/updates/pi-web-plugin";
 import type { PluginRuntimeContext as InternalPluginRuntimeContext } from "../plugins/types";
 import type { RequiredTerminalBrowserComposition, RequiredTerminalBrowserFacadeV1 } from "../plugins/requiredTerminalFacade";
 import { initialAppState, type AppState } from "../appState";
+import { AppShellController } from "../appShell/appShellController";
+import { saveNavigationPreferences } from "../navigationPreferences";
+import { usageOverviewApi } from "../api/usageOverview";
 import { PI_WEB_PLUGIN_LIFECYCLE_VERSION } from "../../../shared/apiTypes";
 import { loadExternalPlugins } from "../plugins/external";
 import { PluginRegistry } from "../plugins/registry";
 import { PiWebApp } from "./PiWebApp";
 import { WorkspacePanel } from "./WorkspacePanel";
+import { AppNavigationPanel } from "./appShell/AppNavigationPanel";
 
 // Keep real shell, registry, loader and public callback adaptation; omit socket/API startup.
 class ApplicationPanelsApp extends PiWebApp {
@@ -26,6 +30,11 @@ const remote = { id: "remote", name: "Remote box", kind: "remote" as const, crea
 
 beforeEach(() => {
   window.history.replaceState(null, "", "/");
+  // Public panel contracts use the supported wide, show-all layout. Quiet
+  // defaults and More/Actions discovery are covered by the rendering suite.
+  saveNavigationPreferences({ pinnedIds: [], mobileCollapsed: false, useDefaultPins: false });
+  // Welcome-summary loading has its own component/API tests.
+  vi.spyOn(usageOverviewApi, "get").mockResolvedValue({ records: [], today: "2026-10-17", timeZone: "UTC", scope: "workspace", warnings: [] });
   // Layout/scroll scheduling is not the behavior under test.
   vi.stubGlobal("requestAnimationFrame", () => 1);
   vi.stubGlobal("cancelAnimationFrame", () => undefined);
@@ -66,7 +75,15 @@ it("uses bundled Info with no project, workspace or session and follows selectio
   expect(panel.shadowRoot?.textContent).toContain("remote machine");
   expect(panel.shadowRoot?.textContent).toContain("Workspace");
   expect(panel.shadowRoot?.textContent).toContain("/repo");
-  expect(app.shadowRoot?.querySelector("app-navigation-panel")?.shadowRoot?.querySelector("workspace-list")?.shadowRoot?.textContent).toContain("folder");
+  const navigation = app.shadowRoot?.querySelector("app-navigation-panel");
+  if (!(navigation instanceof AppNavigationPanel)) throw new Error("Expected navigation panel");
+  const workspacePicker = navigation.renderRoot.querySelector<HTMLButtonElement>('[data-context="workspaces"]');
+  if (workspacePicker === null) throw new Error("Expected workspace picker trigger");
+  workspacePicker.click();
+  await settle(app);
+  expect(navigation.shadowRoot?.querySelector("workspace-list")?.shadowRoot?.textContent).toContain("folder");
+  navigation.shadowRoot?.querySelector<HTMLButtonElement>(".picker-close")?.click();
+  await settle(app);
 
   patchState(app, { selectedProject: undefined, selectedWorkspace: undefined });
   await settle(app);
@@ -537,6 +554,10 @@ async function mount(plugin: PiWebPlugin, { id = "info", state = {}, machineSpec
     plugins: [{ id, module: `${id}/pi-web-plugin.js`, machineSpecific }],
   }))));
   const app = new ApplicationPanelsApp();
+  const shell: unknown = Reflect.get(app, "appShell");
+  if (!(shell instanceof AppShellController)) throw new Error("Expected app shell controller");
+  shell.isDesktopSideBySideLayout = true;
+  shell.isMobileNavigationLayout = false;
   Reflect.set(app, "verifiedPluginModeByMachine", new Map([["local", "recovery-disabled"], ["remote", "recovery-disabled"]]));
   const loaded = await loadExternalPlugins(undefined, { moduleLoader: () => Promise.resolve({ default: plugin }) });
   expect(loaded.failures).toEqual([]);

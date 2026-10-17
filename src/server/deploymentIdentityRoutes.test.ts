@@ -55,7 +55,7 @@ describe("deployment identity asset routes", () => {
     expect(response.json()).toEqual({
       name: "PI WEB (dev)",
       short_name: "PI WEB (dev)",
-      theme_color: "#21132f",
+      theme_color: "#1c1c1c",
       icons: [{ src: "./pwa-icon-192.png", sizes: "192x192", type: "image/png", purpose: "any maskable" }],
     });
   });

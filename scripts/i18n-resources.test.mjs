@@ -27,7 +27,7 @@ async function* sourceFiles(directory) {
 }
 
 describe("locale resources", () => {
-  it("keeps standalone plugin runtimes identical to the canonical runtime", async () => {
+  it("keeps standalone plugin translation runtimes in sync with the canonical runtime", async () => {
     await syncI18nRuntimes(true);
   });
 

@@ -3,7 +3,7 @@ import { messages as english } from './locales/en';
 import { messages as chinese, templates } from './locales/zh-CN';
 
 export { getLocale, getLocalePreference, initializeLocale, setLocalePreference } from './i18nCore';
-export type { Locale, LocalePreference } from './i18nCore';
+export type { LocalePreference } from './i18nCore';
 
 export const { t, localizedTemplate, localizedText } = createTranslator(english, chinese, templates);
 

@@ -14,21 +14,12 @@ export function getLocalePreference(): LocalePreference {
   }
 }
 
-export function setLocalePreference(preference: LocalePreference): void {
-  if (preference === "system") globalThis.localStorage.removeItem(LOCALE_STORAGE_KEY);
-  else globalThis.localStorage.setItem(LOCALE_STORAGE_KEY, preference);
-}
-
 export function getLocale(): Locale {
   const preference = getLocalePreference();
   if (preference !== "system") return preference;
   const browser: Partial<Pick<Navigator, "languages" | "language">> = typeof navigator === "undefined" ? {} : navigator;
   const language = browser.languages?.[0] ?? browser.language ?? "en";
   return /^zh(?:-|$)/i.test(language) ? "zh-CN" : "en";
-}
-
-export function initializeLocale(): void {
-  if (typeof document !== "undefined") document.documentElement.lang = getLocale();
 }
 
 interface TranslatedTemplate {

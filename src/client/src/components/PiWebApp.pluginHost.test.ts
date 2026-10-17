@@ -15,6 +15,7 @@ import { loadCachedNewSessions, markCachedNewSessionInfo, rememberCachedNewSessi
 import { loadDraft, saveDraft } from "../promptDraftStorage";
 import { clearStagedAttachments, loadStagedAttachments, saveStagedAttachments, type PendingAttachment } from "../promptAttachmentStaging";
 import { api as defaultApi } from "../api";
+import { usageOverviewApi } from "../api/usageOverview";
 import { machineSessionKey } from "../machineKeys";
 import { browserErrorScopeKey, machineBrowserErrorScope, workspaceBrowserErrorScope } from "../browserErrors";
 import type { MachineNavigationSnapshot } from "../controllers/machineNavigationMemory";
@@ -27,9 +28,10 @@ import { PluginRegistry } from "../plugins/registry";
 import { adaptPublicPlugin } from "../plugins/publicContext";
 import type { PiWebPlugin, PiWebPluginRegistration, PiWebPluginRegistrationDeclaration, PluginCapability, PluginRuntimeContext, SessionLabelContext, WorkspaceInvalidation, WorkspacePanelContext, WorkspacePanelNavigationV1 } from "../plugins/types";
 import { PiWebApp } from "./PiWebApp";
-import { html, render } from "lit";
+import { html, LitElement, render } from "lit";
 import { WorkspacePanel } from "./WorkspacePanel";
 import { AppNavigationPanel } from "./appShell/AppNavigationPanel";
+import { NavigationDialog } from "./appShell/NavigationDialog";
 import { SessionList } from "./SessionList";
 
 async function expectWorkspaceContentError(app: PiWebApp, message: string): Promise<void> {
@@ -66,6 +68,8 @@ beforeEach(() => {
   window.localStorage.clear();
   window.sessionStorage.clear();
   vi.mocked(loadExternalPlugins).mockReset();
+  // These fixtures render plugin surfaces; welcome usage loading is tested separately.
+  vi.spyOn(usageOverviewApi, "get").mockResolvedValue({ records: [], today: "2026-10-17", timeZone: "UTC", scope: "workspace", warnings: [] });
 });
 
 afterEach(async () => {
@@ -145,9 +149,22 @@ describe("PiWebApp plugin host", () => {
     expect(browser.pushed).toEqual([]);
     expect(browser.replaced).toEqual([]);
 
-    const files = panel.shadowRoot?.querySelector<HTMLButtonElement>('button[aria-label="Files"]');
-    expect(files).not.toBeNull();
+    // The single navigation entry owns recovery in tabbed/mobile layouts.
+    // A panel's removed duplicate tabs must not become the test interaction.
+    const tabs = host.querySelector("app-mobile-main-tabs");
+    if (!(tabs instanceof LitElement)) throw new Error("Expected main navigation tabs");
+    await tabs.updateComplete;
+    const more = tabs.shadowRoot?.querySelector<HTMLButtonElement>('button[aria-label="Navigation"]');
+    expect(more).not.toBeNull();
+    more?.click();
+    render(app.render(), host);
+    const navigation = host.querySelector("navigation-dialog");
+    if (!(navigation instanceof NavigationDialog)) throw new Error("Expected navigation dialog");
+    await navigation.updateComplete;
+    const files = [...navigation.renderRoot.querySelectorAll<HTMLButtonElement>(".destination-button")].find((button) => button.textContent === "Files");
+    expect(files).toBeDefined();
     expect(files?.disabled).toBe(false);
+    expect(files?.getAttribute("aria-current")).toBeNull();
     files?.click();
     render(app.render(), host);
     await panel.updateComplete;
@@ -155,8 +172,8 @@ describe("PiWebApp plugin host", () => {
     expect(appState(app).browserErrors).toEqual({});
     expect(panel.shadowRoot?.textContent).not.toContain("Workspace panel unavailable");
     expect(panel.shadowRoot?.querySelector(".panel-content")?.textContent).toContain("Files");
-    expect(files?.getAttribute("aria-pressed")).toBe("true");
-    expect(files?.classList.contains("selected")).toBe(true);
+    expect(panel.tool).toBe("files:workspace.panel");
+    expect(host.querySelector("navigation-dialog")).toBeNull();
     expect(browser.url.searchParams.get("tool")).toBe("files:workspace.panel");
     expect(browser.url.searchParams.get("view")).toBe("workspace");
     render(null, host);
@@ -194,7 +211,7 @@ describe("PiWebApp plugin host", () => {
     expect(warning?.querySelector("button")).toBeNull();
     expect(appState(app).browserErrors).toEqual({});
     expect(host.querySelector(".shell")?.classList.contains(width <= 760 ? "navigation-view" : "workspace-view")).toBe(true);
-    expect(panel.shadowRoot?.querySelector('button[aria-label="Files"]')?.getAttribute("aria-pressed")).toBe("true");
+    expect(panel.tool).toBe("files:workspace.panel");
     expect(panel.shadowRoot?.querySelector(".panel-content")?.textContent).toContain("Files");
     expect(panel.error).toBe("");
     expect(browser.url.href).toBe(originalUrl);
@@ -249,14 +266,14 @@ describe("PiWebApp plugin host", () => {
       expect(host.querySelector(".shell")?.classList.contains(`${expectedView}-view`)).toBe(true);
       if (validView) expect(host.textContent).not.toContain("Unknown view:");
       else expect(host.querySelector('.error.warning[role="alert"]')?.textContent).toContain(`Unknown view: ${view}`);
-      expect(panel.shadowRoot?.querySelector('button[aria-label="Files"]')?.getAttribute("aria-pressed")).toBe(String(selected));
+      expect(panel.tool === "files:workspace.panel").toBe(selected);
       if (selected) {
         expect(appState(app).workspaceTool).toBe("files:workspace.panel");
         expect(panel.shadowRoot?.querySelector(".panel-content")?.textContent).toContain("Files");
       } else if (tool === undefined) {
         // Omission uses the default tool; the invalid view must not select Files.
         expect(appState(app).workspaceTool).toBe(TERMINAL_PANEL_ID);
-        expect(panel.shadowRoot?.querySelector('button[aria-label="Terminal"]')?.getAttribute("aria-pressed")).toBe("true");
+        expect(panel.tool).toBe(TERMINAL_PANEL_ID);
         expect(panel.shadowRoot?.querySelector(".panel-content")).not.toBeNull();
       } else {
         expect(panel.shadowRoot?.querySelector(".selected, [aria-pressed=true]")).toBeNull();
@@ -300,7 +317,7 @@ describe("PiWebApp plugin host", () => {
     const panel = host.querySelector("workspace-panel");
     if (!(panel instanceof WorkspacePanel)) throw new Error("Workspace panel was not rendered");
     await panel.updateComplete;
-    expect(panel.shadowRoot?.querySelector('button[aria-label="Files"]')?.getAttribute("aria-pressed")).toBe("true");
+    expect(panel.tool).toBe("files:workspace.panel");
     expect(panel.shadowRoot?.querySelector(".panel-content")?.textContent).toContain("Recovered Files");
     expect(host.querySelector('.error.warning')).toBeNull();
     expect(browser.url.href).toBe(originalUrl);

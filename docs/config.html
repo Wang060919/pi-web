@@ -90,6 +90,7 @@
 <a href="#plugin-config">Plugins</a>
 <a href="#network">Networking</a>
 <a href="#storage">Storage</a>
+<a href="#runtime-settings">Models &amp; MCP</a>
 <a href="#providers">Providers &amp; trust</a>
 <a href="#environment">Environment overrides</a>
 <a href="#worktree-pre-remove-hook">Cleanup hook</a>
@@ -666,6 +667,17 @@
 <details class="config-details"><summary>Changing directories or running a second instance</summary><ul><li><strong>State migration:</strong> a new PI WEB data directory starts with empty registries and no archives. Stop PI WEB before copying state. For archives, copy both <code>archived-sessions.json</code> and <code>archived-sessions/</code>.</li><li><strong>Second instance:</strong> use a distinct data directory, daemon endpoint, and web port. One live session daemon owns each data directory.</li><li><strong>Agent state:</strong> uses the bundled Pi SDK’s data layout. PI WEB does not convert profiles or move PI WEB-managed archives when the agent directory changes.</li><li><strong>Active paths:</strong> changing Pi state or session paths requires a sessiond restart; web/API-only restarts do not apply it. Sessions, terminals, and package operations use the daemon’s active paths. If those paths are unavailable, profile-dependent operations are unavailable too.</li></ul></details>
 <details class="config-details"><summary>Environment inherited by agent processes</summary><ul><li>Agent shells, terminals, and child sessions inherit the daemon environment, including its Pi state paths.</li><li><code>NODE_ENV</code> and <code>PORT</code> are removed so they do not interfere with development commands.</li><li><code>PI_WEB_SESSION=1</code> marks nested processes. Inherited <code>PI_WEB_*</code> values still point to the hosting instance. Use a separate data directory, daemon endpoint, and web port for a second instance.</li><li>Do not restart the hosting session daemon from inside an active session you need to preserve.</li><li><code>environmentFacts</code> includes nesting and deployment guidance in session system prompts by default. Set it to <code>false</code>, or use <code>PI_WEB_ENVIRONMENT_FACTS=false</code>, to omit that guidance. Restart sessiond after changing it.</li></ul></details>
 </section>
+<section id="runtime-settings"><h2>Browser model and MCP management</h2>
+<h3 id="model-configuration">Model configuration</h3>
+<p>Open <strong>Settings → Model configuration</strong> to edit provider Base URLs, API protocols, keys and headers, model capabilities, context/output limits, and built-in model overrides. <strong>Discover models</strong> adds selected results to the draft; <strong>Save configuration</strong> writes the selected machine's active Pi agent directory's <code>models.json</code> (<code>~/.pi/agent/models.json</code> by default). This is machine-wide Pi configuration, separate from PI WEB's <code>config.json</code> and project-local core config.</p>
+<p>Stored keys and header values are masked. Leave a placeholder unchanged to preserve its value; <strong>Clear configured key</strong> removes the <code>models.json</code> key, and deleting header properties removes those headers. Separate login credentials remain in <code>auth.json</code>. Before changing an endpoint's scheme, hostname, or port, use <code>/logout</code> to remove the old provider login, then enter the replacement key and headers: stored logins take precedence over <code>models.json</code> keys, and hidden credentials cannot be reused at a new origin.</p>
+<p><strong>Test connection</strong> uses the unsaved draft for a small real provider request, with at most 16 output tokens and a 20-second timeout. It may consume provider credits; it does not save the draft, modify stored login credentials, or change a running conversation. Diagnostics do not execute shell credential commands. Save refreshes the shared model/auth catalog while current requests keep running. Existing sessions keep their selected model metadata: when idle, switch to another model and back, or start a new session, to use the refreshed model definition. Clicking the already selected model only closes the picker. Global extension-provider registrations still follow the <a href="#pi-extension-provider-baseline">provider baseline restart rules</a>; <code>/reload</code> does not rebuild that baseline.</p>
+<p>After the daemon has begun constructing any session, browser saves cannot change or remove an existing provider's connection settings or credentials, including per-model endpoints and headers or removed model entries. This protection lasts until the daemon restarts, even after sessions close; it prevents retained model definitions from sending new credentials to an old endpoint. Metadata edits remain available. To add a different connection without interrupting current work, keep existing entries and use a genuinely new provider ID that does not match a built-in or globally registered provider.</p>
+<p>To change an existing connection, first finish current work and close PI WEB chat pages. From an external terminal, safely restart the session daemon (for user-service installs: <code>systemctl --user restart pi-web-sessiond</code>). Open your PI WEB deployment's base URL with only <code>?settings=models</code>, without project, workspace or session parameters, and save before reopening conversations. Restarting while a chat page reconnects can load a session before the save and activate the protection again. Browser saves never stop running sessions automatically.</p>
+<h3 id="mcp-server-management">MCP server management</h3>
+<p>Open <strong>Settings → MCP servers</strong> to add or edit stdio/HTTP server definitions, enable or disable them, test a connection, inspect returned tool schemas, and use HTTP OAuth sign-in/sign-out where supported. Global entries live in the active agent directory's <code>mcp.json</code>; project entries live in the selected workspace's <code>.pi/mcp.json</code>. These are Pi MCP files, separate from PI WEB core config. Project overrides of a global server are limited to <code>enabled</code>, <code>exposure</code>, and <code>toolExposure</code>.</p>
+<p>Sensitive values are masked; preserve the displayed marker to keep a value or replace it to update it. With a project selected, trust it before testing or signing in; untrusted project configuration is hidden. Listing configurations does not start servers. A test starts only the selected server in an independent probe and closes its transport afterward. Its result and timestamp describe that probe, not the live connection state of every session. Run <code>/reload</code> in each existing idle session after changing MCP configuration.</p>
+</section>
 <section id="providers"><h2>Providers, catalogs & project trust</h2>
 <div class="table-scroll" role="region" aria-label="Provider and trust configuration" tabindex="0">
 <table class="reference-table ">
@@ -678,8 +690,14 @@
 </tr></thead>
 <tbody>
 <tr>
-<th scope="row"><span id="pi-extension-provider-baseline"></span>Provider definitions / connections</th>
-<td>Active agent directory’s <code>models.json</code>, environment credentials, or globally installed Pi extensions</td>
+<th scope="row">Model configuration</th>
+<td>Settings → Model configuration; active agent directory’s <code>models.json</code></td>
+<td>Shared catalog; existing sessions retain selected model metadata.</td>
+<td>Save refreshes the catalog. Existing connection changes require a fresh daemon before any session loads; see <a href="#model-configuration">the safe save sequence</a>. For metadata changes, switch to another model and back when idle, or start a new session.</td>
+</tr>
+<tr>
+<th scope="row"><span id="pi-extension-provider-baseline"></span>Global extension providers / environment</th>
+<td>Globally installed Pi extensions and daemon environment credentials</td>
 <td>Shared across all sessions on the machine. Project extensions cannot add/replace/remove providers.</td>
 <td>Sessiond restart</td>
 </tr>
@@ -748,7 +766,7 @@
 </details>
 <p>Failed catalog refreshes keep the last successful catalog and report problems in daemon logs. A refresh can briefly delay session startup; the activity line reports when model lists are refreshing.</p>
 <p>Pi virtual models are unsupported, including from global extensions. Disable the extension’s virtual-model feature and select a physical model instead; restarting the daemon does not enable virtual models.</p>
-<details class="config-details"><summary>Provider safety and logging</summary><ul><li>Provider registrations/configuration are a startup snapshot. <code>/reload</code> cannot rebuild it.</li><li>Accepted model-list updates are machine-wide; if two workspaces register lists for one provider, the last registration wins.</li><li>Model entries can override provider URLs/headers. Pi extensions remain trusted code; this is not a security boundary.</li><li>Provider decisions are recorded in daemon logs, not browser notifications. Entries omit provider configuration and credentials. See <a href="faq#provider-extension-no-effect">provider extension troubleshooting</a> for ignored changes.</li></ul></details>
+<details class="config-details"><summary>Provider safety and logging</summary><ul><li>Global extension-provider registrations are a startup snapshot. <code>/reload</code> cannot rebuild it; extension connection/implementation changes and daemon environment changes require a sessiond restart. Saved <code>models.json</code> edits refresh the catalog as described under <a href="#model-configuration">model configuration</a>.</li><li>Accepted model-list updates are machine-wide; if two workspaces register lists for one provider, the last registration wins.</li><li>Model entries can override provider URLs/headers. Pi extensions remain trusted code; this is not a security boundary.</li><li>Provider decisions are recorded in daemon logs, not browser notifications. Entries omit provider configuration and credentials. See <a href="faq#provider-extension-no-effect">provider extension troubleshooting</a> for ignored changes.</li></ul></details>
 </section>
 <section id="environment"><h2>Environment overrides</h2>
 <p>Look up the JSON setting above for its scope and restart requirements. These environment values take precedence over machine config.</p>

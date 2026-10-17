@@ -35,6 +35,26 @@ Open the model or thinking-level selector and click a row’s star under **New s
 
 Defaults are saved in Pi’s global `settings.json` on the selected session’s machine (`~/.pi/agent/settings.json` by default), using `defaultProvider`, `defaultModel`, and `defaultThinkingLevel`. They apply to new sessions without restarting. Project `.pi/settings.json` overrides, explicit startup choices, and per-model thinking settings still take precedence. A default model must be enabled; otherwise startup falls back to the first enabled model. Resumed sessions keep their saved model and thinking level.
 
+## Browser model and MCP management
+
+### Model configuration
+
+Open **Settings → Model configuration** to edit provider Base URLs, API protocols, keys and headers, model capabilities, context/output limits, and built-in model overrides. **Discover models** adds selected results to the draft; **Save configuration** writes the selected machine's active Pi agent directory's `models.json` (`~/.pi/agent/models.json` by default). This is machine-wide Pi configuration, separate from PI WEB's `config.json` and project-local core config.
+
+Stored keys and header values are masked. Leave a placeholder unchanged to preserve its value; **Clear configured key** removes the `models.json` key, and deleting header properties removes those headers. Separate login credentials remain in `auth.json`. Before changing an endpoint's scheme, hostname, or port, use `/logout` to remove the old provider login, then enter the replacement key and headers: stored logins take precedence over `models.json` keys, and hidden credentials cannot be reused at a new origin.
+
+**Test connection** uses the unsaved draft for a small real provider request, with at most 16 output tokens and a 20-second timeout. It may consume provider credits; it does not save the draft, modify stored login credentials, or change a running conversation. Diagnostics do not execute shell credential commands. Save refreshes the shared model/auth catalog while current requests keep running. Existing sessions keep their selected model metadata: when idle, switch to another model and back, or start a new session, to use the refreshed model definition. Clicking the already selected model only closes the picker. Global extension-provider registrations still follow the [provider baseline restart rules](#pi-extension-provider-baseline); `/reload` does not rebuild that baseline.
+
+After the daemon has begun constructing any session, browser saves cannot change or remove an existing provider's connection settings or credentials, including per-model endpoints and headers or removed model entries. This protection lasts until the daemon restarts, even after sessions close; it prevents retained model definitions from sending new credentials to an old endpoint. Metadata edits remain available. To add a different connection without interrupting current work, keep existing entries and use a genuinely new provider ID that does not match a built-in or globally registered provider.
+
+To change an existing connection, first finish current work and close PI WEB chat pages. From an external terminal, safely restart the session daemon (for user-service installs: `systemctl --user restart pi-web-sessiond`). Open your PI WEB deployment's base URL with only `?settings=models`, without project, workspace or session parameters, and save before reopening conversations. Restarting while a chat page reconnects can load a session before the save and activate the protection again. Browser saves never stop running sessions automatically.
+
+### MCP server management
+
+Open **Settings → MCP servers** to add or edit stdio/HTTP server definitions, enable or disable them, test a connection, inspect returned tool schemas, and use HTTP OAuth sign-in/sign-out where supported. Global entries live in the active agent directory's `mcp.json`; project entries live in the selected workspace's `.pi/mcp.json`. These are Pi MCP files, separate from PI WEB core config. Project overrides of a global server are limited to `enabled`, `exposure`, and `toolExposure`.
+
+Sensitive values are masked; preserve the displayed marker to keep a value or replace it to update it. With a project selected, trust it before testing or signing in; untrusted project configuration is hidden. Listing configurations does not start servers. A test starts only the selected server in an independent probe and closes its transport afterward. Its result and timestamp describe that probe, not the live connection state of every session. Run `/reload` in each existing idle session after changing MCP configuration.
+
 ## Reverse-proxy deployment paths
 
 The deployment path is not a PI WEB config-file key or environment setting. The published client is portable: one build works at `/` and at canonical trailing-slash prefixes such as `/ai/` or `/test/ai/`.
@@ -291,13 +311,13 @@ Changing either path requires a session-daemon restart on the target machine; re
 
 Model providers are shared across all sessions on a machine. PI WEB loads them when the session daemon starts, using Pi's built-in providers, environment credentials, the active agent directory's `models.json`, and globally installed Pi extensions/packages. PI WEB workspace plugins are separate; see the [plugin guide](https://pi-web.dev/plugins).
 
-Provider connection settings stay fixed until the daemon restarts. Project extensions and `/reload` cannot add, replace, or remove providers. Other Pi extension features continue to load and reload normally.
+Global Pi extension-provider registrations stay fixed until the daemon restarts. Project extensions and `/reload` cannot add, replace, or remove those registrations. Saved `models.json` edits refresh the shared catalog as described under [model configuration](#model-configuration). Other Pi extension features continue to load and reload normally.
 
 Pi virtual models are unsupported, including from global extensions. Disable the extension's virtual-model feature and select a physical model instead; restarting the daemon does not enable virtual models.
 
 #### Model list refresh for a known provider
 
-An extension may refresh an existing provider's **model list** without a restart, provided all other provider settings remain unchanged. Changes to credentials, connection settings, or provider implementation require a daemon restart. Accepted model-list updates are available to sessions immediately.
+An extension may refresh an existing provider's **model list** without a restart, provided all other provider settings remain unchanged. Extension changes to credentials, connection settings, or provider implementation require a daemon restart. Accepted model-list updates are available to sessions immediately.
 
 Model lists are shared across the machine, not isolated per project. If two workspaces update the same provider's list, the last update wins. Pi extensions remain trusted code, and model entries can override provider connection details.
 
@@ -307,7 +327,7 @@ Provider decisions are recorded in daemon logs, not browser notifications. Entri
 
 This prevents accidental provider, configuration, or credential contamination between projects; it is not a security boundary because Pi extensions remain trusted daemon code.
 
-Configure providers before the daemon starts: use the active agent directory's `models.json`, or install the Pi extension globally in that agent directory. Project Pi extensions and project-level `models.json` files cannot add providers to PI WEB's shared baseline. After updating PI WEB—or after installing, removing, or updating a global Pi extension that registers providers—manually restart `pi-web-sessiond.service` (`systemctl --user restart pi-web-sessiond`). Restarting only the web/API service and running `/reload` do not rebuild the baseline.
+Install provider extensions globally in the active agent directory before the daemon starts. Use **Settings → Model configuration** for `models.json` edits and catalog refreshes. Project Pi extensions and project-level `models.json` files cannot add providers to PI WEB's shared baseline. After updating PI WEB—or after installing, removing, or updating a global Pi extension that registers providers—manually restart `pi-web-sessiond.service` (`systemctl --user restart pi-web-sessiond`). Restarting only the web/API service and running `/reload` do not rebuild the extension-provider baseline. Changes to the daemon's environment also require a restart.
 
 ### Background model catalog refresh
 

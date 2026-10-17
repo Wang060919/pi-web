@@ -3,7 +3,7 @@
 import { LitElement, html } from "lit";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { initialAppState, type AppState } from "../appState";
-import type { SessionInfo, SessionStatus, SessionWarning, Workspace } from "../api";
+import { api, type SessionInfo, type SessionStatus, type SessionWarning, type Workspace } from "../api";
 import { SessionController } from "../controllers/sessionController";
 import { reportBrowserError, sessionBrowserErrorScope, workspaceBrowserErrorScope, type BrowserErrorRecovery } from "../browserErrors";
 import { machineSessionKey } from "../machineKeys";
@@ -29,6 +29,8 @@ import { loadNavigationPreferences, saveNavigationPreferences } from "../navigat
 import { NavigationDialog } from "./appShell/NavigationDialog";
 import { deepActiveElement } from "./modalLayerRegistry";
 import { AppShellController } from "../appShell/appShellController";
+import { usageOverviewApi } from "../api/usageOverview";
+import { WelcomeUsageOverview } from "./WelcomeUsageOverview";
 
 // Exercise the real shell and child rendering without starting API/socket
 // orchestration. The inherited Lit controllers and update lifecycle still run.
@@ -46,6 +48,8 @@ const unexpectedRequest = vi.fn(() => Promise.reject(new Error("Rendering tests 
 
 beforeEach(() => {
   unexpectedRequest.mockClear();
+  // Welcome-page data loading is exercised at its own component/API boundary.
+  vi.spyOn(usageOverviewApi, "get").mockResolvedValue({ records: [], today: "2026-10-17", timeZone: "UTC", scope: "workspace", warnings: [] });
   // Existing rendering scenarios exercise explicit legacy "show all" layouts.
   saveNavigationPreferences({ pinnedIds: [], mobileCollapsed: false });
   window.history.replaceState(null, "", "/");
@@ -66,6 +70,82 @@ afterEach(() => {
 });
 
 describe("application rendering boundaries", () => {
+  it("opens the workspace overview from Actions and clears it when a conversation is selected", async () => {
+    const project = { id: workspace.projectId, name: "Project", path: workspace.path, createdAt: "now" };
+    window.history.replaceState(null, "", `?${new URLSearchParams({ project: project.id, workspace: workspace.id, session: session.id, view: "chat" })}`);
+    const app = await mountApp({ projects: [project], selectedProject: project, workspaces: [workspace], selectedWorkspace: workspace, sessions: [session], selectedSession: session, mainView: "chat", actionPaletteOpen: true });
+    // Runtime plugins and session joining are separate boundaries. Keep their
+    // loading idle while exercising actual action, route, and navigation UI.
+    Reflect.set(app, "gatewayPluginLoadPromise", Promise.resolve());
+    Reflect.set(app, "gatewayPluginLoadAttemptComplete", true);
+    const selectSession = vi.spyOn(SessionController.prototype, "selectSession").mockImplementation((next) => {
+      patchState(app, { selectedSession: next });
+      return Promise.resolve();
+    });
+    await settle(app);
+    const palette = app.shadowRoot?.querySelector<ActionPalette>("action-palette");
+    const overview = [...palette?.shadowRoot?.querySelectorAll<HTMLButtonElement>(".options button") ?? []]
+      .find((button) => button.querySelector("strong")?.textContent === "Workspace overview");
+    if (overview === undefined) throw new Error("Expected workspace overview action");
+    overview.click();
+    await vi.waitFor(() => { expect(Reflect.get(app, "state")).toMatchObject({ selectedSession: undefined, mainView: "chat" }); });
+    await settle(app);
+    expect(new URLSearchParams(window.location.search).get("overview")).toBe("1");
+    expect(new URLSearchParams(window.location.search).has("session")).toBe(false);
+    expect(app.shadowRoot?.querySelector("welcome-usage-overview")).toBeInstanceOf(WelcomeUsageOverview);
+    expect(app.shadowRoot?.querySelector("action-palette")).toBeNull();
+
+    const list = app.shadowRoot?.querySelector("app-navigation-panel")?.shadowRoot?.querySelector("session-list");
+    await settle(app);
+    const row = list?.shadowRoot?.querySelector<HTMLButtonElement>(".action-row");
+    if (row == null) throw new Error("Expected existing conversation in navigation");
+    row.click();
+    await vi.waitFor(() => { expect(selectSession).toHaveBeenCalledOnce(); });
+    await settle(app);
+    expect(new URLSearchParams(window.location.search).get("session")).toBe(session.id);
+    expect(new URLSearchParams(window.location.search).has("overview")).toBe(false);
+    expect(app.shadowRoot?.querySelector("welcome-usage-overview")).toBeNull();
+  });
+
+  it("restores the explicit welcome URL after reload without auto-selecting an existing conversation", async () => {
+    const project = { id: workspace.projectId, name: "Project", path: workspace.path, createdAt: "now" };
+    window.history.replaceState(null, "", `?${new URLSearchParams({ project: project.id, workspace: workspace.id, overview: "1", view: "chat" })}`);
+    const workspaces = vi.spyOn(api, "workspaces").mockResolvedValue([workspace]);
+    const sessions = vi.spyOn(api, "sessions").mockResolvedValue([session]);
+    const selectSession = vi.spyOn(SessionController.prototype, "selectSession");
+    const app = await mountApp({ projects: [project], mainView: "chat" });
+    Reflect.set(app, "gatewayPluginLoadPromise", Promise.resolve());
+    Reflect.set(app, "gatewayPluginLoadAttemptComplete", true);
+    // RenderOnlyApp skips startup orchestration. Invoke its route entry once,
+    // with API list boundaries faked, to model restoring the current URL.
+    const restore: unknown = Reflect.get(app, "restoreRoute");
+    if (typeof restore !== "function") throw new Error("Expected route restoration entry");
+    await Reflect.apply(restore, app, [true]);
+    await settle(app);
+
+    expect(workspaces).toHaveBeenCalledExactlyOnceWith(project.id, "local");
+    expect(sessions).toHaveBeenCalledExactlyOnceWith(workspace.path, "local");
+    expect(selectSession).not.toHaveBeenCalled();
+    expect(Reflect.get(app, "state")).toMatchObject({ selectedWorkspace: workspace, selectedSession: undefined, sessions: [session] });
+    expect(app.shadowRoot?.querySelector("welcome-usage-overview")).toBeInstanceOf(WelcomeUsageOverview);
+    expect(new URLSearchParams(window.location.search).get("overview")).toBe("1");
+  });
+
+  it("mounts workspace usage only on the welcome surface and unmounts it when a conversation is selected", async () => {
+    const app = await mountApp({ selectedWorkspace: workspace, workspaces: [workspace], mainView: "chat" });
+    await settle(app);
+    const usage = app.shadowRoot?.querySelector("welcome-usage-overview");
+    expect(usage).toBeInstanceOf(WelcomeUsageOverview);
+    if (!(usage instanceof WelcomeUsageOverview)) throw new Error("Expected welcome usage summary");
+    expect(usage.cwd).toBe(workspace.path);
+    expect(usage.machineId).toBe("local");
+    expect(usageOverviewApi.get).toHaveBeenCalledOnce();
+    patchState(app, { selectedSession: session });
+    await settle(app);
+    expect(app.shadowRoot?.querySelector("welcome-usage-overview")).toBeNull();
+    expect(usage.isConnected).toBe(false);
+  });
+
   it("keeps a fresh layout quiet while allowing a hidden tool to open from action search", async () => {
     localStorage.clear();
     const app = await mountApp({ selectedWorkspace: workspace, workspaces: [workspace], mainView: "chat", actionPaletteOpen: true }, () => html`<p>Selected tool</p>`);

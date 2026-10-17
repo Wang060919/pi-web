@@ -679,7 +679,7 @@ describe("Docker command assets", () => {
     expect(result.stdout).toContain("Reconnect with: docker logs -f pi-web-docker-restart-sessiond-");
     expect(result.stdout).toContain("fake helper log");
     const log = await readFile(fakeDocker.logPath, "utf8");
-    expect(log).toContain("container inspect");
+    expect(log).toContain("container inspect current-container");
     expect(log).toContain("run -d");
     expect(log).toContain("--env-file");
     expect(log).toContain(`${installDir}/.env`);
@@ -1078,6 +1078,10 @@ printf 'unexpected fake docker args: %s\n' "$*" >&2
 exit 9
 `, "utf8");
   await chmod(dockerPath, 0o755);
+  // Container identity belongs to this fixture, not the host's installed tools.
+  const hostnamePath = join(binDir, "hostname");
+  await writeFile(hostnamePath, "#!/usr/bin/env sh\nprintf 'current-container\\n'\n", "utf8");
+  await chmod(hostnamePath, 0o755);
   return { binDir, logPath };
 }
 
