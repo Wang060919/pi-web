@@ -18,6 +18,18 @@ interface PendingWorkspaceUploadReview {
   files: File[];
 }
 
+interface ActiveFilesResize {
+  pointerId: number;
+  startY: number;
+  startPercent: number;
+  height: number;
+  handle: HTMLElement;
+}
+
+const DEFAULT_TREE_PERCENT = 34;
+const MIN_TREE_PERCENT = 20;
+const MAX_TREE_PERCENT = 80;
+
 export class WorkspaceFilesPanel extends LitElement {
   @property({ attribute: false }) context: WorkspacePanelContext | undefined;
   @property({ attribute: false }) runtime: FilesRuntime | undefined;
@@ -30,6 +42,8 @@ export class WorkspaceFilesPanel extends LitElement {
   @state() private createDirs = true;
   @state() private formError = "";
   @state() private dragActive = false;
+  @state() private treePercent = DEFAULT_TREE_PERCENT;
+  private activeFilesResize: ActiveFilesResize | undefined;
   private dragDepth = 0;
   private scope: FilesScopeState | undefined;
   private unsubscribeRuntime: (() => void) | undefined;
@@ -43,7 +57,10 @@ export class WorkspaceFilesPanel extends LitElement {
   protected override willUpdate(changedProperties: PropertyValues<this>): void {
     if (!changedProperties.has("context") && !changedProperties.has("runtime")) return;
     const nextKey = this.context === undefined ? undefined : workspaceContextKey(this.context);
-    if (this.boundScopeKey !== undefined && nextKey !== this.boundScopeKey) this.resetPendingUpload();
+    if (this.boundScopeKey !== undefined && nextKey !== this.boundScopeKey) {
+      this.finishFilesResize();
+      this.resetPendingUpload();
+    }
     this.bindRuntime(nextKey);
     const nextNavigationModeKey = workspaceNavigationModeKey(this.context);
     if (nextNavigationModeKey !== this.navigationModeKey) {
@@ -70,6 +87,7 @@ export class WorkspaceFilesPanel extends LitElement {
   }
 
   override disconnectedCallback(): void {
+    this.finishFilesResize();
     window.removeEventListener("resize", this.handleResponsiveVisibilityChange);
     this.visibilityObserver?.disconnect();
     this.unsubscribeRuntime?.();
@@ -120,10 +138,11 @@ export class WorkspaceFilesPanel extends LitElement {
         </section>
         ${scope.error === undefined ? null : html`<p class="files-error" role="alert">${scope.error}</p>`}
         ${this.renderUploadProgress(context, runtime, scope)}
-        <section class="split">
-          <div class="list tree">
+        <section class="split" style=${`--files-tree-size:${String(this.treePercent)}fr;--files-viewer-size:${String(100 - this.treePercent)}fr`}>
+          <div class="list tree" id="files-tree">
             ${scope.fileTree.length === 0 ? localizedTemplate("FilesPanel.no_files_loaded.c8f2a390", html)`<p class="muted">No files loaded.</p>` : scope.fileTree.map((entry) => this.renderTreeEntry(context, runtime, scope, entry, 0))}
           </div>
+          ${this.renderFilesResizer()}
           <div class="viewer">
             <pi-web-files-viewer
               .contentRendering=${this.contentRendering}
@@ -148,6 +167,83 @@ export class WorkspaceFilesPanel extends LitElement {
         ${this.pendingUpload === undefined ? null : this.renderUploadDialog(context, runtime, this.pendingUpload, files.defaultUploadFolder)}
       </section>
     `;
+  }
+
+  private renderFilesResizer(): TemplateResult {
+    return html`
+      <div
+        class="split-resizer"
+        role="separator"
+        tabindex="0"
+        aria-label=${t("FilesPanel.resize_file_list_and_preview")}
+        title=${t("FilesPanel.drag_or_double_click_to_reset")}
+        aria-controls="files-tree"
+        aria-orientation="horizontal"
+        aria-valuemin=${String(MIN_TREE_PERCENT)}
+        aria-valuemax=${String(MAX_TREE_PERCENT)}
+        aria-valuenow=${String(Math.round(this.treePercent))}
+        @pointerdown=${this.handleFilesResizeStart}
+        @pointermove=${this.handleFilesResizeMove}
+        @pointerup=${this.handleFilesResizeEnd}
+        @pointercancel=${this.handleFilesResizeEnd}
+        @lostpointercapture=${this.handleFilesResizeEnd}
+        @keydown=${this.handleFilesResizeKey}
+        @dblclick=${() => { this.finishFilesResize(); this.treePercent = DEFAULT_TREE_PERCENT; }}
+      ></div>
+    `;
+  }
+
+  private readonly handleFilesResizeStart = (event: PointerEvent): void => {
+    if (event.button !== 0 || this.activeFilesResize !== undefined) return;
+    const handle = event.currentTarget;
+    const split = this.renderRoot.querySelector<HTMLElement>(".split");
+    const tree = this.renderRoot.querySelector<HTMLElement>(".tree");
+    if (!(handle instanceof HTMLElement) || split === null || tree === null) return;
+    const height = split.getBoundingClientRect().height - 1;
+    if (height <= 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    handle.focus({ preventScroll: true });
+    handle.setPointerCapture(event.pointerId);
+    this.activeFilesResize = { pointerId: event.pointerId, startY: event.clientY, startPercent: tree.getBoundingClientRect().height / height * 100, height, handle };
+    this.toggleAttribute("resizing-files", true);
+  };
+
+  private readonly handleFilesResizeMove = (event: PointerEvent): void => {
+    const resize = this.activeFilesResize;
+    if (resize?.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    this.setTreePercent(resize.startPercent + (event.clientY - resize.startY) / resize.height * 100);
+  };
+
+  private readonly handleFilesResizeEnd = (event: PointerEvent): void => {
+    if (this.activeFilesResize?.pointerId === event.pointerId) this.finishFilesResize();
+  };
+
+  private readonly handleFilesResizeKey = (event: KeyboardEvent): void => {
+    const step = event.shiftKey ? 10 : 2;
+    let next: number;
+    switch (event.key) {
+      case "ArrowUp": next = this.treePercent - step; break;
+      case "ArrowDown": next = this.treePercent + step; break;
+      case "Home": next = MIN_TREE_PERCENT; break;
+      case "End": next = MAX_TREE_PERCENT; break;
+      default: return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    this.setTreePercent(next);
+  };
+
+  private setTreePercent(percent: number): void {
+    this.treePercent = Math.max(MIN_TREE_PERCENT, Math.min(MAX_TREE_PERCENT, percent));
+  }
+
+  private finishFilesResize(): void {
+    const resize = this.activeFilesResize;
+    this.activeFilesResize = undefined;
+    this.toggleAttribute("resizing-files", false);
+    if (resize?.handle.hasPointerCapture(resize.pointerId) === true) resize.handle.releasePointerCapture(resize.pointerId);
   }
 
   private bindRuntime(nextKey: string | undefined): void {
@@ -451,8 +547,13 @@ export class WorkspaceFilesPanel extends LitElement {
     .files-error { flex: 0 0 auto; margin: 0; border-bottom: 1px solid var(--pi-danger); color: var(--pi-danger); padding: 8px; overflow-wrap: anywhere; }
     .capability-error { box-sizing: border-box; width: min(100%, 420px); margin: auto; display: grid; gap: 8px; color: var(--pi-danger); padding: 24px; text-align: center; }
     .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
-    .split { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: minmax(160px, 34%) minmax(0, 1fr); }
-    .list { min-height: 0; overflow: auto; border-bottom: 1px solid var(--pi-border); padding: 6px; }
+    .split { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: minmax(0, var(--files-tree-size, 34fr)) 1px minmax(0, var(--files-viewer-size, 66fr)); }
+    .list { min-height: 0; overflow: auto; padding: 6px; }
+    .split-resizer { position: relative; z-index: 2; background: var(--pi-border); cursor: row-resize; touch-action: none; outline: none; }
+    .split-resizer::before { content: ""; position: absolute; inset: -5px 0; }
+    .split-resizer:hover, .split-resizer:focus-visible, :host([resizing-files]) .split-resizer { background: var(--pi-text-secondary); }
+    .split-resizer:focus-visible { outline: 1px solid var(--pi-text-secondary); }
+    :host([resizing-files]) { cursor: row-resize; user-select: none; }
     .row { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 4px; width: 100%; border: 0; border-radius: 5px; background: transparent; text-align: left; padding: 4px 6px 4px calc(6px + var(--depth, 0) * 14px); }
     .row:not(:disabled):hover { background: var(--pi-surface-hover); }
     .row.selected, .row.selected:not(:disabled):hover { background: var(--pi-selection-bg); }

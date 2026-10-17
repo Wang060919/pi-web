@@ -2,6 +2,8 @@
 import type { messages as englishMessages } from './en.js';
 
 export const messages: Record<keyof typeof englishMessages, string> = {
+  "FilesPanel.resize_file_list_and_preview": "调整文件列表与预览高度",
+  "FilesPanel.drag_or_double_click_to_reset": "上下拖动调整高度，双击恢复默认。",
   "FilesPanel.workspace_root.a28d8001": "工作区根目录",
   "FilesPanel.choose_at_least_one_file_to_upload.6f017d64": "请至少选择一个要上传的文件。",
   "FilesPanel.done.3a797c59": "完成",
@@ -66,8 +68,8 @@ export const templates = {
     "order": []
   },
   "FilesPanel.files_upload_refresh_drop_files_to_upload.86aad454": {
-    "sourceHash": 90304216,
-    "valueCount": 25,
+    "sourceHash": 1173518456,
+    "valueCount": 27,
     "strings": [
       "\n      <section\n        class=",
       "\n        @dragenter=",
@@ -81,8 +83,10 @@ export const templates = {
       ">刷新</button>\n          </div>\n          <input id=\"workspace-upload-input\" class=\"visually-hidden\" type=\"file\" multiple @change=",
       " />\n        </section>\n        ",
       "\n        ",
-      "\n        <section class=\"split\">\n          <div class=\"list tree\">\n            ",
-      "\n          </div>\n          <div class=\"viewer\">\n            <pi-web-files-viewer\n              .contentRendering=",
+      "\n        <section class=\"split\" style=",
+      ">\n          <div class=\"list tree\" id=\"files-tree\">\n            ",
+      "\n          </div>\n          ",
+      "\n          <div class=\"viewer\">\n            <pi-web-files-viewer\n              .contentRendering=",
       "\n              .machineId=",
       "\n              .projectId=",
       "\n              .workspaceId=",
@@ -121,7 +125,9 @@ export const templates = {
       21,
       22,
       23,
-      24
+      24,
+      25,
+      26
     ]
   },
   "FilesPanel.loading.28330ace": {

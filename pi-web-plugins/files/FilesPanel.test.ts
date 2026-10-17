@@ -243,6 +243,97 @@ describe("Files panel component boundary", () => {
     expect(panel.shadowRoot?.querySelector("[role='alert']")?.textContent).toContain("workspace-files capability v1");
     expect(panel.shadowRoot?.querySelector(".split")).toBeNull();
   });
+
+  it("exposes a keyboard-adjustable separator with bounded values and a default reset", async () => {
+    const panel = await mountPanel(createContext());
+    const separator = requiredElement(panel.shadowRoot?.querySelector<HTMLElement>("[role='separator']"), "file separator");
+    expect(separator.getAttribute("aria-orientation")).toBe("horizontal");
+    expect(separator.tabIndex).toBe(0);
+    expect(separator.getAttribute("aria-valuemin")).toBe("20");
+    expect(separator.getAttribute("aria-valuemax")).toBe("80");
+    expect(panel.shadowRoot?.getElementById(separator.getAttribute("aria-controls") ?? "")).not.toBeNull();
+    expect(separator.getAttribute("aria-valuenow")).toBe("34");
+
+    for (const [key, shiftKey, expected] of [
+      ["ArrowDown", false, "36"],
+      ["ArrowUp", false, "34"],
+      ["ArrowDown", true, "44"],
+      ["ArrowUp", true, "34"],
+      ["Home", false, "20"],
+      ["ArrowUp", true, "20"],
+      ["End", false, "80"],
+      ["ArrowDown", true, "80"],
+    ] as const) {
+      const event = new KeyboardEvent("keydown", { key, shiftKey, bubbles: true, cancelable: true });
+      separator.dispatchEvent(event);
+      await panel.updateComplete;
+      expect(event.defaultPrevented).toBe(true);
+      expect(separator.getAttribute("aria-valuenow")).toBe(expected);
+    }
+
+    separator.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+    await panel.updateComplete;
+    expect(separator.getAttribute("aria-valuenow")).toBe("34");
+    const unrelatedKey = new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true });
+    separator.dispatchEvent(unrelatedKey);
+    expect(unrelatedKey.defaultPrevented).toBe(false);
+  });
+
+  it("drags from the measured tree height and clamps both ends while ignoring unrelated pointers", async () => {
+    const { panel, separator, setPointerCapture } = await mountFilesResizer(400);
+    separator.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 7, button: 2, clientY: 400 }));
+    separator.dispatchEvent(new PointerEvent("pointermove", { pointerId: 7, clientY: 800 }));
+    await panel.updateComplete;
+    expect(setPointerCapture).not.toHaveBeenCalled();
+    expect(separator.getAttribute("aria-valuenow")).toBe("34");
+
+    separator.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 7, button: 0, clientY: 400 }));
+    expect(setPointerCapture).toHaveBeenCalledExactlyOnceWith(7);
+    expect(panel.hasAttribute("resizing-files")).toBe(true);
+    expect(panel.shadowRoot?.activeElement).toBe(separator);
+    separator.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 8, button: 0, clientY: 400 }));
+    separator.dispatchEvent(new PointerEvent("pointermove", { pointerId: 8, clientY: 900 }));
+    separator.dispatchEvent(new PointerEvent("pointercancel", { pointerId: 8 }));
+    await panel.updateComplete;
+    expect(setPointerCapture).toHaveBeenCalledOnce();
+    expect(separator.getAttribute("aria-valuenow")).toBe("34");
+    expect(panel.hasAttribute("resizing-files")).toBe(true);
+
+    // The injected browser measurement is 40%, rather than the default 34%.
+    separator.dispatchEvent(new PointerEvent("pointermove", { pointerId: 7, clientY: 500 }));
+    await panel.updateComplete;
+    expect(separator.getAttribute("aria-valuenow")).toBe("50");
+    separator.dispatchEvent(new PointerEvent("pointermove", { pointerId: 7, clientY: 2000 }));
+    await panel.updateComplete;
+    expect(separator.getAttribute("aria-valuenow")).toBe("80");
+    separator.dispatchEvent(new PointerEvent("pointermove", { pointerId: 7, clientY: -1000 }));
+    await panel.updateComplete;
+    expect(separator.getAttribute("aria-valuenow")).toBe("20");
+  });
+
+  it.each(["pointerup", "pointercancel", "lostpointercapture", "disconnect"] as const)("stops resizing after %s", async (ending) => {
+    const { panel, separator, releasePointerCapture, losePointerCapture } = await mountFilesResizer(340);
+    separator.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 7, button: 0, clientY: 340 }));
+    separator.dispatchEvent(new PointerEvent("pointermove", { pointerId: 7, clientY: 500 }));
+    await panel.updateComplete;
+    expect(separator.getAttribute("aria-valuenow")).toBe("50");
+
+    if (ending === "disconnect") panel.remove();
+    else {
+      if (ending === "lostpointercapture") losePointerCapture(7);
+      separator.dispatchEvent(new PointerEvent(ending, { pointerId: 7 }));
+    }
+    expect(panel.hasAttribute("resizing-files")).toBe(false);
+    if (ending === "lostpointercapture") expect(releasePointerCapture).not.toHaveBeenCalled();
+    else expect(releasePointerCapture).toHaveBeenCalledExactlyOnceWith(7);
+
+    separator.dispatchEvent(new PointerEvent("pointermove", { pointerId: 7, clientY: 900 }));
+    if (ending === "disconnect") {
+      document.body.append(panel);
+      await panel.updateComplete;
+    } else await panel.updateComplete;
+    expect(separator.getAttribute("aria-valuenow")).toBe("50");
+  });
 });
 
 describe("Files upload helpers", () => {
@@ -278,6 +369,26 @@ async function mountPanel(context: WorkspacePanelContext, runtime = new FilesRun
   document.body.append(panel);
   await panel.updateComplete;
   return panel;
+}
+
+async function mountFilesResizer(treeHeight: number) {
+  const panel = await mountPanel(createContext());
+  const split = requiredElement(panel.shadowRoot?.querySelector<HTMLElement>(".split"), "file split");
+  const tree = requiredElement(panel.shadowRoot?.querySelector<HTMLElement>(".tree"), "file tree");
+  const separator = requiredElement(panel.shadowRoot?.querySelector<HTMLElement>("[role='separator']"), "file separator");
+  // Browser geometry and capture are explicit inputs; happy-dom does not lay
+  // out the grid or implement a real pointer-capture lifecycle.
+  vi.spyOn(split, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 600, 1001));
+  vi.spyOn(tree, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 600, treeHeight));
+  const capturedPointers = new Set<number>();
+  const setPointerCapture = vi.fn((pointerId: number) => { capturedPointers.add(pointerId); });
+  const releasePointerCapture = vi.fn((pointerId: number) => { capturedPointers.delete(pointerId); });
+  Object.defineProperties(separator, {
+    setPointerCapture: { configurable: true, value: setPointerCapture },
+    hasPointerCapture: { configurable: true, value: (pointerId: number) => capturedPointers.has(pointerId) },
+    releasePointerCapture: { configurable: true, value: releasePointerCapture },
+  });
+  return { panel, separator, setPointerCapture, releasePointerCapture, losePointerCapture: (pointerId: number) => capturedPointers.delete(pointerId) };
 }
 
 interface ContextOptions {

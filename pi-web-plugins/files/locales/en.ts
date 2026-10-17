@@ -1,5 +1,7 @@
 // English source messages. Keys are stable at the call site.
 export const messages = {
+  "FilesPanel.resize_file_list_and_preview": "Resize file list and preview",
+  "FilesPanel.drag_or_double_click_to_reset": "Drag to resize. Double-click to reset.",
   "FilesPanel.workspace_root.a28d8001": "workspace root",
   "FilesPanel.choose_at_least_one_file_to_upload.6f017d64": "Choose at least one file to upload.",
   "FilesPanel.done.3a797c59": "Done",
