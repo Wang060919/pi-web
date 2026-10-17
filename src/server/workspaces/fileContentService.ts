@@ -1,4 +1,5 @@
-import { lstat, mkdir, open, realpath, rename, stat, unlink, writeFile } from "node:fs/promises";
+import { constants } from "node:fs";
+import { lstat, mkdir, open, realpath, rename, stat, unlink } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import type { DeleteWorkspaceFileResponse, FileContentMediaType, FileContentResponse, MoveWorkspaceFileOptions, MoveWorkspaceFileResponse, PiWebPathAccessConfig, WriteWorkspaceFileOptions, WriteWorkspaceFileResponse } from "../../shared/apiTypes.js";
 import { classifyWorkspaceFile, MAX_WORKSPACE_FILE_CONTENT_BYTES, type WorkspaceFileClassification } from "../../shared/workspaceFiles.js";
@@ -49,13 +50,13 @@ export async function writeWorkspaceFile(rootPath: string, path: string | undefi
   const createDirs = options.createDirs ?? true;
   const overwrite = options.overwrite ?? true;
 
-  let exists = false;
+  let existing: { target: string; dev: number; ino: number } | undefined;
   try {
     const { target, relativePath } = await resolveInsideWorkspace(rootPath, path);
-    const s = await stat(target);
+    const s = await lstat(target);
     if (!s.isFile()) throw new Error("Path is not a file");
     if (!overwrite) throw new Error(`File already exists: ${relativePath}`);
-    exists = true;
+    existing = { target, dev: s.dev, ino: s.ino };
   } catch (error: unknown) {
     if (error instanceof Error && error.message.startsWith("File already exists")) throw error;
     if (isNodeErrorWithCode(error, "ENOENT")) { /* expected for creation — continue */ }
@@ -66,21 +67,50 @@ export async function writeWorkspaceFile(rootPath: string, path: string | undefi
   // Use resolveParentInsideWorkspace for the actual write since the target may not exist yet
   const { root, target, relativePath } = await resolveParentInsideWorkspace(rootPath, path);
 
-  if (createDirs) await mkdir(dirname(target), { recursive: true });
+  const realParent = await prepareWriteParent(root, dirname(target), createDirs);
+  // Existing internal symlinks keep writing their validated target. New files
+  // use exclusive creation, which never follows a dangling final symlink.
+  const writeTarget = existing?.target ?? join(realParent, basename(target));
+  const noFollow = process.platform === "win32" ? 0 : constants.O_NOFOLLOW;
+  const handle = await open(writeTarget, existing === undefined ? "wx" : constants.O_WRONLY | noFollow);
+  try {
+    const opened = await handle.stat();
+    if (!opened.isFile()) throw new Error("Path is not a file");
+    // Open without truncation, then verify the handle before changing bytes.
+    // This also protects platforms that cannot use O_NOFOLLOW, including Windows.
+    if (existing !== undefined) {
+      if (opened.dev !== existing.dev || opened.ino !== existing.ino) throw new Error("File changed while preparing write");
+      await handle.truncate(0);
+    }
+    await handle.writeFile(content);
+    const s = await handle.stat();
+    return { path: relativePath, size: s.size, modifiedAt: s.mtime.toISOString(), created: existing === undefined };
+  } finally {
+    await handle.close();
+  }
+}
 
-  // Resolve symlinks in the parent path to prevent escape via symlink
-  const realParent = await realpath(dirname(target));
-  const realTarget = join(realParent, basename(target));
-  ensureInside(root, realTarget);
-  await writeFile(realTarget, content);
-
-  const s = await stat(realTarget);
-  return {
-    path: relativePath,
-    size: s.size,
-    modifiedAt: s.mtime.toISOString(),
-    created: !exists,
-  };
+async function prepareWriteParent(root: string, parent: string, createDirs: boolean): Promise<string> {
+  const missing: string[] = [];
+  let ancestor = parent;
+  for (;;) {
+    let canonical: string;
+    try {
+      canonical = await realpath(ancestor);
+    } catch (error) {
+      if (!createDirs || !isNodeErrorWithCode(error, "ENOENT")) throw error;
+      missing.unshift(basename(ancestor));
+      ancestor = dirname(ancestor);
+      continue;
+    }
+    // Check the existing ancestor before mkdir can follow an escaping symlink.
+    ensureInside(root, canonical);
+    const destination = join(canonical, ...missing);
+    if (missing.length > 0) await mkdir(destination, { recursive: true });
+    const resolved = await realpath(destination);
+    ensureInside(root, resolved);
+    return resolved;
+  }
 }
 
 export async function deleteWorkspaceFile(rootPath: string, path: string | undefined): Promise<DeleteWorkspaceFileResponse> {

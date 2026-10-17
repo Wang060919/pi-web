@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readFile, readlink, realpath, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { piWebDataDir } from "../../config.js";
 
@@ -31,48 +31,64 @@ export function machineStorePath(env: NodeJS.ProcessEnv = process.env, cwd = pro
 }
 
 export class MachineStore {
+  private writes: Promise<void> = Promise.resolve();
+
   constructor(private readonly filePath = machineStorePath()) {}
 
   async list(): Promise<StoredMachine[]> {
+    await this.writes;
     return (await this.read()).machines;
   }
 
   async add(input: { name: string; baseUrl: string; token?: string; headers?: Record<string, string> }): Promise<StoredMachine> {
-    const data = await this.read();
-    const now = new Date().toISOString();
-    const machine: StoredMachine = {
-      id: randomUUID(),
-      name: input.name,
-      kind: "remote",
-      baseUrl: input.baseUrl,
-      ...(input.token === undefined ? {} : { token: input.token }),
-      ...(input.headers === undefined ? {} : { headers: input.headers }),
-      createdAt: now,
-      updatedAt: now,
-    };
-    data.machines.push(machine);
-    await this.write(data);
-    return machine;
+    return this.serialized(async () => {
+      const data = await this.read();
+      const now = new Date().toISOString();
+      const machine: StoredMachine = {
+        id: randomUUID(),
+        name: input.name,
+        kind: "remote",
+        baseUrl: input.baseUrl,
+        ...(input.token === undefined ? {} : { token: input.token }),
+        ...(input.headers === undefined ? {} : { headers: input.headers }),
+        createdAt: now,
+        updatedAt: now,
+      };
+      data.machines.push(machine);
+      await this.write(data);
+      return machine;
+    });
   }
 
   async update(id: string, patch: Partial<Pick<StoredMachine, "name" | "baseUrl" | "token" | "headers">>): Promise<StoredMachine | undefined> {
-    const data = await this.read();
-    const index = data.machines.findIndex((machine) => machine.id === id);
-    if (index < 0) return undefined;
-    const current = data.machines[index];
-    if (current === undefined) return undefined;
-    const next: StoredMachine = { ...current, ...patch, updatedAt: new Date().toISOString() };
-    data.machines[index] = next;
-    await this.write(data);
-    return next;
+    return this.serialized(async () => {
+      const data = await this.read();
+      const index = data.machines.findIndex((machine) => machine.id === id);
+      if (index < 0) return undefined;
+      const current = data.machines[index];
+      if (current === undefined) return undefined;
+      const next: StoredMachine = { ...current, ...patch, updatedAt: new Date().toISOString() };
+      data.machines[index] = next;
+      await this.write(data);
+      return next;
+    });
   }
 
   async remove(id: string): Promise<boolean> {
-    const data = await this.read();
-    const machines = data.machines.filter((machine) => machine.id !== id);
-    if (machines.length === data.machines.length) return false;
-    await this.write({ machines });
-    return true;
+    return this.serialized(async () => {
+      const data = await this.read();
+      const machines = data.machines.filter((machine) => machine.id !== id);
+      if (machines.length === data.machines.length) return false;
+      await this.write({ machines });
+      return true;
+    });
+  }
+
+  private serialized<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.writes.then(operation);
+    // Fail the caller, but allow subsequent mutations to retry from disk.
+    this.writes = result.then(() => undefined, () => undefined);
+    return result;
   }
 
   private async read(): Promise<MachineFile> {
@@ -89,9 +105,36 @@ export class MachineStore {
 
   private async write(data: MachineFile): Promise<void> {
     await mkdir(dirname(this.filePath), { recursive: true });
-    await writeFile(this.filePath, `${JSON.stringify(data, null, 2)}\n`, { encoding: "utf8", mode: MACHINE_STORE_FILE_MODE });
-    await restrictMachineStorePermissions(this.filePath);
+    // Follow the configured file link before staging, preserving writeFile's
+    // target semantics and keeping the atomic replacement on its filesystem.
+    const destination = await machineStoreWriteDestination(this.filePath);
+    const temporary = `${destination}.${randomUUID()}.tmp`;
+    try {
+      await writeFile(temporary, `${JSON.stringify(data, null, 2)}\n`, { encoding: "utf8", mode: MACHINE_STORE_FILE_MODE, flag: "wx" });
+      await restrictMachineStorePermissions(temporary);
+      await rename(temporary, destination);
+    } finally {
+      await rm(temporary, { force: true });
+    }
   }
+}
+
+async function machineStoreWriteDestination(path: string): Promise<string> {
+  try {
+    return await realpath(path);
+  } catch (error) {
+    if (!isNodeErrorWithCode(error, "ENOENT")) throw error;
+  }
+  // realpath cannot resolve a dangling final link. Follow that link explicitly;
+  // its target parent must already exist, just as with the previous writeFile.
+  let link: string;
+  try {
+    link = await readlink(path);
+  } catch (error) {
+    if (isNodeErrorWithCode(error, "ENOENT") || isNodeErrorWithCode(error, "EINVAL")) return path;
+    throw error;
+  }
+  return machineStoreWriteDestination(resolve(dirname(path), link));
 }
 
 function parseMachineFile(value: unknown): MachineFile {

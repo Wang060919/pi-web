@@ -1,5 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { text as streamText } from "node:stream/consumers";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { RemoteMachineClient } from "./machineClient.js";
+
+afterEach(() => { vi.useRealTimers(); });
 
 describe("RemoteMachineClient", () => {
   it("forwards raw binary request bodies with the provided content type", async () => {
@@ -89,7 +92,92 @@ describe("RemoteMachineClient", () => {
     expect(response.headers["content-encoding"]).toBeUndefined();
     expect(response.headers["content-length"]).toBeUndefined();
   });
+
+  it("keeps the JSON deadline active while reading the response body", async () => {
+    vi.useFakeTimers();
+    const remote = remoteResponseBody();
+    const client = new RemoteMachineClient({ baseUrl: "https://remote.example.test" }, remote.fetchImpl);
+    const result = client.requestJson("GET", "/api/pi-web/status", undefined, { timeoutMs: 10 })
+      .then((value) => ({ value }), (error: unknown) => ({ error }));
+    await remote.bodyReading;
+
+    await vi.advanceTimersByTimeAsync(10);
+    if (remote.signal()?.aborted !== true) remote.finish("{}");
+
+    expect(await result).toMatchObject({ error: { statusCode: 504, message: "Remote machine request timed out" } });
+  });
+
+  it("propagates caller cancellation after JSON response headers", async () => {
+    const remote = remoteResponseBody();
+    const parent = new AbortController();
+    const client = new RemoteMachineClient({ baseUrl: "https://remote.example.test" }, remote.fetchImpl);
+    const result = client.requestJson("GET", "/api/config", undefined, { signal: parent.signal })
+      .then((value) => ({ value }), (error: unknown) => ({ error }));
+    await remote.bodyReading;
+
+    parent.abort();
+    if (remote.signal()?.aborted !== true) remote.finish("{}");
+
+    expect(await result).toMatchObject({ error: { statusCode: 502, message: "Remote machine request cancelled" } });
+  });
+
+  it("cleans up the JSON deadline and parent listener after completion", async () => {
+    vi.useFakeTimers();
+    const remote = remoteResponseBody();
+    const parent = new AbortController();
+    const client = new RemoteMachineClient({ baseUrl: "https://remote.example.test" }, remote.fetchImpl);
+    const pending = client.requestJson("GET", "/api/config", undefined, { timeoutMs: 10, signal: parent.signal });
+    await remote.bodyReading;
+    remote.finish('{"ok":true}');
+
+    expect((await pending).body).toEqual({ ok: true });
+    expect(vi.getTimerCount()).toBe(0);
+    parent.abort();
+    await vi.advanceTimersByTimeAsync(20);
+    expect(remote.signal()?.aborted).toBe(false);
+  });
+
+  it("continues handing streaming response lifetime to the caller after headers", async () => {
+    vi.useFakeTimers();
+    const remote = remoteResponseBody();
+    const client = new RemoteMachineClient({ baseUrl: "https://remote.example.test" }, remote.fetchImpl);
+    const response = await client.request("GET", "/api/download", undefined, { timeoutMs: 10 });
+
+    await vi.advanceTimersByTimeAsync(20);
+    expect(remote.signal()?.aborted).toBe(false);
+    remote.finish("streaming content");
+    if (response.body === undefined) throw new Error("Expected response body");
+    expect(await streamText(response.body)).toBe("streaming content");
+  });
 });
+
+/** Fetch aborts an unread response body even after its headers have arrived. */
+function remoteResponseBody() {
+  let signal: AbortSignal | null | undefined;
+  let body: ReadableStreamDefaultController<Uint8Array> | undefined;
+  let reading = (): void => undefined;
+  const bodyReading = new Promise<void>((resolve) => { reading = resolve; });
+  const response = new Response(new ReadableStream<Uint8Array>({ start(controller) { body = controller; } }));
+  const readText = response.text.bind(response);
+  response.text = () => { reading(); return readText(); };
+  const onAbort = (): void => { body?.error(signal?.reason); };
+  const fetchImpl = vi.fn<typeof fetch>((_input, init) => {
+    signal = init?.signal;
+    if (signal?.aborted === true) onAbort();
+    else signal?.addEventListener("abort", onAbort, { once: true });
+    return Promise.resolve(response);
+  });
+  return {
+    fetchImpl,
+    bodyReading,
+    signal: () => signal,
+    finish(content: string): void {
+      signal?.removeEventListener("abort", onAbort);
+      body?.enqueue(new TextEncoder().encode(content));
+      body?.close();
+    },
+  };
+}
 
 function fetchInputUrl(input: RequestInfo | URL): string {
   if (typeof input === "string") return input;

@@ -1,10 +1,16 @@
-import { mkdir, readFile, symlink, writeFile } from "node:fs/promises";
+import { mkdir, open, readFile, stat, symlink, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { writeWorkspaceFile } from "./fileContentService.js";
 import { cleanupTempWorkspaces, createTempWorkspace } from "./fileContentService.testSupport.js";
 
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return { ...actual, open: vi.fn(actual.open) };
+});
+
 afterEach(async () => {
+  vi.mocked(open).mockReset();
   await cleanupTempWorkspaces();
 });
 
@@ -89,5 +95,64 @@ describe("writeWorkspaceFile", () => {
 
     await expect(writeWorkspaceFile(root, "subdir/escape/evil.txt", Buffer.from("evil"))).rejects.toThrow("Path escapes workspace");
     await expect(readFile(join(outsideDir, "evil.txt"))).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it.each([true, false])("rejects a dangling final symlink without creating its outside target (overwrite=%s)", async (overwrite) => {
+    const root = await createTempWorkspace();
+    const outsideDir = await createTempWorkspace("pi-web-dangling-outside-");
+    const outside = join(outsideDir, "new.txt");
+    await symlink(outside, join(root, "link.txt"));
+
+    await expect(writeWorkspaceFile(root, "link.txt", Buffer.from("unsafe"), { overwrite })).rejects.toThrow();
+    await expect(stat(outside)).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it.each([true, false])("does not truncate a replaced final symlink (native no-follow=%s)", async (noFollow) => {
+    const root = await createTempWorkspace();
+    const outsideDir = await createTempWorkspace("pi-web-write-race-outside-");
+    const target = join(root, "file.txt");
+    const outside = join(outsideDir, "secret.txt");
+    await writeFile(target, "original");
+    await writeFile(outside, "secret");
+    const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+    vi.mocked(open).mockImplementationOnce(async (path, flags, mode) => {
+      await unlink(target);
+      await symlink(outside, target);
+      return actual.open(path, noFollow ? flags : "r+", mode);
+    });
+
+    await expect(writeWorkspaceFile(root, "file.txt", Buffer.from("unsafe"))).rejects.toThrow();
+    await expect(readFile(outside, "utf8")).resolves.toBe("secret");
+  });
+
+  it("preserves a file created concurrently when overwrite is false", async () => {
+    const root = await createTempWorkspace();
+    const target = join(root, "new.txt");
+    const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+    vi.mocked(open).mockImplementationOnce(async (path, flags, mode) => {
+      await writeFile(target, "concurrent");
+      return actual.open(path, flags, mode);
+    });
+
+    await expect(writeWorkspaceFile(root, "new.txt", Buffer.from("unsafe"), { overwrite: false })).rejects.toThrow();
+    await expect(readFile(target, "utf8")).resolves.toBe("concurrent");
+  });
+
+  it("keeps supported writes through a symlink to a file inside the workspace", async () => {
+    const root = await createTempWorkspace();
+    await writeFile(join(root, "target.txt"), "original");
+    await symlink(join(root, "target.txt"), join(root, "link.txt"));
+
+    await expect(writeWorkspaceFile(root, "link.txt", Buffer.from("updated"))).resolves.toMatchObject({ created: false });
+    await expect(readFile(join(root, "target.txt"), "utf8")).resolves.toBe("updated");
+  });
+
+  it("rejects an escaping parent before creating nested directories", async () => {
+    const root = await createTempWorkspace();
+    const outsideDir = await createTempWorkspace("pi-web-mkdir-outside-");
+    await symlink(outsideDir, join(root, "escape"), "junction");
+
+    await expect(writeWorkspaceFile(root, "escape/new/file.txt", Buffer.from("unsafe"))).rejects.toThrow("Path escapes workspace");
+    await expect(stat(join(outsideDir, "new"))).rejects.toMatchObject({ code: "ENOENT" });
   });
 });
