@@ -3,6 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { t } from "../../../shared/i18n";
 import type { CommandOption } from "../api";
 import { ModalSurface } from "./ModalSurface";
+import "./ThinkingLevelLabel";
 
 @customElement("thinking-picker")
 export class ThinkingPicker extends LitElement {
@@ -23,6 +24,8 @@ export class ThinkingPicker extends LitElement {
   @state() private defaultPending = false;
   @state() private pickError: string | undefined = undefined;
   @state() private defaultError: string | undefined = undefined;
+  @state() private showSavingFeedback = false;
+  private savingFeedbackTimer: number | undefined = undefined;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -31,6 +34,7 @@ export class ThinkingPicker extends LitElement {
   }
 
   override disconnectedCallback(): void {
+    this.clearSavingFeedback();
     window.removeEventListener("resize", this.updateAnchorPosition);
     window.removeEventListener("scroll", this.updateAnchorPosition, true);
     super.disconnectedCallback();
@@ -54,10 +58,12 @@ export class ThinkingPicker extends LitElement {
 
   override render() {
     const busy = this.disabled || this.pickPending || this.defaultPending;
-    if (this.embedded) return html`<section class="embedded-body" role="group" aria-label=${this.title} aria-busy=${busy ? "true" : "false"}>${this.renderContent()}</section>`;
+    const pendingClass = !this.disabled && (this.pickPending || this.defaultPending) ? "save-pending" : "";
+    if (this.embedded) return html`<section class=${`embedded-body ${pendingClass}`} role="group" aria-label=${this.title} aria-busy=${busy ? "true" : "false"}>${this.renderContent()}</section>`;
     const rangeDisabled = busy || this.options.length < 2 || this.onPick === undefined;
     return html`
       <modal-surface
+        class=${pendingClass}
         .label=${this.title}
         .busy=${busy}
         .initialFocus=${rangeDisabled ? ".close" : "input[type=range]"}
@@ -66,7 +72,7 @@ export class ThinkingPicker extends LitElement {
         <header>
           <div class="current-value">
             <strong>${this.title}</strong>
-            <output for="thinking-strength" aria-label=${t(this.previewValue === undefined ? "ui.thinkingPicker.current" : "ui.thinkingPicker.preview")}>${this.labelFor(this.previewValue ?? this.selectedValue)}</output>
+            <output for="thinking-strength" aria-label=${t(this.previewValue === undefined ? "ui.thinkingPicker.current" : "ui.thinkingPicker.preview")}>${this.renderLevelLabel(this.previewValue ?? this.selectedValue)}</output>
           </div>
           <button class="close" type="button" aria-label=${t("ui.thinkingPicker.close")} ?disabled=${busy} @click=${() => this.onCancel?.()}>×</button>
         </header>
@@ -88,7 +94,7 @@ export class ThinkingPicker extends LitElement {
         <div class="content">
           ${this.embedded ? html`<div class="current-value">
             <span>${this.title}</span>
-            <output for="thinking-strength">${label}</output>
+            <output for="thinking-strength">${this.renderLevelLabel(value)}</output>
           </div>${description}` : html`
             <div class="strength-scale" aria-hidden="true"><span>${t("ui.thinkingPicker.faster")}</span><span>${t("ui.thinkingPicker.smarter")}</span></div>
           `}
@@ -123,17 +129,16 @@ export class ThinkingPicker extends LitElement {
             </div>
           </div>
           ${this.embedded ? nothing : description}
-          <p id="strength-help" class="help">${this.options.length === 0 ? t("ui.thinkingPicker.unavailable") : this.options.length === 1 ? t("ui.thinkingPicker.fixed") : t("ui.thinkingPicker.hint")}</p>
-          ${this.pickPending ? html`<p class="saving" role="status">${t("ui.thinkingPicker.saving")}</p>` : nothing}
+          <p id="strength-help" class=${this.showSavingFeedback ? "help saving" : "help"} role="status">${this.showSavingFeedback ? t("ui.thinkingPicker.saving") : this.options.length === 0 ? t("ui.thinkingPicker.unavailable") : this.options.length === 1 ? t("ui.thinkingPicker.fixed") : t("ui.thinkingPicker.hint")}</p>
           ${this.pickError === undefined ? nothing : html`<p class="error" role="alert">${this.pickError}</p>`}
           ${this.onSetDefault !== undefined || this.defaultValue !== undefined || this.defaultsLoading ? html`
             <div class="default-section">
               <div class="stored-default">
                 <span>${t("ui.thinkingPicker.defaultStored")}</span>
-                <strong>${this.defaultsLoading ? t("ui.thinkingPicker.defaultLoading") : this.labelFor(this.defaultValue)}</strong>
+                <strong>${this.defaultsLoading ? t("ui.thinkingPicker.defaultLoading") : this.renderLevelLabel(this.defaultValue)}</strong>
               </div>
               ${this.onSetDefault === undefined ? nothing : html`
-                <button class="set-default" type="button" ?disabled=${busy || this.defaultsLoading || option === undefined || value === this.defaultValue} @click=${() => { if (option !== undefined) void this.setDefault(option.value); }}>${t(this.defaultPending ? "ui.thinkingPicker.saving" : "ui.thinkingPicker.defaultAction")}</button>
+                <button class="set-default" type="button" ?disabled=${busy || this.defaultsLoading || option === undefined || value === this.defaultValue} @click=${() => { if (option !== undefined) void this.setDefault(option.value); }}>${t("ui.thinkingPicker.defaultAction")}</button>
               `}
               ${this.defaultError === undefined ? nothing : html`<p class="error" role="alert">${this.defaultError}</p>`}
             </div>
@@ -144,6 +149,10 @@ export class ThinkingPicker extends LitElement {
 
   private labelFor(value: string | undefined): string {
     return this.options.find((option) => option.value === value)?.label ?? value ?? t("ui.thinkingPicker.none");
+  }
+
+  private renderLevelLabel(value: string | undefined) {
+    return html`<thinking-level-label .value=${value} .options=${this.options}>${this.labelFor(value)}</thinking-level-label>`;
   }
 
   private rangeOption(event: Event): CommandOption | undefined {
@@ -176,6 +185,7 @@ export class ThinkingPicker extends LitElement {
     this.previewValue = value;
     const focusTarget = this.shadowRoot?.activeElement instanceof HTMLInputElement ? this.shadowRoot.activeElement : undefined;
     this.pickPending = true;
+    this.scheduleSavingFeedback();
     try {
       this.onBusyChange?.(true);
       if (!await this.onPick(value)) this.pickError = t("ui.thinkingPicker.saveFailed");
@@ -184,6 +194,7 @@ export class ThinkingPicker extends LitElement {
     } finally {
       this.previewValue = undefined;
       this.pickPending = false;
+      this.clearSavingFeedback();
       this.onBusyChange?.(false);
       await this.restoreControlFocus(focusTarget);
     }
@@ -195,6 +206,7 @@ export class ThinkingPicker extends LitElement {
     // parent render. Return to the stable range instead of refocusing that button.
     const focusTarget = this.embedded ? this.renderRoot.querySelector<HTMLInputElement>('input[type="range"]') ?? undefined : undefined;
     this.defaultPending = true;
+    this.scheduleSavingFeedback();
     this.defaultError = undefined;
     try {
       this.onBusyChange?.(true);
@@ -203,9 +215,24 @@ export class ThinkingPicker extends LitElement {
       this.defaultError = t("ui.thinkingPicker.defaultFailed");
     } finally {
       this.defaultPending = false;
+      this.clearSavingFeedback();
       this.onBusyChange?.(false);
       await this.restoreControlFocus(focusTarget);
     }
+  }
+
+  private scheduleSavingFeedback(): void {
+    this.clearSavingFeedback();
+    this.savingFeedbackTimer = window.setTimeout(() => {
+      this.savingFeedbackTimer = undefined;
+      this.showSavingFeedback = true;
+    }, 300);
+  }
+
+  private clearSavingFeedback(): void {
+    if (this.savingFeedbackTimer !== undefined) window.clearTimeout(this.savingFeedbackTimer);
+    this.savingFeedbackTimer = undefined;
+    this.showSavingFeedback = false;
   }
 
   private async restoreControlFocus(target: HTMLElement | undefined): Promise<void> {
@@ -279,6 +306,7 @@ export class ThinkingPicker extends LitElement {
     .slider { margin-top: 12px; }
     input[type=range] { box-sizing: border-box; display: block; width: calc(100% - 18px); height: 24px; margin: 0 9px; padding: 0; appearance: none; -webkit-appearance: none; background: transparent; accent-color: var(--pi-accent); cursor: pointer; }
     input[type=range]:disabled { opacity: .45; cursor: not-allowed; }
+    .save-pending button:disabled, .save-pending input[type=range]:disabled { opacity: 1; cursor: pointer; }
     input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 99px; background: color-mix(in srgb, var(--pi-accent) 32%, var(--pi-border)); }
     input[type=range]::-moz-range-track { height: 4px; border-radius: 99px; background: color-mix(in srgb, var(--pi-accent) 32%, var(--pi-border)); }
     input[type=range]::-webkit-slider-thumb { width: 16px; height: 16px; margin-top: -6px; border: 3px solid var(--pi-surface); border-radius: 50%; appearance: none; -webkit-appearance: none; background: var(--pi-accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--pi-accent) 70%, transparent); }
@@ -293,7 +321,7 @@ export class ThinkingPicker extends LitElement {
     .level.selected::before { background: var(--pi-accent); }
     .level:not(:disabled):hover { background: var(--pi-selection-bg); color: var(--pi-accent); }
     .help, .saving { color: var(--pi-muted); font-size: 11px; line-height: 1.5; }
-    .saving { margin-top: 8px; color: var(--pi-accent); }
+    .saving { color: var(--pi-accent); }
     .error { margin-top: 8px; color: var(--pi-danger); font-size: 12px; line-height: 1.5; }
     .default-section { display: grid; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--pi-border-muted); }
     .stored-default { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
@@ -323,8 +351,7 @@ export class ThinkingPicker extends LitElement {
     :host(:not([embedded])) .level::before { top: 12px; left: 9px; width: 3px; height: 3px; border-radius: 50%; background: var(--pi-muted); }
     :host(:not([embedded])) .level.selected::before { visibility: hidden; }
     :host(:not([embedded])) .level > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-    :host(:not([embedded])) .description { min-height: 0; margin: 8px 0 4px; font-size: 11px; line-height: 1.4; }
-    :host(:not([embedded])) .description:empty { display: none; }
+    :host(:not([embedded])) .description { min-height: 2.8em; margin: 8px 0 4px; font-size: 11px; line-height: 1.4; }
     :host(:not([embedded])) .help { text-align: center; }
     :host(:not([embedded])) .default-section { gap: 6px; margin-top: 10px; padding-top: 10px; }
     :host(:not([embedded])) .stored-default { font-size: 11px; }

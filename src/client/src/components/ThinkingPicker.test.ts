@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ThinkingPicker } from "./ThinkingPicker";
+import { ThinkingLevelLabel } from "./ThinkingLevelLabel";
 import { ModalSurface } from "./ModalSurface";
 import { ModelPicker } from "./ModelPicker";
 import { deepActiveElement, dialogSection, dialogSurface, pressKey, requiredElement, settleRenderedDialog, surfaceBackdrop } from "./modalSurfaceTestSupport";
@@ -10,6 +11,7 @@ afterEach(() => {
   document.body.replaceChildren();
   localStorage.clear();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 describe("thinking-picker", () => {
@@ -23,6 +25,9 @@ describe("thinking-picker", () => {
     });
     const input = range(picker);
     const headerValue = requiredElement(picker.shadowRoot?.querySelector("header output"), "header strength");
+    const rollingLabel = headerValue.querySelector("thinking-level-label");
+    if (!(rollingLabel instanceof ThinkingLevelLabel)) throw new Error("Rolling strength label missing");
+    expect(rollingLabel.value).toBe("medium");
     expect(picker.shadowRoot?.querySelector("header strong")?.textContent).toBe("Thinking strength");
     expect(headerValue.textContent).toBe("Medium");
     expect(headerValue.getAttribute("aria-label")).toBe("Current");
@@ -34,6 +39,8 @@ describe("thinking-picker", () => {
     expect(onPick).not.toHaveBeenCalled();
     expect(picker.selectedValue).toBe("medium");
     expect(valueText(picker)).toBe("Extra high");
+    expect(rollingLabel.value).toBe("xhigh");
+    expect(headerValue.querySelector("thinking-level-label")).toBe(rollingLabel);
     expect(headerValue.getAttribute("aria-label")).toBe("Preview");
     expect(picker.shadowRoot?.querySelector(".description")?.textContent).toBe("More time for deeper reasoning.");
 
@@ -43,7 +50,7 @@ describe("thinking-picker", () => {
     expect(onPick).toHaveBeenCalledExactlyOnceWith("xhigh");
     expect(range(picker).disabled).toBe(true);
     expect(levelButtons(picker).every((button) => button.disabled)).toBe(true);
-    expect(picker.shadowRoot?.querySelector('[role="status"]')?.textContent).toBe("Saving…");
+    expect(picker.shadowRoot?.querySelector('[role="status"]')?.textContent).toBe("Drag to preview, release to apply.");
     expect(dialogSection(picker).getAttribute("aria-busy")).toBe("true");
     pressKey(dialogSurface(picker), "Escape");
     expect(onCancel).not.toHaveBeenCalled();
@@ -59,6 +66,44 @@ describe("thinking-picker", () => {
     expect(headerValue.getAttribute("aria-label")).toBe("Current");
     expect(picker.isConnected).toBe(true);
     expect(onCancel).not.toHaveBeenCalled();
+  });
+
+  it.each([true, false])("delays save feedback in the existing help line and clears it after completion (%s)", async (applied) => {
+    vi.useFakeTimers();
+    const pending = deferred<boolean>();
+    const picker = await mountPicker((element) => { element.onPick = vi.fn().mockReturnValue(pending.promise); });
+    const help = requiredElement(picker.shadowRoot?.querySelector('[role="status"]'), "save feedback");
+    range(picker).value = "2";
+    range(picker).dispatchEvent(new Event("change", { bubbles: true }));
+    await settleRenderedDialog(picker);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(help.textContent).toBe("Drag to preview, release to apply.");
+    await vi.advanceTimersByTimeAsync(200);
+    expect(picker.shadowRoot?.querySelector('[role="status"]')).toBe(help);
+    expect(help.textContent).toBe("Saving…");
+    if (applied) picker.selectedValue = "xhigh";
+    pending.resolve(applied);
+    await pending.promise;
+    await settleRenderedDialog(picker);
+    expect(help.textContent).toBe("Drag to preview, release to apply.");
+    expect(range(picker).disabled).toBe(false);
+    expect(valueText(picker)).toBe(applied ? "Extra high" : "Medium");
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(help.textContent).toBe("Drag to preview, release to apply.");
+  });
+
+  it("cancels delayed save feedback when the picker disconnects", async () => {
+    vi.useFakeTimers();
+    const pending = deferred<boolean>();
+    const picker = await mountPicker((element) => { element.onPick = vi.fn().mockReturnValue(pending.promise); });
+    range(picker).value = "2";
+    range(picker).dispatchEvent(new Event("change", { bubbles: true }));
+    await settleRenderedDialog(picker);
+    picker.remove();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(picker.shadowRoot?.querySelector('[role="status"]')?.textContent).toBe("Drag to preview, release to apply.");
+    pending.resolve(false);
+    await pending.promise;
   });
 
   it.each([false, new Error("offline")])("rolls back a failed change and explains the failure (%s)", async (result) => {

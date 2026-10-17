@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { COMPOSER_SEND_DESKTOP, COMPOSER_SEND_MOBILE } from "../composerShortcuts";
 import { PromptEditor } from "./PromptEditor";
+import { ThinkingLevelLabel } from "./ThinkingLevelLabel";
 import { api } from "../api";
 import { clearStagedAttachments, saveStagedAttachments } from "../promptAttachmentStaging";
 
@@ -158,10 +159,15 @@ describe("composer send behavior", () => {
     await editor.updateComplete;
     const content = editor.view?.contentDOM;
     expect(editor.renderRoot.querySelector(".thinking-label")?.textContent).toBe("low");
+    const rollingLabel = editor.renderRoot.querySelector("thinking-level-label");
+    if (!(rollingLabel instanceof ThinkingLevelLabel)) throw new Error("Rolling strength label missing");
+    expect(rollingLabel.options.map((option) => option.value)).toEqual(["off", "minimal", "low", "medium", "high", "xhigh", "max"]);
     editor.status = { ...status, thinkingLevel: "high" };
     await editor.updateComplete;
     const thinking = editor.renderRoot.querySelector<HTMLButtonElement>(".select-thinking");
     expect(thinking?.getAttribute("aria-label")).toBe("Thinking strength: high");
+    expect(rollingLabel.value).toBe("high");
+    expect(editor.renderRoot.querySelector("thinking-level-label")).toBe(rollingLabel);
     expect(editor.thinkingAnchor).toBe(thinking);
     thinking?.click();
     expect(editor.onSelectThinking).toHaveBeenCalledOnce();

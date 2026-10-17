@@ -10,6 +10,7 @@ import { api, DEFAULT_WORKSPACE_ATTACHMENTS_FOLDER, type FileSuggestion, type Pr
 import type { PromptAttachmentDelivery } from "../../../shared/apiTypes";
 import { capturePromptAttachments, effectivePromptAttachmentDelivery, isInlinePromptAttachment, promptAttachmentsCanUseInlineDelivery } from "../promptAttachmentCapture";
 import { thinkingDisplayLabel } from "../thinkingLevelPresentation";
+import { KNOWN_THINKING_LEVELS } from "../../../shared/thinkingLevels";
 import { inputModeForDraft, inputModesEqual, type InputMode } from "../inputModes";
 import { machineSessionKey } from "../machineKeys";
 import type { StagedPromptChip } from "../promptChips";
@@ -27,6 +28,7 @@ import { renderQueueIcon, renderSteerIcon, renderStopIcon } from "./promptEditor
 import { formatFileSize } from "../utils/format";
 import "./AutocompleteMenu";
 import "./AttachmentPreview";
+import "./ThinkingLevelLabel";
 
 const promptPlaceholder = t("ui.composer.placeholder");
 
@@ -243,10 +245,11 @@ export class PromptEditor extends LitElement {
     if (status === undefined) return null;
     const model = status.model?.id ?? t("PromptEditor.no_model.0a560ca1");
     const provider = status.model?.provider !== undefined && status.model.provider !== "" ? `${status.model.provider}/` : "";
+    const thinkingOptions = KNOWN_THINKING_LEVELS.map((value) => ({ value, label: thinkingDisplayLabel(value) }));
     return html`
       <div class="compact-status" aria-label=${t("ui.composer.status")}>
         <button class="select-model" type="button" title=${t("ui.composer.model")} aria-haspopup="dialog" @click=${() => this.onSelectModel?.()}><span class="model-label" title=${`${provider}${model}`}>${model}</span></button>
-        ${status.thinkingLevel === undefined ? null : html`<button class="select-thinking thinking-button" type="button" title=${t("ui.thinkingPicker.title")} aria-label=${`${t("ui.thinkingPicker.title")}: ${thinkingDisplayLabel(status.thinkingLevel)}`} aria-haspopup="dialog" @click=${() => this.onSelectThinking?.()}><span class="thinking-label">${thinkingDisplayLabel(status.thinkingLevel)}</span></button>`}
+        ${status.thinkingLevel === undefined ? null : html`<button class="select-thinking thinking-button" type="button" title=${t("ui.thinkingPicker.title")} aria-label=${`${t("ui.thinkingPicker.title")}: ${thinkingDisplayLabel(status.thinkingLevel)}`} aria-haspopup="dialog" @click=${() => this.onSelectThinking?.()}><span class="thinking-label"><thinking-level-label .value=${status.thinkingLevel} .options=${thinkingOptions}>${thinkingDisplayLabel(status.thinkingLevel)}</thinking-level-label></span></button>`}
       </div>
     `;
   }
