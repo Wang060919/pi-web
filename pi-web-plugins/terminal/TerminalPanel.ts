@@ -15,12 +15,18 @@ import { createTerminalCopySnapshot, DEFAULT_TERMINAL_ANSI_THEME, type TerminalC
 import { createTerminalSoftKeysDefaultEnvironmentMedia, hasTerminalSoftKeysPreference, initialTerminalSoftKeysEnabled, isTerminalSoftKeysDefaultEnvironment, writeTerminalSoftKeysPreference } from "./terminalSoftKeysPreference";
 import type { TerminalBrowserRuntime } from "./TerminalBrowserRuntime";
 import type { TerminalSoftKeyInputOptions } from "./TerminalSoftKeys";
+// Prefer single-cell Nerd Font variants so shell prompt icons stay on the terminal grid.
+const TERMINAL_FONT_FAMILY = '"JetBrainsMono Nerd Font Mono", "MesloLGS NF", "CaskaydiaCove Nerd Font Mono", "FiraCode Nerd Font Mono", "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, "Symbols Nerd Font Mono", monospace';
+
+const TERMINAL_FONT_SIZE = 14;
 
 const TERMINAL_OPTIONS_BASE: ITerminalOptions = {
   cursorBlink: true,
   convertEol: true,
-  fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-  fontSize: 13,
+  fontFamily: TERMINAL_FONT_FAMILY,
+  fontSize: TERMINAL_FONT_SIZE,
+  lineHeight: 1.2,
+  minimumContrastRatio: 4.5,
 };
 
 const DEFAULT_TERMINAL_SIZE: TerminalSize = { cols: 100, rows: 30 };
@@ -1104,7 +1110,7 @@ export class TerminalPanel extends LitElement {
     .command-run-notice kbd { border: 1px solid var(--pi-border); border-radius: 4px; background: var(--pi-bg); padding: 0 4px; font: 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .command-run-notice button { justify-self: end; max-width: none; }
     .terminal-stage { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; background: var(--pi-terminal-bg); }
-    .terminal-host { position: absolute; inset: 0; padding: 6px; box-sizing: border-box; overflow: hidden; }
+    .terminal-host { position: absolute; inset: 0; padding: 12px; box-sizing: border-box; overflow: hidden; }
     .terminal-host.copying { visibility: hidden; pointer-events: none; }
     .terminal-copy-view { position: absolute; inset: 0; display: flex; flex-direction: column; min-height: 0; background: var(--pi-terminal-bg); color: var(--pi-terminal-text); }
     .terminal-copy-toolbar { box-sizing: border-box; flex: 0 0 auto; display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 47px; padding: 6px; border-bottom: 0; background: var(--pi-bg); color: var(--pi-muted); font: 12px/16px var(--pi-font-family, system-ui, sans-serif); }
@@ -1112,8 +1118,7 @@ export class TerminalPanel extends LitElement {
     .terminal-copy-toolbar small { margin-left: auto; white-space: nowrap; color: var(--pi-dim); }
     .terminal-copy-toolbar button { flex: 0 0 auto; width: auto; min-height: 34px; padding: 6px 9px; font: inherit; }
     .terminal-copy-layers { flex: 1 1 auto; min-height: 0; display: grid; overflow: hidden; background: var(--pi-terminal-bg); }
-    /* xterm renders the configured 13px terminal font in 17px-high cells. */
-    .terminal-copy-content, .terminal-copy-selector { grid-area: 1 / 1; box-sizing: border-box; min-width: 0; min-height: 0; width: 100%; height: 100%; margin: 0; padding: 6px; border: 0; border-radius: 0; font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; line-height: 17px; letter-spacing: normal; font-variant-ligatures: none; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; }
+    .terminal-copy-content, .terminal-copy-selector { grid-area: 1 / 1; box-sizing: border-box; min-width: 0; min-height: 0; width: 100%; height: 100%; margin: 0; padding: 12px; border: 0; border-radius: 0; font: ${TERMINAL_FONT_SIZE}px/1.5 ${unsafeCSS(TERMINAL_FONT_FAMILY)}; letter-spacing: normal; font-variant-ligatures: none; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; }
     .terminal-copy-content { overflow: auto; pointer-events: none; background: var(--pi-terminal-bg); color: var(--pi-terminal-text); -webkit-user-select: none; user-select: none; }
     .terminal-copy-selector { z-index: 1; overflow: auto; resize: none; outline: none; appearance: none; background: transparent; color: transparent; caret-color: var(--pi-accent); -webkit-text-fill-color: transparent; cursor: text; -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; touch-action: auto; }
     .terminal-copy-selector::selection { background: var(--pi-terminal-selection); color: transparent; -webkit-text-fill-color: transparent; }
