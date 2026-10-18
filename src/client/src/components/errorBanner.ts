@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { html, type TemplateResult } from "lit";
 import type { ServerNoticeSeverity } from "../../../shared/apiTypes";
@@ -19,7 +20,7 @@ export function errorBanner(
   return html`<div class=${`error ${severity}`} role="alert">
     <span class="error-text">${error}</span>
     ${onRetry === undefined ? null : localizedTemplate("errorBanner.retry.1a58dfe6", html)`<button type="button" class="error-retry" @click=${() => { onRetry(); }}>Retry</button>`}
-    <button type="button" class="error-dismiss" aria-label=${dismissLabel} title=${dismissLabel} @click=${() => { onDismiss(); }}>✕</button>
+    <button type="button" class="error-dismiss" aria-label=${dismissLabel} title=${dismissLabel} @click=${() => { onDismiss(); }}>${renderUiIcon("close")}</button>
   </div>`;
 }
 

@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { getLocale, localizedTemplate, localizedText, t } from "./i18n.js";
 import type { ContentRenderingCapability, FileTreeEntry, WorkspacePanelContext } from "@jmfederico/pi-web/plugin-api";
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
@@ -286,7 +287,7 @@ export class WorkspaceFilesPanel extends LitElement {
         if (entry.type === "directory") void runtime.expandDir(context, entry.path);
         else void runtime.selectFile(context, entry.path);
       }}>
-        <span>${entry.type === "directory" ? (hasChildren ? "▾" : "▸") : "·"}</span>
+        <span>${entry.type === "directory" ? (renderUiIcon(hasChildren ? "chevronDown" : "chevronRight")) : "·"}</span>
         <span>${entry.name}</span>
       </button>
       ${hasChildren ? children.map((child) => this.renderTreeEntry(context, runtime, scope, child, depth + 1)) : null}
@@ -350,7 +351,7 @@ export class WorkspaceFilesPanel extends LitElement {
             <span class="eyebrow">Upload</span>
             <h2>Review ${uploadReviewCount(fileCount)}</h2>
           </div>
-          <button class="close-button" type="button" title="Cancel upload" aria-label="Cancel upload" @click=${() => { this.closeUploadDialog(); }}>×</button>
+          <button class="close-button" type="button" title="Cancel upload" aria-label="Cancel upload" @click=${() => { this.closeUploadDialog(); }}>${renderUiIcon("close")}</button>
         </header>
         <form @submit=${(event: SubmitEvent) => { this.submitUploadReview(event, context, runtime, review); }}>
           <label>

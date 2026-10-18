@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, t } from "../../../shared/i18n";
 import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -37,7 +38,7 @@ export class ActionPalette extends LitElement {
               }
             }}
           >
-          <button title=${t("navigation.close")} aria-label=${t("navigation.close")} @click=${() => this.onCancel?.()}>×</button>
+          <button title=${t("navigation.close")} aria-label=${t("navigation.close")} @click=${() => this.onCancel?.()}>${renderUiIcon("close")}</button>
         </header>
         <div class="options">
           ${actions.length === 0 ? localizedTemplate("ActionPalette.no_actions_found.9d04ad76", html)`<div class="empty">No actions found.</div>` : actions.map((action, index) => html`

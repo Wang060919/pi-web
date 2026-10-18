@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, localizedText, t } from "./i18n.js";
 import { css, html, LitElement, unsafeCSS } from "lit";
 import { property, query, state } from "lit/decorators.js";
@@ -840,7 +841,7 @@ export class TerminalPanel extends LitElement {
         <section class="command-run-notice running">
           <div>
             <strong>${run.title}</strong>
-            <p>Command is running. Press <kbd>Ctrl</kbd>+<kbd>C</kbd> or use the button to cancel.</p>
+            <p>Command is running. Press <kbd>Ctrl</kbd>${renderUiIcon("plus")}<kbd>C</kbd> or use the button to cancel.</p>
             <code>${run.command}</code>
           </div>
           <button class="danger" ?disabled=${cancelling} @click=${() => { void this.cancelCommandRun(run); }}>${cancelling ? t("TerminalPanel.cancel_sent.cf3b8bfb") : t("TerminalPanel.cancel_command.7d5376cf")}</button>
@@ -1051,10 +1052,10 @@ export class TerminalPanel extends LitElement {
           ${this.terminals.map((terminal) => html`
             <button class=${this.selectedId === terminal.id ? "selected" : ""} @click=${() => { this.selectTerminal(terminal.id); }}>
               <span>${terminal.name}${terminal.exited ? t("TerminalPanel.exited.29e1f98a") : ""}</span>
-              <small @click=${(event: Event) => { void this.closeTerminal(terminal.id, event); }}>×</small>
+              <small @click=${(event: Event) => { void this.closeTerminal(terminal.id, event); }}>${renderUiIcon("close")}</small>
             </button>
           `)}
-          <button class="new" ?disabled=${this.context === undefined} @click=${() => { void this.startTerminal(); }}>+ Shell</button>
+          <button class="new" ?disabled=${this.context === undefined} @click=${() => { void this.startTerminal(); }}>${renderUiIcon("plus")} Shell</button>
         </div>
         ${this.error === undefined ? null : html`<p class="error">${this.error}</p>`}
         ${this.connectionError === undefined ? null : html`<p class="error">${this.connectionError}</p>`}
@@ -1090,7 +1091,7 @@ export class TerminalPanel extends LitElement {
     .soft-keys-toggle { flex: 0 0 auto; }
     .soft-keys-toggle .keyboard-icon { display: block; flex: 0 0 auto; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
     button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    button small { color: var(--pi-muted); font-size: 14px; line-height: 1; }
+    button small { display: inline-grid; place-items: center; width: 20px; height: 20px; color: var(--pi-muted); font-size: 14px; line-height: 1; }
     button small:hover { color: var(--pi-danger); }
     button.danger { color: var(--pi-danger); }
     button:disabled { opacity: .5; cursor: not-allowed; }

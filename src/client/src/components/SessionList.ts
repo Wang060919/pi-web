@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, css, html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -381,7 +382,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
     const selectedTitle = this.selected?.path ?? selectedSummary;
     return localizedTemplate("SessionList.sessions.f54dfd54", html)`
       <h2>
-        <button class="section-toggle" aria-expanded=${String(!this.collapsed)} @click=${() => { this.onToggleCollapsed?.(); }}><span class="section-title"><span class="section-name">${this.collapsed ? "▸" : "▾"} Sessions</span>${this.collapsed ? html`<small class="section-selected" dir="auto" title=${selectedTitle}>${selectedSummary}</small>` : null}</span></button>
+        <button class="section-toggle" aria-expanded=${String(!this.collapsed)} @click=${() => { this.onToggleCollapsed?.(); }}><span class="section-title"><span class="section-name">${renderUiIcon(this.collapsed ? "chevronRight" : "chevronDown")} Sessions</span>${this.collapsed ? html`<small class="section-selected" dir="auto" title=${selectedTitle}>${selectedSummary}</small>` : null}</span></button>
         ${this.renderUnreadCount(unreadCount)}
         ${this.renderCurrentSelectionButton(currentSessions)}
         <small class="section-count">${sessionCount}</small>
@@ -400,7 +401,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
   private renderCurrentSelectionButton(currentSessions: SessionInfo[]) {
     if (this.collapsed || currentSessions.length === 0) return null;
     const active = this.selectionScopes.has("current");
-    return html`<button class="bulk-select-entry ${active ? "selected" : ""}" title=${active ? t("SessionList.close_current_session_selection.e5af6532") : t("SessionList.select_current_sessions.00238328")} aria-label=${active ? t("SessionList.close_current_session_selection.d2c1e867") : t("SessionList.select_current_sessions.e089f747")} aria-expanded=${String(active)} aria-pressed=${String(active)} @click=${(event: MouseEvent) => { event.stopPropagation(); this.toggleSelection("current"); }}>☑</button>`;
+    return html`<button class="bulk-select-entry ${active ? "selected" : ""}" title=${active ? t("SessionList.close_current_session_selection.e5af6532") : t("SessionList.select_current_sessions.00238328")} aria-label=${active ? t("SessionList.close_current_session_selection.d2c1e867") : t("SessionList.select_current_sessions.e089f747")} aria-expanded=${String(active)} aria-pressed=${String(active)} @click=${(event: MouseEvent) => { event.stopPropagation(); this.toggleSelection("current"); }}>${renderUiIcon("select")}</button>`;
   }
 
   private renderCleanupButton() {
@@ -410,7 +411,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
   private renderStartButton() {
     if (this.hideStartButton) return null;
     const title = this.startingCount > 0 ? t("SessionList.start_another_session.9a41bfa8") : t("SessionList.start_a_new_session.7f8ab8f8");
-    return html`<button class="start-session-button" title=${title} aria-label=${title} ?disabled=${!this.canStart} @click=${(event: MouseEvent) => { event.stopPropagation(); this.onStart?.(); }}>+</button>`;
+    return html`<button class="start-session-button" title=${title} aria-label=${title} ?disabled=${!this.canStart} @click=${(event: MouseEvent) => { event.stopPropagation(); this.onStart?.(); }}>${renderUiIcon("plus")}</button>`;
   }
 
   private renderStartingSession() {
@@ -429,8 +430,8 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
     const active = this.selectionScopes.has("archived");
     return localizedTemplate("SessionList.archived.e84b2842", html)`
       <h2 class="subheading">
-        <button class="section-toggle" aria-expanded=${String(this.archivedExpanded)} @click=${() => { this.toggleArchived(); }}><span>${this.archivedExpanded ? "▾" : "▸"} Archived</span></button>
-        ${this.archivedExpanded ? html`<button class="bulk-select-entry ${active ? "selected" : ""}" title=${active ? t("SessionList.close_archived_session_selection.c2e5c130") : t("SessionList.select_archived_sessions.ff1c1292")} aria-label=${active ? t("SessionList.close_archived_session_selection.1b60508e") : t("SessionList.select_archived_sessions.2ad268b2")} aria-expanded=${String(active)} aria-pressed=${String(active)} @click=${() => { this.toggleSelection("archived"); }}>☑</button>` : null}
+        <button class="section-toggle" aria-expanded=${String(this.archivedExpanded)} @click=${() => { this.toggleArchived(); }}><span>${renderUiIcon(this.archivedExpanded ? "chevronDown" : "chevronRight")} Archived</span></button>
+        ${this.archivedExpanded ? html`<button class="bulk-select-entry ${active ? "selected" : ""}" title=${active ? t("SessionList.close_archived_session_selection.c2e5c130") : t("SessionList.select_archived_sessions.ff1c1292")} aria-label=${active ? t("SessionList.close_archived_session_selection.1b60508e") : t("SessionList.select_archived_sessions.2ad268b2")} aria-expanded=${String(active)} aria-pressed=${String(active)} @click=${() => { this.toggleSelection("archived"); }}>${renderUiIcon("select")}</button>` : null}
         <small class="section-count">${sessionCount}</small>
       </h2>
     `;
@@ -476,7 +477,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
    * selection offers to select every session in the section, and any existing
    * selection offers to clear the whole scope. The selected count stays inside
    * the clear action so it cannot become a separate wrapping flex item.
-   * Selection mode itself is exited from the same ☑ heading button that opened
+   * Selection mode itself is exited from the same selection heading button that opened
    * it, so the toolbar carries no separate Done or Clear buttons.
    */
   private renderSelectionControls(scope: SessionSelectionScope) {
@@ -518,10 +519,10 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
           ${this.renderActivity(indicatorKind, unread)}
         </div>
         <div class="action-menu">
-          <button class="action-menu-toggle" title="Session actions" @click=${(event: MouseEvent) => { event.stopPropagation(); this.toggleMenu(session.id, event.currentTarget); }}>⋯</button>
+          <button class="action-menu-toggle" title="Session actions" @click=${(event: MouseEvent) => { event.stopPropagation(); this.toggleMenu(session.id, event.currentTarget); }}>${renderUiIcon("more")}</button>
         </div>
       </div>
-      ${agentChildCount > 0 ? localizedTemplate("SessionList.agent_subsessions.ad8905a8", html)`<button class="agent-subsession-toggle" style=${`--agent-offset:${String(agentOffset)}px`} aria-expanded=${String(this.expandedAgentParents.has(session.id))} @click=${() => { this.toggleAgentParent(session.id); }}>${this.expandedAgentParents.has(session.id) ? "▾" : "▸"} Agent subsessions (${agentChildCount})${!this.expandedAgentParents.has(session.id) && agentAttention !== undefined ? renderActionActivityIndicator(agentAttention.kind, agentAttention.kind === "sending" ? t("SessionList.sending_subsession_message.da44466e") : t("SessionList.agent_subsessions_active.9f238611"), agentAttention.unread ? t("SessionList.unread_subsession_activity.f2c995fe") : undefined) : null}</button>` : null}
+      ${agentChildCount > 0 ? localizedTemplate("SessionList.agent_subsessions.ad8905a8", html)`<button class="agent-subsession-toggle" style=${`--agent-offset:${String(agentOffset)}px`} aria-expanded=${String(this.expandedAgentParents.has(session.id))} @click=${() => { this.toggleAgentParent(session.id); }}>${renderUiIcon(this.expandedAgentParents.has(session.id) ? "chevronDown" : "chevronRight")} Agent subsessions (${agentChildCount})${!this.expandedAgentParents.has(session.id) && agentAttention !== undefined ? renderActionActivityIndicator(agentAttention.kind, agentAttention.kind === "sending" ? t("SessionList.sending_subsession_message.da44466e") : t("SessionList.agent_subsessions_active.9f238611"), agentAttention.unread ? t("SessionList.unread_subsession_activity.f2c995fe") : undefined) : null}</button>` : null}
     `;
   }
 
@@ -594,9 +595,9 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
    */
   private renderRowMarker(row: SessionRow) {
     if (row.hasMissingParent) {
-      return html`<span class="tree-marker orphan-marker" title=${ORPHAN_PARENT_TITLE} aria-label=${ORPHAN_PARENT_LABEL}>↳</span>`;
+      return html`<span class="tree-marker orphan-marker" title=${ORPHAN_PARENT_TITLE} aria-label=${ORPHAN_PARENT_LABEL}>${renderUiIcon("cornerDownRight")}</span>`;
     }
-    return row.depth > 0 ? html`<span class="tree-marker">↳</span>` : null;
+    return row.depth > 0 ? html`<span class="tree-marker">${renderUiIcon("cornerDownRight")}</span>` : null;
   }
 
   /**

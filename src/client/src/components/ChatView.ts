@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { roleDisplayLabel, localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -647,10 +648,10 @@ export class ChatView extends LitElement {
         ${this.renderQuoteToolbar()}
         ${this.timelineEntriesCache.length === 0 ? nothing : html`<chat-timeline .entries=${this.timelineEntriesCache} .onNavigate=${this.handleTimelineNavigate}></chat-timeline>`}
         ${this.showWelcome ? nothing : html`<nav class="chat-jumps" aria-label=${t("ui.chatTimeline.controls")}>
-          <button type="button" title=${t("ui.chatTimeline.top")} aria-label=${t("ui.chatTimeline.top")} @click=${this.handleJumpTop}>↑</button>
+          <button type="button" title=${t("ui.chatTimeline.top")} aria-label=${t("ui.chatTimeline.top")} @click=${this.handleJumpTop}>${renderUiIcon("arrowUp")}</button>
           <button type="button" class=${following ? "following" : ""}
             title=${!this.behaviors.followTail ? t("ChatView.jump_to_end.c37e7d58") : following ? t("ChatView.following_live_jump_to_end.9520bc45") : t("ChatView.jump_to_end_and_follow_live.db38db8e")}
-            aria-label=${t("ui.chatTimeline.end")} aria-describedby="chat-follow-state" @click=${this.handleJumpEnd}>↓</button>
+            aria-label=${t("ui.chatTimeline.end")} aria-describedby="chat-follow-state" @click=${this.handleJumpEnd}>${renderUiIcon("arrowDown")}</button>
           <span id="chat-follow-state" class="visually-hidden">${!this.behaviors.followTail ? t("ChatView.automatic_following_disabled.0de38a22") : following ? t("ChatView.following_live.b062bdb4") : t("ChatView.live_following_paused.ecda395d")}</span>
         </nav>`}
       </div>
@@ -836,7 +837,7 @@ export class ChatView extends LitElement {
                 title="Don't show this warning again"
                 aria-label="Dismiss warning"
                 @click=${() => { this.onDismissWarning?.(dismissId); }}
-              >×</button>
+              >${renderUiIcon("close")}</button>
             `}
           </div>
         `;
@@ -849,7 +850,7 @@ export class ChatView extends LitElement {
     return html`
       <dialog class="image-zoom" @click=${this.onImageZoomDialogClick} @close=${this.closeImageZoom} @cancel=${this.closeImageZoom}>
         ${this.zoomedImage === undefined ? null : localizedTemplate("ChatView.template.c235a861", html)`
-          <button type="button" class="image-zoom-close" aria-label="Close image" @click=${this.closeImageZoom}>×</button>
+          <button type="button" class="image-zoom-close" aria-label="Close image" @click=${this.closeImageZoom}>${renderUiIcon("close")}</button>
           <img class="image-zoom-full" src=${this.zoomedImage.src} alt=${this.zoomedImage.alt} />
         `}
       </dialog>
@@ -925,7 +926,7 @@ export class ChatView extends LitElement {
               <div class="queued-message-meta">
                 <span class="queued-kind">${message.kind === "steer" ? t("ChatView.steer.ca8342d8") : t("ChatView.queue.b93d6e9f")} ${String(section.messages.slice(0, index + 1).filter((entry) => entry.kind === message.kind).length)}</span>
                 ${queuedMessageAttachmentLabel(message) === undefined ? nothing : localizedTemplate("ChatView.template.4b41b982", html)`
-                  <span class="queued-attachments" title="Attachments included with this queued message"><span aria-hidden="true">📎</span> ${queuedMessageAttachmentLabel(message)}</span>
+                  <span class="queued-attachments" title="Attachments included with this queued message"><span aria-hidden="true">${renderUiIcon("paperclip")}</span> ${queuedMessageAttachmentLabel(message)}</span>
                 `}
               </div>
               <div class="queued-message-actions">
@@ -961,7 +962,7 @@ export class ChatView extends LitElement {
           <strong>Suggested input</strong>
           ${this.onDismissSuggestedInput === undefined ? null : localizedTemplate("ChatView.template.928ca7f8", html)`
             <button type="button" class="suggested-input-dismiss" aria-label="Dismiss suggested input" title="Dismiss suggested input in this browser"
-              @click=${() => { this.onDismissSuggestedInput?.(this.machineId, this.sessionId, text); }}>×</button>
+              @click=${() => { this.onDismissSuggestedInput?.(this.machineId, this.sessionId, text); }}>${renderUiIcon("close")}</button>
           `}
         </div>
         <p class="suggested-input-text" dir="auto">${text === "" ? t("ChatView.empty_input.902c5033") : text}</p>
@@ -1271,7 +1272,7 @@ export class ChatView extends LitElement {
     if (part.type === "toolExecution") return html`<tool-execution-view class="part" .execution=${part}></tool-execution-view>`;
     if (part.type === "toolResult") return html`
       <details class="part" ?open=${part.isError}>
-        <summary>${part.isError ? "✖" : "✓"} ${part.toolName} result</summary>
+        <summary>${renderUiIcon(part.isError ? "close" : "check")} ${part.toolName} result</summary>
         <formatted-text .imagesEnabled=${this.behaviors.loadImages} .codeBlocks=${this.behaviors.codeBlocks} .intentKey=${intentKey} .contentRendering=${this.contentRendering} .machineId=${this.machineId} .workspaceContext=${this.workspaceContext} .text=${part.text}></formatted-text>
       </details>
     `;

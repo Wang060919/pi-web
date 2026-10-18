@@ -498,7 +498,7 @@ export const chatStyles = css`
   .msg.bash > .msg-header { border-bottom-color: color-mix(in srgb, var(--pi-success) 35%, transparent); background: var(--pi-success-bg); }
   .msg.skill > .msg-header { border-bottom-color: color-mix(in srgb, var(--pi-purple-border) 35%, transparent); background: var(--pi-purple-surface); }
   .group-msg > .msg-header { position: sticky; top: -26px; z-index: 4; min-height: 16px; margin: 0 0 4px; padding: 0; border: 0; background: var(--pi-bg); }
-  .group-msg .msg-action { width: 20px; height: 20px; font-size: 12px; }
+  .group-msg .msg-action { width: 24px; height: 24px; }
   @media (pointer: coarse) { .group-msg .msg-action { width: 28px; height: 28px; } }
   .group-msg > .msg-header.compact-event-header { position: static; min-height: 16px; margin: 0 0 4px; padding: 0; border: 0; background: transparent; box-shadow: none; }
   .msg-header-trailing { min-width: 0; flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; }
@@ -507,7 +507,6 @@ export const chatStyles = css`
   .msg-action:hover { color: var(--pi-text); background: var(--pi-surface-hover); }
   .msg-action:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
   .msg-action:disabled { opacity: .45; cursor: not-allowed; }
-  .msg-fork-icon { font-size: 17px; }
   .msg:hover > .msg-header .msg-actions, .msg:focus-within > .msg-header .msg-actions, .group-msg:hover > .msg-header .msg-actions, .group-msg:focus-within > .msg-header .msg-actions { opacity: 1; }
   .label { display: block; color: var(--pi-muted); font-size: 12px; font-weight: 500; line-height: 16px; text-transform: uppercase; }
   .msg-header .label { flex: 0 0 auto; margin: 0; white-space: nowrap; text-transform: none; }
@@ -641,7 +640,7 @@ export const promptEditorStyles = css`
   .select-thinking .prompt-thinking-gauge .gauge-bar { fill: currentColor; stroke: none; opacity: .28; }
   .select-thinking .prompt-thinking-gauge .gauge-bar-active { opacity: 1; }
   .editor-attach { width: 28px; height: 28px; border-color: transparent; border-radius: 5px; background: transparent; color: var(--pi-muted); }
-  .attach-mark { margin-top: -2px; font: 25px/1 var(--pi-font-family, system-ui, sans-serif); }
+  .attach-mark { display: inline-flex; align-items: center; justify-content: center; }
   textarea, .markdown-editor .cm-editor { box-sizing: border-box; width: 100%; min-height: 30px; max-height: 220px; resize: none; overflow: hidden; border-radius: 8px; border: 0; background: transparent; color: var(--pi-text); font: var(--pi-control-font-size, 16px)/1.42857 var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
   textarea { overflow-y: auto; padding: 4px; }
   .markdown-editor .cm-scroller { max-height: 220px; overflow-y: auto; font-family: var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); line-height: 1.42857; }

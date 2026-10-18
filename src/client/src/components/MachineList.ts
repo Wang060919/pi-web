@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, css, html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -107,7 +108,7 @@ export class MachineList extends LitElement implements KeyboardNavigableSection 
           aria-expanded=${String(open)}
           aria-controls=${menuId}
           @click=${(event: MouseEvent) => { event.stopPropagation(); this.toggleMenu(machine.id, event.currentTarget); }}
-        >⋯</button>
+        >${renderUiIcon("more")}</button>
         ${open ? localizedTemplate("MachineList.remove.8ab88fda", html)`
           <div class="action-menu-panel machine-menu-panel" id=${menuId} style=${this.menuStyle} @click=${(event: MouseEvent) => { event.stopPropagation(); }}>
             <button class="danger" title=${localizedText("MachineList.remove.fa5fdf70")`Remove ${machine.name}`} @click=${() => { this.removeMachine(machine); }}>Remove</button>
@@ -121,7 +122,7 @@ export class MachineList extends LitElement implements KeyboardNavigableSection 
     if (!this.collapsible) return localizedTemplate("MachineList.machines.f75d1d80", html)`<span>Machines</span>`;
     const selectedSummary = this.selected?.name ?? t("MachineList.no_machine_selected.71d61954");
     const selectedTitle = this.selected?.baseUrl ?? selectedSummary;
-    return localizedTemplate("MachineList.machines.bc37920a", html)`<button class="section-toggle" aria-expanded=${String(!this.collapsed)} @click=${() => { this.onToggleCollapsed?.(); }}><span class="section-title"><span class="section-name">${this.collapsed ? "▸" : "▾"} Machines</span>${this.collapsed ? html`<small class="section-selected" title=${selectedTitle}>${selectedSummary}</small>` : null}</span><small class="section-count">${this.machines.length}</small></button>`;
+    return localizedTemplate("MachineList.machines.bc37920a", html)`<button class="section-toggle" aria-expanded=${String(!this.collapsed)} @click=${() => { this.onToggleCollapsed?.(); }}><span class="section-title"><span class="section-name">${renderUiIcon(this.collapsed ? "chevronRight" : "chevronDown")} Machines</span>${this.collapsed ? html`<small class="section-selected" title=${selectedTitle}>${selectedSummary}</small>` : null}</span><small class="section-count">${this.machines.length}</small></button>`;
   }
 
   private toggleMenu(machineId: string, target: EventTarget | null): void {

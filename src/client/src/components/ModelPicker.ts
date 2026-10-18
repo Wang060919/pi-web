@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, css, html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -179,7 +180,7 @@ export class ModelPicker extends LitElement {
       >
         <header>
           <strong>${this.title}</strong>
-          <button aria-label="Close" @click=${() => this.onCancel?.()}>×</button>
+          <button aria-label="Close" @click=${() => this.onCancel?.()}>${renderUiIcon("close")}</button>
         </header>
         <div class="scope-toggle" role="group" aria-label="Model scope">
           ${this.renderScopeToggleButton("enabled", t("ModelPicker.enabled.2f79f806"))}
@@ -268,7 +269,7 @@ export class ModelPicker extends LitElement {
       >
         <header class="popover-header">
           <strong>${this.title}</strong>
-          <button class="popover-close" type="button" aria-label=${t("ui.modelPicker.close")} ?disabled=${this.popoverBusy} @click=${() => this.onCancel?.()}>×</button>
+          <button class="popover-close" type="button" aria-label=${t("ui.modelPicker.close")} ?disabled=${this.popoverBusy} @click=${() => this.onCancel?.()}>${renderUiIcon("close")}</button>
         </header>
         <div class="search-row">
           <input class="search" aria-label=${t("ui.modelPicker.search")} placeholder=${t("ui.modelPicker.search")} .value=${this.query} ?disabled=${this.popoverBusy} @input=${(event: Event) => { this.handleSearchInput(event); }} @keydown=${(event: KeyboardEvent) => { this.handleSearchKeyDown(event); }}>
@@ -285,7 +286,7 @@ export class ModelPicker extends LitElement {
                   title=${option.value} aria-current=${current ? "true" : nothing}
                   @focus=${() => { this.selectedIndex = index; }} @click=${() => { this.requestPick(option.value); }}>
                   <span class="model-copy"><strong>${option.label}</strong>${option.description === undefined || option.description === "" ? nothing : html`<small>${option.description}</small>`}</span>
-                  ${current ? html`<span class="current-check" role="img" aria-label=${t("ui.modelPicker.current")}>✓</span>` : html`<span class="current-check" aria-hidden="true"></span>`}
+                  ${current ? html`<span class="current-check" role="img" aria-label=${t("ui.modelPicker.current")}>${renderUiIcon("check")}</span>` : html`<span class="current-check" aria-hidden="true"></span>`}
                 </button>
                 ${this.renderDefaultPin(option.value, option.label, catalogEntry?.enabled !== false)}
               </div>
@@ -310,7 +311,7 @@ export class ModelPicker extends LitElement {
           ></thinking-picker>
         `}
         </div>
-        <button class="manage-models" type="button" ?disabled=${this.popoverBusy || this.membershipChangePending} @click=${() => { this.selectMode("all"); }}>${t("ui.modelPicker.manage")}<span aria-hidden="true">›</span></button>
+        <button class="manage-models" type="button" ?disabled=${this.popoverBusy || this.membershipChangePending} @click=${() => { this.selectMode("all"); }}>${t("ui.modelPicker.manage")}<span aria-hidden="true">${renderUiIcon("chevronRight")}</span></button>
       </modal-surface>
     `;
   }

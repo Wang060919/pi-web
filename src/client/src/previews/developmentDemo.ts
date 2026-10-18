@@ -1,3 +1,4 @@
+import { renderUiIcon } from "../components/uiIcons";
 import { LitElement, css, html } from "lit";
 import { state } from "lit/decorators.js";
 import { getLocale } from "../../../shared/i18n";
@@ -76,7 +77,7 @@ class DevelopmentDemoLauncher extends LitElement {
       <dialog aria-labelledby="demo-title" aria-describedby="demo-description">
         <header>
           <h2 id="demo-title">${copy("测试数据展示", "Example data")}</h2>
-          <button class="close" type="button" aria-label=${copy("关闭", "Close")} @click=${() => { this.closeDialog(); }}>×</button>
+          <button class="close" type="button" aria-label=${copy("关闭", "Close")} @click=${() => { this.closeDialog(); }}>${renderUiIcon("close")}</button>
         </header>
         <p id="demo-description">${copy("载入预设会话，查看对话、代码和工具调用等展示效果。载入数据不会调用真实模型。", "Load preset sessions to explore conversations, code, and tool calls. Loading examples does not call a real model.")}</p>
         <p class="hint">${copy("仅用于当前隔离测试版，可重复载入。", "Available only in this isolated development instance. Examples can be loaded again.")}</p>
@@ -91,7 +92,7 @@ class DevelopmentDemoLauncher extends LitElement {
         ${welcome === undefined ? null : html`
           <nav aria-label=${copy("示例场景", "Example scenarios")}>
             <h3>${copy("示例场景", "Example scenarios")}</h3>
-            <ul>${this.sessions.map((session) => html`<li><a href=${session.url}>${session.name}<span aria-hidden="true">→</span></a></li>`)}</ul>
+            <ul>${this.sessions.map((session) => html`<li><a href=${session.url}>${session.name}<span aria-hidden="true">${renderUiIcon("arrowRight")}</span></a></li>`)}</ul>
           </nav>
         `}
       </dialog>

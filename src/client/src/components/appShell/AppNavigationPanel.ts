@@ -1,3 +1,4 @@
+import { renderUiIcon } from "../uiIcons";
 import { localizedTemplate, t } from "../../../../shared/i18n";
 import { LitElement, css, html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -333,7 +334,7 @@ export class AppNavigationPanel extends LitElement {
     return html`
       <div class="context-picker">
         <modal-surface .label=${label} .onClose=${() => { void this.closeContextPicker(); }}>
-          <div class="picker-heading"><strong>${label}</strong><button class="picker-close" aria-label=${t("ui.navigation.closePicker")} title=${t("ui.navigation.closePicker")} @click=${() => { void this.closeContextPicker(); }}>×</button></div>
+          <div class="picker-heading"><strong>${label}</strong><button class="picker-close" aria-label=${t("ui.navigation.closePicker")} title=${t("ui.navigation.closePicker")} @click=${() => { void this.closeContextPicker(); }}>${renderUiIcon("close")}</button></div>
           ${projectPicker ? this.renderProjectList() : this.renderWorkspaceList()}
         </modal-surface>
       </div>

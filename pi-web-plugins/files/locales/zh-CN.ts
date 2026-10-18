@@ -190,15 +190,16 @@ export const templates = {
     ]
   },
   "FilesPanel.upload_review_destination_folder_workspace_relative_lea.0fd3495b": {
-    "sourceHash": 179602129,
-    "valueCount": 17,
+    "sourceHash": 3428599264,
+    "valueCount": 18,
     "strings": [
       "\n      <dialog class=\"upload-dialog\" aria-label=\"确认文件上传\" @cancel=",
       " @close=",
       " @click=",
       ">\n        <header>\n          <div>\n            <span class=\"eyebrow\">上传</span>\n            <h2>确认上传 ",
       " 个文件</h2>\n          </div>\n          <button class=\"close-button\" type=\"button\" title=\"取消上传\" aria-label=\"取消上传\" @click=",
-      ">×</button>\n        </header>\n        <form @submit=",
+      ">",
+      "</button>\n        </header>\n        <form @submit=",
       ">\n          <label>\n            <span>目标文件夹</span>\n            <input id=\"workspace-upload-destination\" autofocus .value=",
       " placeholder=",
       " @input=",
@@ -225,9 +226,10 @@ export const templates = {
       10,
       11,
       12,
-      14,
+      13,
       15,
-      16
+      16,
+      17
     ]
   },
   "FilesPanel.unable_to_open_upload_review.25ce5d64": {
@@ -438,14 +440,16 @@ export const templates = {
     ]
   },
   "FilesViewer.open.90a9b471": {
-    "sourceHash": 429787005,
-    "valueCount": 1,
+    "sourceHash": 1968818240,
+    "valueCount": 2,
     "strings": [
       "\n            <a\n              class=\"viewer-action\"\n              href=",
-      "\n              target=\"_blank\"\n              rel=\"noopener noreferrer\"\n              referrerpolicy=\"no-referrer\"\n              title=\"在新窗口中打开\"\n            >打开 ↗</a>\n          "
+      "\n              target=\"_blank\"\n              rel=\"noopener noreferrer\"\n              referrerpolicy=\"no-referrer\"\n              title=\"在新窗口中打开\"\n            >打开 ",
+      "</a>\n          "
     ],
     "order": [
-      0
+      0,
+      1
     ]
   },
   "FilesViewer.download.b52b071b": {

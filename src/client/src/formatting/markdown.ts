@@ -1,3 +1,4 @@
+import { uiIconMarkup } from "../components/uiIcons";
 import { localizedText, t } from "../../../shared/i18n";
 import { marked, type Renderer } from "marked";
 import { DEFAULT_CODE_BLOCK_POLICY, type CodeBlockPolicy } from "./codeBlockPolicy";
@@ -19,8 +20,9 @@ function markdownRenderer(codeBlocks: CodeBlockPolicy): Renderer {
     if (codeBlocks.presentation === "plain" && !codeBlocks.copy) return block;
     const language = token.lang?.trim().split(/\s/u)[0] ?? "";
     const label = language === "" ? "" : `<span class="code-block-label">${escapeHtml(language)}</span>`;
+    const copyLabel = escapeHtml(t("FormattedText.copy_code_block.d31aaa3e")).replaceAll('"', "&quot;");
     const copy = codeBlocks.copy
-      ? t("markdown.template.0489bc0d")
+      ? `<button type="button" class="code-copy-button code-block-copy" title="${copyLabel}" aria-label="${copyLabel}"><span aria-hidden="true">${uiIconMarkup("copy")}</span></button>`
       : "";
     // Generate the normal-flow header before mounting; never reparent source DOM.
     const header = label === "" && copy === "" ? "" : localizedText("markdown.template.30f22a99")`<div class="code-block-header" role="group" aria-label="Code block controls">${label}${copy}</div>`;

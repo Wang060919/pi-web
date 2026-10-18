@@ -1,3 +1,4 @@
+import { renderUiIcon } from "../uiIcons";
 import { localizedTemplate, localizedText, t } from "../../../../shared/i18n";
 import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -91,7 +92,7 @@ export class NavigationDialog extends LitElement {
               this.selectedIndex = 0;
             }
           }}>
-          <button aria-label=${t("navigation.close")} title=${t("navigation.close")} @click=${this.onClose}>×</button>
+          <button aria-label=${t("navigation.close")} title=${t("navigation.close")} @click=${this.onClose}>${renderUiIcon("close")}</button>
         </header>
         <span id="navigation-selection" class="sr-only" role="status" aria-live="polite" aria-atomic="true">${tabs.length === 0 ? t("NavigationDialog.no_destinations_found.d366459a") : localizedText("NavigationDialog.of.0e166819")`${tabs[this.selectedIndex]?.label ?? ""}, ${String(this.selectedIndex + 1)} of ${String(tabs.length)}`}</span>
         <h2>${t("NavigationDialog.navigation.81259b67")}</h2>

@@ -44,7 +44,7 @@ it("shows the renderer label and an accessible Copy icon without activating a ma
   expect(host.renderRoot.querySelector(".code-block-frame > .code-block-header .code-block-label")?.textContent).toBe("Mermaid / diagram");
   expect(draw).not.toHaveBeenCalled();
   const copy = button(host, "Copy source");
-  expect(copy.textContent).toBe("⧉");
+  expect(copy.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
   expect(copy.getAttribute("title")).toBe("Copy source");
   expect(copy.querySelector('span[aria-hidden="true"]')).not.toBeNull();
   expect(copy.closest(".code-block-header")?.nextElementSibling?.id).toBe("content");
@@ -65,7 +65,7 @@ it("copies source from a visible preview and retains accessible success/failure 
   await host.updateComplete;
   await host.updateComplete;
   expect(writeClipboardText).toHaveBeenCalledWith("source");
-  expect(copy.textContent).toBe("✓");
+  expect(copy.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
   expect(copy.getAttribute("aria-label")).toBe("Copied source");
   expect(copy.getAttribute("title")).toBe("Copied source");
   expect(host.renderRoot.querySelector('[role="status"]')?.textContent).toBe("Copied source");
@@ -74,7 +74,7 @@ it("copies source from a visible preview and retains accessible success/failure 
   copy.click();
   await host.updateComplete;
   await host.updateComplete;
-  expect(copy.textContent).toBe("⧉");
+  expect(copy.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
   expect(copy.getAttribute("aria-label")).toBe("Failed to copy source");
   expect(copy.getAttribute("title")).toBe("Failed to copy source");
   expect(host.renderRoot.querySelector('[role="status"]')?.textContent).toBe("Failed to copy source");

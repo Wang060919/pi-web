@@ -259,7 +259,7 @@ describe("workspace-file-viewer", () => {
     expect(requiredElement(viewer.shadowRoot?.querySelector<HTMLElement & { content: string }>("pi-web-files-code-viewer"), "raw code viewer").content).toBe(source);
     expect(viewer.shadowRoot?.querySelector("h1, script")).toBeNull();
 
-    const open = anchorWithText(viewer, "Open ↗");
+    const open = anchorWithText(viewer, "Open");
     expect(open.getAttribute("target")).toBe("_blank");
     expect(open.getAttribute("rel")).toBe("noopener noreferrer");
     expect(open.getAttribute("referrerpolicy")).toBe("no-referrer");
@@ -411,7 +411,7 @@ describe("workspace-file-viewer", () => {
     expect(currentFrame.getAttribute("referrerpolicy")).toBe("no-referrer");
     expect(requiredElement(viewer.shadowRoot?.querySelector(".preview-note"), "PDF fallback note").textContent)
       .toContain("Use Open ↗ or Download above");
-    expect(anchorWithText(viewer, "Open ↗")).toBeDefined();
+    expect(anchorWithText(viewer, "Open")).toBeDefined();
 
     detachedImage.dispatchEvent(new Event("error"));
     await viewer.updateComplete;
@@ -422,7 +422,7 @@ describe("workspace-file-viewer", () => {
     await viewer.updateComplete;
     expect(viewer.shadowRoot?.querySelector("[role='alert']")?.textContent).toContain("Preview failed for second.pdf.");
     expect(viewer.shadowRoot?.querySelector("iframe")).toBeNull();
-    expect(anchorWithText(viewer, "Open ↗")).toBeDefined();
+    expect(anchorWithText(viewer, "Open")).toBeDefined();
     expect(viewer.shadowRoot?.querySelector("a[download]")).not.toBeNull();
 
     buttonWithText(viewer, "Retry preview").click();
@@ -439,7 +439,8 @@ describe("workspace-file-viewer", () => {
     expect(viewer.shadowRoot?.querySelector("img")).toBeNull();
     const raw = requiredElement(viewer.shadowRoot?.querySelector<HTMLElement & { content: string }>("pi-web-files-code-viewer"), "raw SVG viewer");
     expect(raw.content).toBe(source);
-    expect(viewer.shadowRoot?.querySelector("svg, script")).toBeNull();
+    expect([...(viewer.shadowRoot?.querySelectorAll("svg") ?? [])].filter((icon) => icon.closest(".viewer-header") === null)).toEqual([]);
+    expect(viewer.shadowRoot?.querySelector("script")).toBeNull();
 
     modeButton(viewer, "Preview").click();
     await viewer.updateComplete;

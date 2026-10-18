@@ -246,7 +246,7 @@ describe("plugin-defined transcript message actions", () => {
     await settle(view);
     expect(writeText).toHaveBeenCalledExactlyOnceWith("First\n\nSecond");
     await vi.waitFor(() => { expect(button(view, "Copied assistant message").title).toBe("Copied"); });
-    expect(button(view, "Copied assistant message").textContent).toContain("✓");
+    expect(button(view, "Copied assistant message").querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     await vi.advanceTimersByTimeAsync(800);
     button(view, "Copied assistant message").click();
     await vi.waitFor(() => { expect(button(view, "Copied assistant message").disabled).toBe(false); });

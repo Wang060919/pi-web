@@ -92,11 +92,11 @@ describe("session root pins", () => {
     expect(shadow(list).textContent).not.toContain("📌");
     const contents = [...shadow(list).querySelectorAll(".pin-heading, .action-row")].map((item) => item.classList.contains("action-row") ? item.getAttribute("title") : item.textContent);
     expect(contents).toEqual(["Pinned", a.path, child.path, "Recent", b.path]);
-    button(shadow(list), "▸ Agent subsessions (1)").click();
+    button(shadow(list), "Agent subsessions (1)").click();
     await list.updateComplete;
     expect(rowIds(list)).toEqual(["a", "agent", "child", "b"]);
     expect(row(list, "child").style.getPropertyValue("--depth")).toBe("2");
-    button(shadow(list), "▸ Archived").click();
+    button(shadow(list), "Archived").click();
     await list.updateComplete;
     expect(rowIds(list)).toEqual(["a", "agent", "child", "b", "archived"]);
     list.pinnedRootIds = ["b", "a"];

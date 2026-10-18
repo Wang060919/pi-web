@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, t } from "../../../shared/i18n";
 import { LitElement, css, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -94,7 +95,7 @@ export class MachineDialog extends LitElement {
         <form @submit=${(event: SubmitEvent) => { this.handleSubmit(event); }}>
           <header>
             <strong>Add machine</strong>
-            <button type="button" @click=${() => { this.onCancel?.(); }} aria-label="Close">×</button>
+            <button type="button" @click=${() => { this.onCancel?.(); }} aria-label="Close">${renderUiIcon("close")}</button>
           </header>
           <div class="body">
             ${this.error === "" ? null : html`<div class="dialog-error" role="alert">${this.error}</div>`}

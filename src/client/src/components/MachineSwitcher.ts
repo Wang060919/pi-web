@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -82,7 +83,7 @@ export class MachineSwitcher extends LitElement implements KeyboardNavigableSect
             <span class="machine-switcher-label">${label}</span>
           </span>
           <span class=${`machine-status ${status}`}>${machineStatusLabel(status)}</span>
-          <span class="machine-chevron" aria-hidden="true">▾</span>
+          <span class="machine-chevron" aria-hidden="true">${renderUiIcon("chevronDown")}</span>
         </button>
         ${this.open ? html`
           <div class="machine-switcher-menu" style=${this.menuStyle} @click=${(event: MouseEvent) => { event.stopPropagation(); }}>
@@ -120,7 +121,7 @@ export class MachineSwitcher extends LitElement implements KeyboardNavigableSect
               aria-label=${localizedText("MachineSwitcher.actions_for.86e47525")`Actions for ${machine.name}`}
               aria-expanded=${String(actionsOpen)}
               @click=${(event: MouseEvent) => { event.stopPropagation(); this.toggleActionsMenu(machine.id, event.currentTarget); }}
-            >⋯</button>
+            >${renderUiIcon("more")}</button>
             ${actionsOpen ? localizedTemplate("MachineSwitcher.remove.5b9e2913", html)`
               <div class="machine-option-actions-panel" style=${this.actionMenuStyle} @click=${(event: MouseEvent) => { event.stopPropagation(); }}>
                 <button class="danger" title=${localizedText("MachineSwitcher.remove.0d9de645")`Remove ${machine.name}`} @click=${() => { this.removeMachine(machine); }}>Remove</button>

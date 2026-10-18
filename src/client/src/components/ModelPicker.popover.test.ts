@@ -93,14 +93,14 @@ describe("model-picker popover", () => {
     const other = requiredElement(modelChoices(picker)[1], "other model choice");
     expect(current.title).toBe("openai/gpt-5");
     expect(current.getAttribute("aria-current")).toBe("true");
-    expect(current.querySelector(".current-check")?.textContent).toBe("✓");
+    expect(current.querySelector('.current-check[aria-label="Current model"] svg')).not.toBeNull();
 
     pressKey(search(picker), "ArrowDown");
     await settleRenderedDialog(picker);
     expect(other.closest(".popover-row")?.classList.contains("selected")).toBe(true);
     expect(other.getAttribute("aria-current")).toBeNull();
     expect(current.getAttribute("aria-current")).toBe("true");
-    expect(current.querySelector(".current-check")?.textContent).toBe("✓");
+    expect(current.querySelector('.current-check[aria-label="Current model"] svg')).not.toBeNull();
   });
 
   it("searches displayed names and commits the keyboard choice with its wire identity", async () => {

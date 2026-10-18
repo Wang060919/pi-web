@@ -69,8 +69,8 @@ describe("composable normal chat", () => {
     expect(view.behaviors.followTail).toBe(true);
     expect(view.behaviors.automaticHistory).toBe(true);
     expect(view.renderRoot.querySelector("conversation-meter, .scroll-marker")).toBeNull();
-    expect(required(view.renderRoot, '.chat-jumps [aria-label="Jump to top"]').textContent).toBe("↑");
-    expect(required(view.renderRoot, '.chat-jumps [aria-label="Jump to end"]').textContent).toBe("↓");
+    expect(required(view.renderRoot, '.chat-jumps [aria-label="Jump to top"]').querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(required(view.renderRoot, '.chat-jumps [aria-label="Jump to end"]').querySelector('svg[aria-hidden="true"]')).not.toBeNull();
   });
 
   it("keeps closed disclosure bodies mounted and records toggles without rerendering", async () => {

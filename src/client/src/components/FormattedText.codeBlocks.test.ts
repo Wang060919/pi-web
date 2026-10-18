@@ -97,9 +97,13 @@ it.each(["plain", "code"] as const)("preserves unchanged %s source and Copy focu
   const label = header?.querySelector(".code-block-label");
   expect(label?.textContent).toBe("text");
   copy.focus();
-  copy.click();
+  const icon = copy.querySelector("svg path");
+  if (icon === null) throw new Error("Expected the Copy icon");
+  const copyPath = icon.getAttribute("d");
+  icon.dispatchEvent(new MouseEvent("click", { bubbles: true }));
   await settle(view);
   expect(copy.getAttribute("aria-label")).toBe("Copied code block");
+  expect(copy.querySelector("svg path")?.getAttribute("d")).not.toBe(copyPath);
 
   for (const chunk of [" grows", " across another streamed update."]) {
     view.text += chunk;
@@ -118,6 +122,7 @@ it.each(["plain", "code"] as const)("preserves unchanged %s source and Copy focu
   expect(writeClipboardText).toHaveBeenCalledWith(`${literalSource}\n`);
   await vi.advanceTimersByTimeAsync(1200);
   expect(copy.getAttribute("aria-label")).toBe("Copy code block");
+  expect(copy.querySelector("svg path")?.getAttribute("d")).toBe(copyPath);
 });
 
 it("keeps the plain chat baseline literal while bypassing all preview inspection", async () => {

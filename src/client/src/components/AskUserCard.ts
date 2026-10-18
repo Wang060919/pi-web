@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, t } from "../../../shared/i18n";
 import { LitElement, css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -187,7 +188,7 @@ export class AskUserCard extends LitElement {
   private renderClosedAsk(ask: AskUserRequest): TemplateResult {
     return localizedTemplate("AskUserCard.questions_closed_questions.a3bcefce", html)`
       <details class="card closed-card">
-        <summary class="card-header"><h2><span class="disclosure-indicator" aria-hidden="true">▸</span> Questions</h2><span class="header-status">Closed · ${ask.questions.length} questions</span></summary>
+        <summary class="card-header"><h2><span class="disclosure-indicator" aria-hidden="true">${renderUiIcon("chevronRight")}</span> Questions</h2><span class="header-status">Closed · ${ask.questions.length} questions</span></summary>
         ${this.outcomes.map((outcome) => html`<p class="record-summary">${outcome.summary}</p>`)}
         <div class="record-questions">
           ${ask.questions.map((question, index) => html`

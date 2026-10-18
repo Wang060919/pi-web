@@ -91,11 +91,12 @@ export const templates = {
     ]
   },
   "TerminalPanel.command_is_running_press_ctrl_c_or.08636c3c": {
-    "sourceHash": 1988984786,
-    "valueCount": 5,
+    "sourceHash": 2729512169,
+    "valueCount": 6,
     "strings": [
       "\n        <section class=\"command-run-notice running\">\n          <div>\n            <strong>",
-      "</strong>\n            <p>命令正在运行。按 <kbd>Ctrl</kbd>+<kbd>C</kbd> 或点击按钮取消。</p>\n            <code>",
+      "</strong>\n            <p>命令正在运行。按 <kbd>Ctrl</kbd>",
+      "<kbd>C</kbd> 或点击按钮取消。</p>\n            <code>",
       "</code>\n          </div>\n          <button class=\"danger\" ?disabled=",
       " @click=",
       ">",
@@ -106,7 +107,8 @@ export const templates = {
       1,
       2,
       3,
-      4
+      4,
+      5
     ]
   },
   "TerminalPanel.output_is_preserved_continue_in_a_shell.7e1b7f3a": {
@@ -184,15 +186,16 @@ export const templates = {
     ]
   },
   "TerminalPanel.shell.e180687e": {
-    "sourceHash": 630280324,
-    "valueCount": 13,
+    "sourceHash": 1765015283,
+    "valueCount": 14,
     "strings": [
       "\n      <section class=\"terminal-shell\">\n        <div class=\"terminal-tabs\">\n          ",
       "\n          ",
       "\n          ",
       "\n          <button class=\"new\" ?disabled=",
       " @click=",
-      ">+ 新建 Shell</button>\n        </div>\n        ",
+      ">",
+      " 新建 Shell</button>\n        </div>\n        ",
       "\n        ",
       "\n        ",
       "\n        ",
@@ -215,7 +218,8 @@ export const templates = {
       9,
       10,
       11,
-      12
+      12,
+      13
     ]
   },
   "TerminalPanel.loading_terminals.b2b8ff3e": {

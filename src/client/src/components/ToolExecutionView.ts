@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -238,11 +239,11 @@ function isRemovedDiffLine(line: string): boolean {
   return line.startsWith("-") && !line.startsWith("---");
 }
 
-function statusIcon(status: ToolExecutionPart["status"]): string {
-  if (status === "success") return "✓";
-  if (status === "error") return "✖";
-  if (status === "running") return "●";
-  return "○";
+function statusIcon(status: ToolExecutionPart["status"]) {
+  if (status === "success") return renderUiIcon("check");
+  if (status === "error") return renderUiIcon("close");
+  if (status === "running") return renderUiIcon("dot", 12);
+  return renderUiIcon("circle", 12);
 }
 
 function statusLabel(status: ToolExecutionPart["status"]): string {

@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { t } from "../../../shared/i18n";
@@ -53,7 +54,7 @@ export class AttachmentPreview extends LitElement {
       <modal-surface .label=${attachment.name} .initialFocus=${".preview-close"} .onClose=${() => this.onClose?.()}>
         <header>
           <strong>${attachment.name}</strong>
-          <button class="preview-close" type="button" aria-label=${t("ui.attachmentPreview.close")} @click=${() => this.onClose?.()}>×</button>
+          <button class="preview-close" type="button" aria-label=${t("ui.attachmentPreview.close")} @click=${() => this.onClose?.()}>${renderUiIcon("close")}</button>
         </header>
         <div class="preview-body">
           ${image ? this.imageFailed ? html`<p class="preview-notice" role="status">${t("ui.attachmentPreview.imageFailed")}</p>` : html`

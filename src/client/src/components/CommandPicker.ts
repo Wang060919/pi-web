@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, t } from "../../../shared/i18n";
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -34,7 +35,7 @@ export class CommandPicker extends LitElement {
       >
         <header>
           <strong>${this.title}</strong>
-          <button aria-label="Close" @click=${() => this.onCancel?.()}>×</button>
+          <button aria-label="Close" @click=${() => this.onCancel?.()}>${renderUiIcon("close")}</button>
         </header>
         ${this.searchable ? localizedTemplate("CommandPicker.template.c8c7219f", html)`<input placeholder="Search" .value=${this.query} @input=${(event: Event) => { this.handleSearchInput(event); }}>` : null}
         ${this.onSetDefault ? defaultPinHelp : nothing}

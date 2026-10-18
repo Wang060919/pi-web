@@ -45,7 +45,7 @@ describe("queued message actions", () => {
     ]);
     const badges = Array.from(view.shadowRoot?.querySelectorAll(".queued-attachments") ?? []);
     expect(badges).toHaveLength(3);
-    expect(badges.map((badge) => badge.textContent.trim())).toEqual(["📎 1 attachment", "📎 3 attachments", "📎 Attachments"]);
+    expect(badges.map((badge) => badge.textContent.trim())).toEqual(["1 attachment", "3 attachments", "Attachments"]);
     expect(view.shadowRoot?.querySelector("img")).toBeNull();
   });
 
@@ -63,7 +63,8 @@ describe("queued message actions", () => {
       const control = button(view, `[aria-label="${label}"]`);
       expect(control.title).not.toBe("");
       expect(control.querySelector('[aria-hidden="true"]')).not.toBeNull();
-      expect(control.textContent.trim()).toBe(label === "Copy queued message" ? "⧉" : "");
+      expect(control.textContent.trim()).toBe("");
+      expect(control.querySelector("svg")).not.toBeNull();
     }
     button(view, '[aria-label="Switch to Steer"]').click();
     expect(view.onQueuedMessageAction).toHaveBeenCalledWith({ machineId: "remote", sessionId: "session", action: "toggle", index: 2, expectedQueue: messages });

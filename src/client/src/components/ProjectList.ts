@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -89,7 +90,7 @@ export class ProjectList extends LitElement implements KeyboardNavigableSection 
                   ${this.renderActivity(project)}
                 </div>
                 <div class="action-menu">
-                  <button class="action-menu-toggle" title="Project actions" aria-label=${localizedText("ProjectList.actions_for.a80f0aa3")`Actions for ${project.name}`} @click=${(event: MouseEvent) => { event.stopPropagation(); this.toggleMenu(project.id, event.currentTarget); }}>⋯</button>
+                  <button class="action-menu-toggle" title="Project actions" aria-label=${localizedText("ProjectList.actions_for.a80f0aa3")`Actions for ${project.name}`} @click=${(event: MouseEvent) => { event.stopPropagation(); this.toggleMenu(project.id, event.currentTarget); }}>${renderUiIcon("more")}</button>
                   ${this.openMenuProjectId === project.id ? localizedTemplate("ProjectList.close.9291ad4b", html)`
                     <div class="action-menu-panel" style=${this.menuStyle} @click=${(event: MouseEvent) => { event.stopPropagation(); }}>
                       ${this.onMove === undefined ? null : localizedTemplate("ProjectList.move_up_move_down.4d3d29db", html)`
@@ -121,7 +122,7 @@ export class ProjectList extends LitElement implements KeyboardNavigableSection 
     if (!this.collapsible) return localizedTemplate("ProjectList.projects.60d23590", html)`<span>Projects</span>`;
     const selectedSummary = this.selected?.name ?? t("ProjectList.no_project_selected.edb7a30b");
     const selectedTitle = this.selected?.path ?? selectedSummary;
-    return localizedTemplate("ProjectList.projects.fd9190cd", html)`<button class="section-toggle" aria-expanded=${String(!this.collapsed)} @click=${() => { this.onToggleCollapsed?.(); }}><span class="section-title"><span class="section-name">${this.collapsed ? "▸" : "▾"} Projects</span>${this.collapsed ? html`<small class="section-selected" title=${selectedTitle}>${selectedSummary}</small>` : null}</span><small class="section-count">${this.projects.length}</small></button>`;
+    return localizedTemplate("ProjectList.projects.fd9190cd", html)`<button class="section-toggle" aria-expanded=${String(!this.collapsed)} @click=${() => { this.onToggleCollapsed?.(); }}><span class="section-title"><span class="section-name">${renderUiIcon(this.collapsed ? "chevronRight" : "chevronDown")} Projects</span>${this.collapsed ? html`<small class="section-selected" title=${selectedTitle}>${selectedSummary}</small>` : null}</span><small class="section-count">${this.projects.length}</small></button>`;
   }
 
   private renderActivity(project: Project) {

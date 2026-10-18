@@ -15,7 +15,7 @@ describe("orphan child row indicator", () => {
     const marker = row(list).querySelector(".tree-marker.orphan-marker");
     // Same glyph as an ordinary child: the left marker answers "is this a child",
     // not "where is the parent".
-    expect(marker?.textContent).toBe("↳");
+    expect(marker?.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     expect(marker?.getAttribute("aria-label")).toBe("parent unavailable");
     expect(marker?.getAttribute("title")).toBe("Parent session is not available in this workspace");
   });
@@ -25,7 +25,10 @@ describe("orphan child row indicator", () => {
     const list = await renderList({ sessions: [parent, session("nested", { parentSessionPath: parent.path }), orphan()] });
 
     const markers = [...list.shadowRoot?.querySelectorAll(".tree-marker") ?? []];
-    expect(markers.map((marker) => marker.textContent)).toEqual(["↳", "↳"]);
+    expect(markers).toHaveLength(2);
+    const paths = markers.map((marker) => marker.querySelector("svg path")?.getAttribute("d"));
+    expect(paths[0]).toBeTruthy();
+    expect(paths[1]).toBe(paths[0]);
     expect(markers.filter((marker) => marker.classList.contains("orphan-marker"))).toHaveLength(1);
   });
 
@@ -61,7 +64,7 @@ describe("orphan child row indicator", () => {
     const list = await renderList({ sessions: [parent, child] });
 
     const childRow = [...list.shadowRoot?.querySelectorAll(".action-row") ?? []][1];
-    expect(childRow?.querySelector(".tree-marker")?.textContent).toBe("↳");
+    expect(childRow?.querySelector('.tree-marker svg[aria-hidden="true"]')).not.toBeNull();
     expect(childRow?.querySelector(".orphan-marker")).toBeNull();
   });
 

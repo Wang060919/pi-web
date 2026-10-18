@@ -30,7 +30,7 @@ describe("local attachment preview", () => {
   ])("renders %s as escaped text", async (name, mimeType, content) => {
     const preview = await mount(textAttachment(content, name, mimeType));
     expect(preview.renderRoot.querySelector("pre")?.textContent).toBe(content);
-    expect(preview.renderRoot.querySelector("script, iframe, svg, img")).toBeNull();
+    expect(preview.renderRoot.querySelector(".preview-body")?.querySelector("script, iframe, svg, img")).toBeNull();
   });
 
   it("bounds large UTF-8 previews without replacing a partial character", async () => {

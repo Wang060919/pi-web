@@ -857,7 +857,6 @@ export const messages = {
   "sessionController.session_creation_failed.0a01a527": "Session creation failed",
   "workspaceController.project_not_found.aebda77a": "Project not found",
   "workspaceController.workspace_authority_is_degraded.0b245fcd": "Workspace authority is degraded",
-  "markdown.template.0489bc0d": "<button type=\"button\" class=\"code-copy-button code-block-copy\" title=\"Copy code block\" aria-label=\"Copy code block\"><span aria-hidden=\"true\">⧉</span></button>",
   "keyboardShortcuts.enter_a_shortcut_choose_none_or_reset.5fd01f31": "Enter a shortcut, choose None, or reset to the default.",
   "keyboardShortcuts.shortcut_chords_must_include_a_key.96ba3ebf": "Shortcut chords must include a key.",
   "keyboardShortcuts.each_shortcut_chord_can_include_only_one.2647de8c": "Each shortcut chord can include only one non-modifier key.",

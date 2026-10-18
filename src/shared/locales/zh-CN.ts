@@ -859,7 +859,6 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "sessionController.session_creation_failed.0a01a527": "会话创建失败",
   "workspaceController.project_not_found.aebda77a": "找不到项目",
   "workspaceController.workspace_authority_is_degraded.0b245fcd": "工作区管理服务处于降级状态",
-  "markdown.template.0489bc0d": "<button type=\"button\" class=\"code-copy-button code-block-copy\" title=\"复制代码块\" aria-label=\"复制代码块\"><span aria-hidden=\"true\">⧉</span></button>",
   "keyboardShortcuts.enter_a_shortcut_choose_none_or_reset.5fd01f31": "输入快捷键、选择“无”，或恢复默认值。",
   "keyboardShortcuts.shortcut_chords_must_include_a_key.96ba3ebf": "快捷键组合必须包含按键。",
   "keyboardShortcuts.each_shortcut_chord_can_include_only_one.2647de8c": "每组快捷键只能包含一个非修饰键。",
@@ -1097,10 +1096,11 @@ export const templates = {
     ]
   },
   "AskUserCard.questions_closed_questions.a3bcefce": {
-    "sourceHash": 2908723945,
-    "valueCount": 3,
+    "sourceHash": 4037094197,
+    "valueCount": 4,
     "strings": [
-      "\n      <details class=\"card closed-card\">\n        <summary class=\"card-header\"><h2><span class=\"disclosure-indicator\" aria-hidden=\"true\">▸</span> 问题</h2><span class=\"header-status\">已关闭 · ",
+      "\n      <details class=\"card closed-card\">\n        <summary class=\"card-header\"><h2><span class=\"disclosure-indicator\" aria-hidden=\"true\">",
+      "</span> 问题</h2><span class=\"header-status\">已关闭 · ",
       " 个问题</span></summary>\n        ",
       "\n        <div class=\"record-questions\">\n          ",
       "\n        </div>\n      </details>\n    "
@@ -1108,7 +1108,8 @@ export const templates = {
     "order": [
       0,
       1,
-      2
+      2,
+      3
     ]
   },
   "AskUserCard.multiple_choices_allowed.13fd6707": {
@@ -1147,8 +1148,8 @@ export const templates = {
     "order": []
   },
   "AuthDialog.template.5bfc64fa": {
-    "sourceHash": 247525021,
-    "valueCount": 7,
+    "sourceHash": 2311670874,
+    "valueCount": 8,
     "strings": [
       "\n      <modal-surface\n        .onClose=",
       "\n        .initialFocus=",
@@ -1156,7 +1157,8 @@ export const templates = {
       "\n        @keydown=",
       "\n      >\n        <header>\n          <strong>",
       "</strong>\n          <button title=\"关闭\" aria-label=\"关闭\" @click=",
-      ">×</button>\n        </header>\n        ",
+      ">",
+      "</button>\n        </header>\n        ",
       "\n      </modal-surface>\n    "
     ],
     "order": [
@@ -1166,7 +1168,8 @@ export const templates = {
       3,
       4,
       5,
-      6
+      6,
+      7
     ]
   },
   "AuthDialog.login_to.f534145c": {
@@ -1473,29 +1476,33 @@ export const templates = {
     ]
   },
   "ChatView.template.f44ad199": {
-    "sourceHash": 1797752273,
-    "valueCount": 1,
+    "sourceHash": 431820306,
+    "valueCount": 2,
     "strings": [
       "\n              <button\n                type=\"button\"\n                class=\"session-warning-dismiss\"\n                title=\"不再显示此警告\"\n                aria-label=\"关闭警告\"\n                @click=",
-      "\n              >×</button>\n            "
+      "\n              >",
+      "</button>\n            "
     ],
     "order": [
-      0
+      0,
+      1
     ]
   },
   "ChatView.template.c235a861": {
-    "sourceHash": 3789279445,
-    "valueCount": 3,
+    "sourceHash": 766396908,
+    "valueCount": 4,
     "strings": [
       "\n          <button type=\"button\" class=\"image-zoom-close\" aria-label=\"关闭图片\" @click=",
-      ">×</button>\n          <img class=\"image-zoom-full\" src=",
+      ">",
+      "</button>\n          <img class=\"image-zoom-full\" src=",
       " alt=",
       " />\n        "
     ],
     "order": [
       0,
       1,
-      2
+      2,
+      3
     ]
   },
   "ChatView.sending_your_message.b690fb4f": {
@@ -1557,14 +1564,16 @@ export const templates = {
     ]
   },
   "ChatView.template.4b41b982": {
-    "sourceHash": 2149568387,
-    "valueCount": 1,
+    "sourceHash": 2185706742,
+    "valueCount": 2,
     "strings": [
-      "\n                  <span class=\"queued-attachments\" title=\"此排队消息包含附件\"><span aria-hidden=\"true\">📎</span> ",
+      "\n                  <span class=\"queued-attachments\" title=\"此排队消息包含附件\"><span aria-hidden=\"true\">",
+      "</span> ",
       "</span>\n                "
     ],
     "order": [
-      0
+      0,
+      1
     ]
   },
   "ChatView.template.29b9a192": {
@@ -1618,14 +1627,16 @@ export const templates = {
     ]
   },
   "ChatView.template.928ca7f8": {
-    "sourceHash": 3495749278,
-    "valueCount": 1,
+    "sourceHash": 3057923349,
+    "valueCount": 2,
     "strings": [
       "\n            <button type=\"button\" class=\"suggested-input-dismiss\" aria-label=\"关闭建议输入\" title=\"在此浏览器中关闭建议输入\"\n              @click=",
-      ">×</button>\n          "
+      ">",
+      "</button>\n          "
     ],
     "order": [
-      0
+      0,
+      1
     ]
   },
   "ChatView.more_extension_queued.9f0718e6": {
@@ -1800,8 +1811,8 @@ export const templates = {
     ]
   },
   "CommandPicker.template.ac370c64": {
-    "sourceHash": 803254384,
-    "valueCount": 10,
+    "sourceHash": 532385849,
+    "valueCount": 11,
     "strings": [
       "\n      <modal-surface\n        .onClose=",
       "\n        .initialFocus=",
@@ -1809,7 +1820,8 @@ export const templates = {
       "\n        @keydown=",
       "\n      >\n        <header>\n          <strong>",
       "</strong>\n          <button aria-label=\"关闭\" @click=",
-      ">×</button>\n        </header>\n        ",
+      ">",
+      "</button>\n        </header>\n        ",
       "\n        ",
       "\n        <div class=\"options\" tabindex=\"0\">\n          ",
       "\n          ",
@@ -1825,7 +1837,8 @@ export const templates = {
       6,
       7,
       8,
-      9
+      9,
+      10
     ]
   },
   "CommandPicker.template.c8c7219f": {
@@ -2150,8 +2163,8 @@ export const templates = {
     ]
   },
   "MachineDialog.add_machine_remote_pi_web_url_cancel.98f8e499": {
-    "sourceHash": 2580079677,
-    "valueCount": 15,
+    "sourceHash": 1092586896,
+    "valueCount": 16,
     "strings": [
       "\n      <modal-surface\n        .onClose=",
       "\n        .initialFocus=",
@@ -2159,7 +2172,8 @@ export const templates = {
       "\n        @keydown=",
       "\n      >\n        <form @submit=",
       ">\n          <header>\n            <strong>添加机器</strong>\n            <button type=\"button\" @click=",
-      " aria-label=\"关闭\">×</button>\n          </header>\n          <div class=\"body\">\n            ",
+      " aria-label=\"关闭\">",
+      "</button>\n          </header>\n          <div class=\"body\">\n            ",
       "\n            <label>\n              远程 PI WEB URL\n              <input name=\"baseUrl\" type=\"url\" .value=",
       " @input=",
       " placeholder=\"http://dev-box.local:8504\" autocomplete=\"url\" inputmode=\"url\" />\n            </label>\n            <small class=",
@@ -2185,7 +2199,8 @@ export const templates = {
       11,
       12,
       13,
-      14
+      14,
+      15
     ]
   },
   "MachineDialog.machine_name_suggested_from_the_url_edit.82f62b17": {
@@ -2216,14 +2231,15 @@ export const templates = {
     "order": []
   },
   "MachineList.template.dfda7036": {
-    "sourceHash": 2540346267,
-    "valueCount": 5,
+    "sourceHash": 1374642414,
+    "valueCount": 6,
     "strings": [
       "\n      <div class=\"action-menu\">\n        <button\n          class=\"action-menu-toggle\"\n          title=\"机器操作\"\n          aria-label=",
       "\n          aria-expanded=",
       "\n          aria-controls=",
       "\n          @click=",
-      "\n        >⋯</button>\n        ",
+      "\n        >",
+      "</button>\n        ",
       "\n      </div>\n    "
     ],
     "order": [
@@ -2231,7 +2247,8 @@ export const templates = {
       1,
       2,
       3,
-      4
+      4,
+      5
     ]
   },
   "MachineList.actions_for.a3386ee2": {
@@ -2303,8 +2320,8 @@ export const templates = {
     ]
   },
   "MachineSwitcher.machine.8b398990": {
-    "sourceHash": 1320241647,
-    "valueCount": 11,
+    "sourceHash": 1894286057,
+    "valueCount": 12,
     "strings": [
       "\n      <div class=\"machine-switcher\">\n        <button\n          type=\"button\"\n          class=\"machine-switcher-button\"\n          title=",
       "\n          aria-label=",
@@ -2316,7 +2333,8 @@ export const templates = {
       "\n          <span class=\"machine-switcher-text\">\n            <span class=\"machine-switcher-kicker\">机器</span>\n            <span class=\"machine-switcher-label\">",
       "</span>\n          </span>\n          <span class=",
       ">",
-      "</span>\n          <span class=\"machine-chevron\" aria-hidden=\"true\">▾</span>\n        </button>\n        ",
+      "</span>\n          <span class=\"machine-chevron\" aria-hidden=\"true\">",
+      "</span>\n        </button>\n        ",
       "\n      </div>\n    "
     ],
     "order": [
@@ -2330,24 +2348,27 @@ export const templates = {
       7,
       8,
       9,
-      10
+      10,
+      11
     ]
   },
   "MachineSwitcher.template.99c7c152": {
-    "sourceHash": 3994617925,
-    "valueCount": 4,
+    "sourceHash": 1995641684,
+    "valueCount": 5,
     "strings": [
       "\n          <div class=\"machine-option-actions\">\n            <button\n              type=\"button\"\n              class=\"machine-option-actions-toggle\"\n              title=\"机器操作\"\n              aria-label=",
       "\n              aria-expanded=",
       "\n              @click=",
-      "\n            >⋯</button>\n            ",
+      "\n            >",
+      "</button>\n            ",
       "\n          </div>\n        "
     ],
     "order": [
       0,
       1,
       2,
-      3
+      3,
+      4
     ]
   },
   "MachineSwitcher.actions_for.86e47525": {
@@ -2401,8 +2422,8 @@ export const templates = {
     ]
   },
   "ModelPicker.template.3fc1af0e": {
-    "sourceHash": 3625739671,
-    "valueCount": 17,
+    "sourceHash": 659732580,
+    "valueCount": 18,
     "strings": [
       "\n      <modal-surface\n        .onClose=",
       "\n        .initialFocus=",
@@ -2410,7 +2431,8 @@ export const templates = {
       "\n        @keydown=",
       "\n      >\n        <header>\n          <strong>",
       "</strong>\n          <button aria-label=\"关闭\" @click=",
-      ">×</button>\n        </header>\n        <div class=\"scope-toggle\" role=\"group\" aria-label=\"模型范围\">\n          ",
+      ">",
+      "</button>\n        </header>\n        <div class=\"scope-toggle\" role=\"group\" aria-label=\"模型范围\">\n          ",
       "\n          ",
       "\n        </div>\n        ",
       "\n        <div class=\"search-row\">\n          <input class=\"search\" aria-label=\"搜索模型\" placeholder=\"搜索\" .value=",
@@ -2440,7 +2462,8 @@ export const templates = {
       13,
       14,
       15,
-      16
+      16,
+      17
     ]
   },
   "ModelPicker.project_override_showing_models_from_this_workspace.4a934e19": {
@@ -2869,15 +2892,16 @@ export const templates = {
     ]
   },
   "ProjectDialog.add_project_project_folder_create_the_folder.059a9ba1": {
-    "sourceHash": 3105712372,
-    "valueCount": 16,
+    "sourceHash": 663952911,
+    "valueCount": 17,
     "strings": [
       "\n      <modal-surface\n        .onClose=",
       "\n        .initialFocus=",
       "\n        .label=",
       "\n        @keydown=",
       "\n      >\n        <header>\n          <strong>添加项目</strong>\n          <button @click=",
-      " aria-label=\"关闭\">×</button>\n        </header>\n        <div class=\"body\">\n          <label>\n            项目文件夹\n            <input .value=",
+      " aria-label=\"关闭\">",
+      "</button>\n        </header>\n        <div class=\"body\">\n          <label>\n            项目文件夹\n            <input .value=",
       " @input=",
       " placeholder=\"/path/to/project 或 ~/code/project\" />\n          </label>\n          <div class=\"suggestions\">\n            ",
       "\n            ",
@@ -2906,7 +2930,8 @@ export const templates = {
       12,
       13,
       14,
-      15
+      15,
+      16
     ]
   },
   "ProjectDialog.loading_folders.74f367df": {
@@ -2926,8 +2951,8 @@ export const templates = {
     "order": []
   },
   "ProjectList.template.3f8eed18": {
-    "sourceHash": 2344960864,
-    "valueCount": 13,
+    "sourceHash": 1168246709,
+    "valueCount": 14,
     "strings": [
       "\n              <div\n                class=",
       "\n                tabindex=\"0\"\n                data-project-id=",
@@ -2941,7 +2966,8 @@ export const templates = {
       "</small>\n                  ",
       "\n                </div>\n                <div class=\"action-menu\">\n                  <button class=\"action-menu-toggle\" title=\"项目操作\" aria-label=",
       " @click=",
-      ">⋯</button>\n                  ",
+      ">",
+      "</button>\n                  ",
       "\n                </div>\n              </div>\n            "
     ],
     "order": [
@@ -2957,7 +2983,8 @@ export const templates = {
       9,
       10,
       11,
-      12
+      12,
+      13
     ]
   },
   "ProjectList.actions_for.a80f0aa3": {
@@ -3239,8 +3266,8 @@ export const templates = {
     ]
   },
   "PromptEditor.template.f6a5aa80": {
-    "sourceHash": 370473800,
-    "valueCount": 11,
+    "sourceHash": 1250416983,
+    "valueCount": 12,
     "strings": [
       "\n          <div class=\"attachment-chip attachment-card\" title=",
       ">\n            <button class=\"attachment-preview-trigger\" type=\"button\" title=",
@@ -3253,7 +3280,8 @@ export const templates = {
       "</span>\n              </span>\n            </button>\n            ",
       "\n            <button type=\"button\" class=\"attachment-remove\" title=\"移除附件\" aria-label=",
       " @click=",
-      ">×</button>\n          </div>\n        "
+      ">",
+      "</button>\n          </div>\n        "
     ],
     "order": [
       0,
@@ -3266,7 +3294,8 @@ export const templates = {
       7,
       8,
       9,
-      10
+      10,
+      11
     ]
   },
   "PromptEditor.remove.ee640944": {
@@ -3330,13 +3359,14 @@ export const templates = {
     ]
   },
   "SessionCleanupDialog.sessions_clean_up_sessions_preview_manual_cleanup.06a74625": {
-    "sourceHash": 2177191821,
-    "valueCount": 16,
+    "sourceHash": 48657834,
+    "valueCount": 17,
     "strings": [
       "\n      <modal-surface .onClose=",
       " .label=",
       ">\n        <header>\n          <div>\n            <span class=\"eyebrow\">会话</span>\n            <h1>清理会话</h1>\n          </div>\n          <button class=\"close-button\" title=\"关闭清理\" aria-label=\"关闭清理\" @click=",
-      ">×</button>\n        </header>\n        <div class=\"body\">\n          <p class=\"intro\">在归档空闲会话或永久删除旧归档会话之前，预览此机器的手动清理结果。</p>\n          ",
+      ">",
+      "</button>\n        </header>\n        <div class=\"body\">\n          <p class=\"intro\">在归档空闲会话或永久删除旧归档会话之前，预览此机器的手动清理结果。</p>\n          ",
       "\n          ",
       "\n          ",
       "\n          ",
@@ -3367,7 +3397,8 @@ export const templates = {
       12,
       13,
       14,
-      15
+      15,
+      16
     ]
   },
   "SessionCleanupDialog.archive_non_archived_sessions_idle_for_more.65b9eb9a": {
@@ -3707,8 +3738,8 @@ export const templates = {
     ]
   },
   "SessionList.messages.e0223b51": {
-    "sourceHash": 3630881846,
-    "valueCount": 26,
+    "sourceHash": 3784989575,
+    "valueCount": 27,
     "strings": [
       "\n      <div\n        class=\"action-row ",
       " ",
@@ -3735,7 +3766,8 @@ export const templates = {
       " 条消息</span>",
       "</small>\n          ",
       "\n        </div>\n        <div class=\"action-menu\">\n          <button class=\"action-menu-toggle\" title=\"会话菜单\" @click=",
-      ">⋯</button>\n        </div>\n      </div>\n      ",
+      ">",
+      "</button>\n        </div>\n      </div>\n      ",
       "\n    "
     ],
     "order": [
@@ -3764,7 +3796,8 @@ export const templates = {
       22,
       23,
       24,
-      25
+      25,
+      26
     ]
   },
   "SessionList.agent_subsessions.ad8905a8": {
@@ -3945,8 +3978,8 @@ export const templates = {
     ]
   },
   "SessionTreeNavigator.conversation_history_navigate_session_tree.1600c2af": {
-    "sourceHash": 1674257986,
-    "valueCount": 9,
+    "sourceHash": 2774773151,
+    "valueCount": 10,
     "strings": [
       "\n      <modal-surface\n        .label=",
       "\n        .initialFocus=",
@@ -3955,7 +3988,8 @@ export const templates = {
       "\n        .onBusyEscape=",
       "\n      >\n        <header>\n          <div>\n            <span class=\"eyebrow\">对话历史</span>\n            <h1>浏览会话树</h1>\n          </div>\n          <button class=\"close-button\" ?disabled=",
       " title=\"关闭会话树\" aria-label=\"关闭会话树\" @click=",
-      ">×</button>\n        </header>\n        ",
+      ">",
+      "</button>\n        </header>\n        ",
       "\n        ",
       "\n      </modal-surface>\n    "
     ],
@@ -3968,7 +4002,8 @@ export const templates = {
       5,
       6,
       7,
-      8
+      8,
+      9
     ]
   },
   "SessionTreeNavigator.select_the_history_entry_where_you_would.fe730f36": {
@@ -4151,13 +4186,14 @@ export const templates = {
     ]
   },
   "SettingsDialog.settings_pi_web.760f578b": {
-    "sourceHash": 3740598926,
-    "valueCount": 12,
+    "sourceHash": 2751274781,
+    "valueCount": 13,
     "strings": [
       "\n      <modal-surface .onClose=",
       " .label=",
       ">\n        <header class=\"settings-header\">\n          <div>\n            <span class=\"eyebrow\">设置</span>\n            <h1>PI WEB</h1>\n          </div>\n          <button class=\"close-button\" title=\"关闭设置\" aria-label=\"关闭设置\" @click=",
-      ">×</button>\n        </header>\n        <div class=\"settings-body\">\n          <nav class=\"settings-nav\" aria-label=\"设置分类\">\n            ",
+      ">",
+      "</button>\n        </header>\n        <div class=\"settings-body\">\n          <nav class=\"settings-nav\" aria-label=\"设置分类\">\n            ",
       "\n            ",
       "\n            ",
       "\n            ",
@@ -4180,7 +4216,8 @@ export const templates = {
       8,
       9,
       10,
-      11
+      11,
+      12
     ]
   },
   "SettingsDialog.failed_to_load_file_access_upload_config.b5ad76ea": {
@@ -4570,14 +4607,15 @@ export const templates = {
     "order": []
   },
   "WorkspaceList.template.dd405b57": {
-    "sourceHash": 2888057344,
-    "valueCount": 5,
+    "sourceHash": 3516283177,
+    "valueCount": 6,
     "strings": [
       "\n      <div class=\"action-menu\">\n        <button\n          class=\"action-menu-toggle\"\n          title=\"工作区操作与详情\"\n          aria-label=",
       "\n          aria-expanded=",
       "\n          aria-controls=",
       "\n          @click=",
-      "\n        >⋯</button>\n        ",
+      "\n        >",
+      "</button>\n        ",
       "\n      </div>\n    "
     ],
     "order": [
@@ -4585,7 +4623,8 @@ export const templates = {
       1,
       2,
       3,
-      4
+      4,
+      5
     ]
   },
   "WorkspaceList.actions_and_details_for.8fd26615": {

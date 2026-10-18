@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { t } from "../../../shared/i18n";
@@ -74,7 +75,7 @@ export class ThinkingPicker extends LitElement {
             <strong>${this.title}</strong>
             <output for="thinking-strength" aria-label=${t(this.previewValue === undefined ? "ui.thinkingPicker.current" : "ui.thinkingPicker.preview")}>${this.renderLevelLabel(this.previewValue ?? this.selectedValue)}</output>
           </div>
-          <button class="close" type="button" aria-label=${t("ui.thinkingPicker.close")} ?disabled=${busy} @click=${() => this.onCancel?.()}>×</button>
+          <button class="close" type="button" aria-label=${t("ui.thinkingPicker.close")} ?disabled=${busy} @click=${() => this.onCancel?.()}>${renderUiIcon("close")}</button>
         </header>
         ${this.renderContent()}
       </modal-surface>

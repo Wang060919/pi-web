@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, t } from "../../../shared/i18n";
 import { LitElement, css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -170,7 +171,7 @@ export class ContentRendererHost extends LitElement {
           <button type="button" aria-controls="content" aria-pressed=${showingRaw} @click=${() => { this.setRaw(true); }}>Raw</button>
         `}
         ${this.codeBlocks?.copy === false ? null : html`
-          <button class="copy code-block-copy" type="button" title=${this.copyStatus} aria-label=${this.copyStatus} @click=${() => { void this.copy(); }}><span aria-hidden="true">${this.copyStatus === t("ContentRendererHost.copied_source.d92c9bc8") ? "✓" : "⧉"}</span></button>
+          <button class="copy code-block-copy" type="button" title=${this.copyStatus} aria-label=${this.copyStatus} @click=${() => { void this.copy(); }}><span aria-hidden="true">${renderUiIcon(this.copyStatus === t("ContentRendererHost.copied_source.d92c9bc8") ? "check" : "copy")}</span></button>
           <span class="sr-only" role="status">${this.copyStatus === t("ContentRendererHost.copy_source.6c1cb102") ? "" : this.copyStatus}</span>
         `}
       </div>`}

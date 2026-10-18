@@ -1,3 +1,4 @@
+import { renderUiIcon, uiIconMarkup } from "./uiIcons";
 import { t } from "../../../shared/i18n";
 import { LitElement, html } from "lit";
 import type { ChatContentRendering } from "../formatting/contentRendering";
@@ -47,7 +48,7 @@ export class FormattedText extends LitElement {
                 href=${workspaceFilePreviewUrl(context.projectId, context.workspaceId, file.path, { machineId: context.machineId, download: true })}>
                 <span class="file-card-type" aria-hidden="true">${file.extension || t("ui.fileCards.file")}</span>
                 <span class="file-card-copy"><strong>${file.name}</strong><small>${t("ui.fileCards.open")}</small></span>
-                <span class="file-card-open" aria-hidden="true">↗</span>
+                <span class="file-card-open" aria-hidden="true">${renderUiIcon("externalLink")}</span>
               </a>
             `)}
           </div>
@@ -103,7 +104,7 @@ export class FormattedText extends LitElement {
 
   private setCopyButtonState(button: HTMLButtonElement, state: "idle" | "copied" | "failed"): void {
     const icon = button.querySelector("span");
-    if (icon !== null) icon.textContent = state === "copied" ? "✓" : "⧉";
+    if (icon !== null) icon.innerHTML = uiIconMarkup(state === "copied" ? "check" : "copy");
     const label = state === "copied" ? t("FormattedText.copied_code_block.1b9e03c5") : state === "failed" ? t("FormattedText.failed_to_copy_code_block.bf5a1ad5") : t("FormattedText.copy_code_block.d31aaa3e");
     button.title = label;
     button.setAttribute("aria-label", label);

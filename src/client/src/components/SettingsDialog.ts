@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -118,7 +119,7 @@ export class SettingsDialog extends LitElement {
             <span class="eyebrow">Settings</span>
             <h1>PI WEB</h1>
           </div>
-          <button class="close-button" title="Close settings" aria-label="Close settings" @click=${() => this.onClose?.()}>×</button>
+          <button class="close-button" title="Close settings" aria-label="Close settings" @click=${() => this.onClose?.()}>${renderUiIcon("close")}</button>
         </header>
         <div class="settings-body">
           <nav class="settings-nav" aria-label="Settings sections">

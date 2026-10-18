@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, css, html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -89,7 +90,7 @@ export class SessionTreeNavigator extends LitElement {
             <span class="eyebrow">Conversation history</span>
             <h1>Navigate session tree</h1>
           </div>
-          <button class="close-button" ?disabled=${this.busy} title="Close session tree" aria-label="Close session tree" @click=${() => { this.onCancel?.(); }}>×</button>
+          <button class="close-button" ?disabled=${this.busy} title="Close session tree" aria-label="Close session tree" @click=${() => { this.onCancel?.(); }}>${renderUiIcon("close")}</button>
         </header>
         ${this.step === "tree" ? this.renderTreeStep() : this.renderActionStep()}
         ${this.renderFooter()}
@@ -152,7 +153,7 @@ export class SessionTreeNavigator extends LitElement {
           title=${row.childIds.length === 0 ? t("SessionTreeNavigator.no_child_entries.08568a90") : expanded ? t("SessionTreeNavigator.collapse_branch.76e8091c") : t("SessionTreeNavigator.expand_branch.4616895d")}
           aria-hidden="true"
           @click=${(event: MouseEvent) => { this.toggleNode(row.node.id, event); }}
-        >${row.childIds.length === 0 ? "·" : expanded ? "▾" : "▸"}</span>
+        >${row.childIds.length === 0 ? "·" : renderUiIcon(expanded ? "chevronDown" : "chevronRight")}</span>
         <span class="metadata">
           ${this.renderKindBadge(kindPresentation)}
           <span class="badges">

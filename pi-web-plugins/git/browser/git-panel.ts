@@ -510,7 +510,7 @@ function renderSubmoduleGroup(
   const expanded = state.expandedDirectories.has(group.path);
   return html`
     <button type="button" class="git-row" style="--depth:0" aria-expanded=${String(expanded)} @click=${() => { controller.toggleDirectory(context, group.path); }}>
-      <span class="git-twisty">${expanded ? "▾" : "▸"}</span>
+      <span class="git-twisty">${renderTreeDisclosure(html, expanded)}</span>
       <span>${group.name}${submoduleBadge(html)}</span>
     </button>
     ${expanded ? html`
@@ -530,6 +530,11 @@ function renderSubmoduleFileRow(
   return renderSelectableRow(html, controller, context, state, entry.path, entry.relativePath, entry.file, 1);
 }
 
+// This standalone plugin uses the host's template tag, without importing Lit.
+function renderTreeDisclosure(html: HtmlTemplateTag, expanded: boolean) {
+  return html`<svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-.125em"><path d=${expanded ? "m5 9 7 7 7-7" : "m9 5 7 7-7 7"} /></svg>`;
+}
+
 function renderTreeNode(
   html: HtmlTemplateTag,
   controller: GitUiController,
@@ -542,7 +547,7 @@ function renderTreeNode(
     const expanded = state.expandedDirectories.has(node.path);
     return html`
       <button type="button" class="git-row" style=${`--depth:${String(depth)}`} aria-expanded=${String(expanded)} @click=${() => { controller.toggleDirectory(context, node.path); }}>
-        <span class="git-twisty">${expanded ? "▾" : "▸"}</span>
+        <span class="git-twisty">${renderTreeDisclosure(html, expanded)}</span>
         <span>${node.name}${node.isSubmodule === true ? submoduleBadge(html) : null}</span>
       </button>
       ${expanded ? node.children.map((child) => renderTreeNode(html, controller, context, state, child, depth + 1)) : null}

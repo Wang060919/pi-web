@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { roleDisplayLabel, t } from "../../../shared/i18n";
@@ -56,7 +57,7 @@ export class SessionSearchDialog extends LitElement {
               this.query = event.target.value;
               this.clearResults();
             }}>
-            <button type="button" aria-label=${t("navigation.close")} title=${t("navigation.close")} @click=${() => { this.close(); }}>×</button>
+            <button type="button" aria-label=${t("navigation.close")} title=${t("navigation.close")} @click=${() => { this.close(); }}>${renderUiIcon("close")}</button>
           </header>
           <div class="search-controls">
             <label><span>${t("ui.sessionSearch.scope")}</span><select aria-label=${t("ui.sessionSearch.scope")} .value=${this.scope} ?disabled=${this.opening || this.locating} @change=${(event: Event) => { this.changeScope(event); }}>
@@ -87,7 +88,7 @@ export class SessionSearchDialog extends LitElement {
     const hit = this.previewHit;
     const entry = this.preview;
     return html`
-      <div class="preview-navigation"><button class="preview-back" type="button" ?disabled=${this.locating} @click=${() => { this.backToResults(); }}>← ${t("ui.sessionSearch.back")}</button><button class="preview-locate" type="button" ?disabled=${entry === undefined || this.locating || this.onSelect === undefined} @click=${() => { void this.locate(); }}>${t("ui.sessionSearch.locate")}</button></div>
+      <div class="preview-navigation"><button class="preview-back" type="button" ?disabled=${this.locating} @click=${() => { this.backToResults(); }}>${renderUiIcon("arrowLeft")} ${t("ui.sessionSearch.back")}</button><button class="preview-locate" type="button" ?disabled=${entry === undefined || this.locating || this.onSelect === undefined} @click=${() => { void this.locate(); }}>${t("ui.sessionSearch.locate")}</button></div>
       <section class="message-preview" aria-label=${t("ui.sessionSearch.preview")} aria-busy=${String(this.opening)}>
         <h2>${t("ui.sessionSearch.preview")}</h2>
         <p class="preview-source">${hit?.session.name ?? hit?.session.id}<br>${hit?.session.cwd}</p>

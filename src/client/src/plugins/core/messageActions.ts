@@ -1,5 +1,5 @@
 import { roleDisplayLabel, localizedText, t } from "../../../../shared/i18n";
-import { html } from "lit";
+import { renderUiIcon } from "../../components/uiIcons";
 import type { MessageActionAvailabilityContext, MessageActionContribution } from "../../../../plugin-api";
 import { writeClipboardText } from "../../clipboard";
 import { renderCopyIcon, renderGoBackIcon } from "../../components/messageActionIcons";
@@ -13,7 +13,7 @@ export function createCoreMessageActions(writeText = writeClipboardText): Messag
     ...historyAction,
     id: "message.fork",
     title: t("messageActions.clone_session_from_this_message.9626ddbf"),
-    icon: html`<span class="msg-fork-icon" aria-hidden="true">⑂</span>`,
+    icon: renderUiIcon("fork"),
     run: async ({ history }) => {
       if (window.confirm(t("messageActions.are_you_sure_you_want_to_fork.bd452d07"))) await history.fork();
     },
@@ -32,7 +32,7 @@ export function createCoreMessageActions(writeText = writeClipboardText): Messag
     visible: ({ message }) => (message.role === "user" || message.role === "assistant") && message.text !== "",
     run: async ({ message }) => {
       if (!await writeText(message.text)) throw new Error(t("messageActions.unable_to_copy_message_to_the_clipboard.21bce1a6"));
-      return { title: t("messageActions.copied.3064c989"), ariaLabel: localizedText("messageActions.copied_message.eb473c93")`Copied ${roleDisplayLabel(message.role)} message`, icon: html`<span aria-hidden="true">✓</span>` };
+      return { title: t("messageActions.copied.3064c989"), ariaLabel: localizedText("messageActions.copied_message.eb473c93")`Copied ${roleDisplayLabel(message.role)} message`, icon: renderUiIcon("check") };
     },
   }];
 }

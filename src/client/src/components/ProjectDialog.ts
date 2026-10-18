@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, t } from "../../../shared/i18n";
 import { LitElement, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -166,7 +167,7 @@ export class ProjectDialog extends LitElement {
       >
         <header>
           <strong>Add project</strong>
-          <button @click=${() => { this.onCancel?.(); }} aria-label="Close">×</button>
+          <button @click=${() => { this.onCancel?.(); }} aria-label="Close">${renderUiIcon("close")}</button>
         </header>
         <div class="body">
           <label>

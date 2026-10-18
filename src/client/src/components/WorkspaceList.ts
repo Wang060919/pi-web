@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -136,7 +137,7 @@ export class WorkspaceList extends LitElement implements KeyboardNavigableSectio
     if (!this.collapsible) return localizedTemplate("WorkspaceList.workspaces.0d24eed9", html)`<span>Workspaces</span>`;
     const selectedSummary = this.selected === undefined ? t("WorkspaceList.no_workspace_selected.a700f4d9") : `${this.selected.label}${this.selected.isMain ? t("WorkspaceList.main.5cd3eab9") : ""} · ${this.selected.path}`;
     const selectedTitle = this.selected?.path ?? selectedSummary;
-    return localizedTemplate("WorkspaceList.workspaces.b7a9e786", html)`<button class="section-toggle" aria-expanded=${String(!this.collapsed)} @click=${() => { this.onToggleCollapsed?.(); }}><span class="section-title"><span class="section-name">${this.collapsed ? "▸" : "▾"} Workspaces</span>${this.collapsed ? html`<small class="section-selected" title=${selectedTitle}>${selectedSummary}</small>` : null}</span><small class="section-count">${this.workspaces.length}</small></button>`;
+    return localizedTemplate("WorkspaceList.workspaces.b7a9e786", html)`<button class="section-toggle" aria-expanded=${String(!this.collapsed)} @click=${() => { this.onToggleCollapsed?.(); }}><span class="section-title"><span class="section-name">${renderUiIcon(this.collapsed ? "chevronRight" : "chevronDown")} Workspaces</span>${this.collapsed ? html`<small class="section-selected" title=${selectedTitle}>${selectedSummary}</small>` : null}</span><small class="section-count">${this.workspaces.length}</small></button>`;
   }
 
   private renderActivity(workspace: Workspace): TemplateResult | undefined {
@@ -173,7 +174,7 @@ export class WorkspaceList extends LitElement implements KeyboardNavigableSectio
           aria-expanded=${String(open)}
           aria-controls=${menuId}
           @click=${(event: MouseEvent) => { event.stopPropagation(); this.toggleMenu(workspace.id, event.currentTarget); }}
-        >⋯</button>
+        >${renderUiIcon("more")}</button>
         ${open ? html`
           <div class="action-menu-panel workspace-menu-panel" id=${menuId} style=${this.menuStyle} @click=${(event: MouseEvent) => { event.stopPropagation(); }}>
             ${this.renderWorkspaceActions(workspace, index)}
@@ -289,7 +290,7 @@ export class WorkspaceList extends LitElement implements KeyboardNavigableSectio
     const label = copied ? t("WorkspaceList.copied.9209bdc9") : action;
     return html`
       <button type="button" class="detail-copy" title=${label} aria-label=${label} @click=${() => { void this.copyDetail(key, value); }}>
-        <span aria-hidden="true">${copied ? "✓" : "⧉"}</span>
+        <span aria-hidden="true">${renderUiIcon(copied ? "check" : "copy")}</span>
       </button>
     `;
   }

@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { defaultKeymap, history, historyKeymap, indentWithTab, insertNewlineAndIndent, isolateHistory } from "@codemirror/commands";
 import { markdown, deleteMarkupBackward, insertNewlineContinueMarkup } from "@codemirror/lang-markdown";
@@ -228,7 +229,7 @@ export class PromptEditor extends LitElement {
           <autocomplete-menu .items=${this.completions} .selectedIndex=${this.selectedIndex} .onPick=${(item: CompletionItem) => { this.pick(item); }}></autocomplete-menu>
         </div>
         <div class="actions">
-          <button class="editor-attach icon-button" ?disabled=${busy} title=${t("ui.composer.attach")} aria-label=${t("ui.composer.attach")} @click=${() => { this.attachmentInput?.click(); }}><span class="attach-mark" aria-hidden="true">+</span></button>
+          <button class="editor-attach icon-button" ?disabled=${busy} title=${t("ui.composer.attach")} aria-label=${t("ui.composer.attach")} @click=${() => { this.attachmentInput?.click(); }}><span class="attach-mark" aria-hidden="true">${renderUiIcon("plus")}</span></button>
           <div class="composer-controls">
             ${this.renderCompactStatus()}
             <slot name="status"></slot>
@@ -302,7 +303,7 @@ export class PromptEditor extends LitElement {
         ${this.promptChips.map((chip) => html`
           <div class="prompt-chip" title=${chip.text}>
             <span>${chip.label}</span>
-            <button type="button" aria-label=${localizedText("PromptEditor.remove.2ff51610")`Remove ${chip.label}`} ?disabled=${this.disabled} @click=${() => this.onRemoveChip?.(chip)}>×</button>
+            <button type="button" aria-label=${localizedText("PromptEditor.remove.2ff51610")`Remove ${chip.label}`} ?disabled=${this.disabled} @click=${() => this.onRemoveChip?.(chip)}>${renderUiIcon("close")}</button>
           </div>
         `)}
         ${this.submissionError === undefined ? null : html`<div class="chip-error" role="alert">${this.submissionError}</div>`}
@@ -327,7 +328,7 @@ export class PromptEditor extends LitElement {
               </span>
             </button>
             ${this.renderImageCompression(attachment)}
-            <button type="button" class="attachment-remove" title="Remove attachment" aria-label=${localizedText("PromptEditor.remove.ee640944")`Remove ${attachment.name}`} @click=${() => { this.removeAttachment(attachment.id); }}>×</button>
+            <button type="button" class="attachment-remove" title="Remove attachment" aria-label=${localizedText("PromptEditor.remove.ee640944")`Remove ${attachment.name}`} @click=${() => { this.removeAttachment(attachment.id); }}>${renderUiIcon("close")}</button>
           </div>
         `)}
         </div>

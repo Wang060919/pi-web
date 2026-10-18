@@ -1,3 +1,4 @@
+import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, localizedText, t } from "./i18n.js";
 import type { ContentRendererOption, ContentRenderingCapability, FileContentResponse } from "@jmfederico/pi-web/plugin-api";
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
@@ -155,7 +156,7 @@ export class WorkspaceFileViewer extends LitElement {
               rel="noopener noreferrer"
               referrerpolicy="no-referrer"
               title="Open in new window"
-            >Open ↗</a>
+            >Open ${renderUiIcon("externalLink")}</a>
           ` : null}
           <a class="viewer-action" href=${downloadUrl} download=${name} title=${localizedText("FilesViewer.download.b52b071b")`Download ${name}`}>Download</a>
         </div>
