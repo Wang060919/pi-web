@@ -6,6 +6,7 @@ import { configApi, piPackagesApi, pluginsApi, type Machine, type MachineRuntime
 import type { SettingsSection } from "../settingsRoute";
 import "./settings/SettingsModelsPanel";
 import "./settings/SettingsMcpPanel";
+import "./settings/SettingsSkillsPanel";
 import "./ModalSurface";
 import "./settings/SettingsGeneralPanel";
 import "./settings/SettingsThemePanel";
@@ -123,6 +124,7 @@ export class SettingsDialog extends LitElement {
           <nav class="settings-nav" aria-label="Settings sections">
             ${this.renderNavButton("general", t("SettingsDialog.general.9d6707b6"), t("SettingsDialog.gateway_selected_machine.97827f75"))}
             ${this.renderNavButton("models", t("modelsSettings.heading"), t("SettingsDialog.selected_machine.60ce1c88"))}
+            ${this.renderNavButton("skills", t("inspection.skills"), t("SettingsDialog.selected_machine.60ce1c88"))}
             ${this.renderNavButton("mcp", t("ui.settings.mcp"), t("SettingsDialog.selected_machine.60ce1c88"))}
             ${this.renderNavButton("sessiond", t("SettingsDialog.session_daemon.a8a7922c"), t("SettingsDialog.selected_machine.60ce1c88"))}
             ${this.renderNavButton("packages", t("SettingsDialog.pi_packages.91f80e11"), t("SettingsDialog.selected_machine.600984f6"))}
@@ -138,6 +140,7 @@ export class SettingsDialog extends LitElement {
   }
 
   private renderActiveSection(): TemplateResult {
+    if (this.section === "skills") return html`<settings-skills-panel .machineId=${this.settingsTarget().id} .projectId=${this.projectId} .workspaceId=${this.workspaceId}></settings-skills-panel>`;
     if (this.section === "models") return html`<settings-models-panel .machineId=${this.settingsTarget().id} .targetLabel=${settingsMachineTargetLabel(this.settingsTarget())} .onConfigurationSaved=${this.onModelsSaved}></settings-models-panel>`;
     if (this.section === "mcp") return html`<settings-mcp-panel .machineId=${this.settingsTarget().id} .projectId=${this.projectId} .workspaceId=${this.workspaceId}></settings-mcp-panel>`;
     // Keep the section -> panel routing in sync with the public
@@ -689,6 +692,7 @@ function errorMessage(error: unknown): string {
 }
 
 export type SettingsPanelTag =
+  | "settings-skills-panel"
   | "settings-models-panel"
   | "settings-mcp-panel"
   | "settings-general-panel"
@@ -707,6 +711,7 @@ export type SettingsPanelTag =
  */
 export function activeSettingsPanelTag(section: SettingsSection): SettingsPanelTag {
   switch (section) {
+    case "skills": return "settings-skills-panel";
     case "models": return "settings-models-panel";
     case "mcp": return "settings-mcp-panel";
     case "sessiond":

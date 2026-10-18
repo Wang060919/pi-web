@@ -2,6 +2,33 @@
 import type { messages as englishMessages } from './en';
 
 export const messages: Record<keyof typeof englishMessages, string> = {
+  "inspection.skills": "技能",
+  "inspection.skillsNote": "浏览所选机器和工作区中已安装的技能。此目录不加载扩展、不修改文件；运行时动态添加的技能可在会话上下文详情中查看。",
+  "inspection.untrusted": "项目尚未受信任，因此仅显示全局技能。",
+  "inspection.refresh": "刷新",
+  "inspection.loading": "加载中…",
+  "inspection.searchSkills": "搜索技能",
+  "inspection.noSkills": "没有匹配的技能。",
+  "inspection.global": "全局",
+  "inspection.project": "项目",
+  "inspection.automatic": "允许模型自动调用",
+  "inspection.manual": "仅显式调用",
+  "inspection.skillContent": "技能内容",
+  "inspection.selectSkill": "选择技能以阅读其说明。",
+  "inspection.source": "来源",
+  "inspection.skillHome": "技能主页",
+  "inspection.preview": "预览",
+  "inspection.raw": "源码",
+  "inspection.markdownOnly": "这里只能打开该技能目录内的 Markdown 文档。",
+  "inspection.open": "提示词与工具",
+  "inspection.prompt": "系统提示词",
+  "inspection.tools": "启用的工具",
+  "inspection.runtimeNote": "当前运行时快照，可能包含尚未发送的改动。扩展的请求转换（包括隐藏工具声明）仍可能改变服务商收到的内容。执行一轮或重载会话后可刷新。",
+  "inspection.unavailable": "无法检查该运行时。旧版本机器可能需要更新并重启会话守护进程。",
+  "inspection.emptyPrompt": "当前系统提示词为空。",
+  "inspection.noTools": "没有匹配的启用工具。",
+  "inspection.searchTools": "搜索工具",
+
   "ui.tools.copyFailed": "无法复制到剪贴板。",
   "modelsSettings.clearKey": "清除配置密钥",
   "mcp.requestFailed": "MCP 请求失败",
@@ -4124,13 +4151,14 @@ export const templates = {
     ]
   },
   "SettingsDialog.settings_pi_web.760f578b": {
-    "sourceHash": 3348257532,
-    "valueCount": 11,
+    "sourceHash": 3740598926,
+    "valueCount": 12,
     "strings": [
       "\n      <modal-surface .onClose=",
       " .label=",
       ">\n        <header class=\"settings-header\">\n          <div>\n            <span class=\"eyebrow\">设置</span>\n            <h1>PI WEB</h1>\n          </div>\n          <button class=\"close-button\" title=\"关闭设置\" aria-label=\"关闭设置\" @click=",
       ">×</button>\n        </header>\n        <div class=\"settings-body\">\n          <nav class=\"settings-nav\" aria-label=\"设置分类\">\n            ",
+      "\n            ",
       "\n            ",
       "\n            ",
       "\n            ",
@@ -4151,7 +4179,8 @@ export const templates = {
       7,
       8,
       9,
-      10
+      10,
+      11
     ]
   },
   "SettingsDialog.failed_to_load_file_access_upload_config.b5ad76ea": {

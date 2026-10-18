@@ -1,6 +1,7 @@
 import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { LitElement, css, html, svg, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import type { SessionRef } from "../../../shared/apiTypes";
 import type { SessionStatus } from "../api";
 import { renderSessionWarningIcon, statusBarStyles } from "./shared";
 import type { ChatLine } from "./shared";
@@ -22,6 +23,8 @@ export function statusBarWarningControlContent(count: number, expanded: boolean)
 
 @customElement("status-bar")
 export class StatusBar extends LitElement {
+  @property() machineId = "local";
+  @property({ attribute: false }) session: SessionRef | undefined;
   @property({ type: Boolean, reflect: true }) compact = false;
   @property({ attribute: false }) status: SessionStatus | undefined = undefined;
   @property({ attribute: false }) messages: readonly ChatLine[] = [];
@@ -32,6 +35,7 @@ export class StatusBar extends LitElement {
   @state() private usageOpen = false;
 
   protected override willUpdate(changed: PropertyValues<this>): void {
+    if (changed.has("machineId")) this.usageOpen = false;
     if (changed.has("status") && (this.status === undefined || changed.get("status")?.sessionId !== this.status.sessionId)) this.usageOpen = false;
   }
 
@@ -79,7 +83,7 @@ export class StatusBar extends LitElement {
         </button>
         ${status.pendingMessageCount > 0 ? localizedTemplate("StatusBar.queued.aa0b8a9a", html)`<span>${String(status.pendingMessageCount)} queued</span>` : null}
       </div>
-      ${this.usageOpen ? html`<usage-details .status=${status} .messages=${this.messages} .historyPartial=${this.historyPartial} .onClose=${() => { this.usageOpen = false; }}></usage-details>` : nothing}
+      ${this.usageOpen ? html`<usage-details .session=${this.session} .machineId=${this.machineId} .status=${status} .messages=${this.messages} .historyPartial=${this.historyPartial} .onClose=${() => { this.usageOpen = false; }}></usage-details>` : nothing}
     `;
   }
 

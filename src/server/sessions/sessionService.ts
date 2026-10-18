@@ -1,3 +1,4 @@
+import type { SessionInspection } from "../../shared/runtimeInspection.js";
 import type {
   AskUserSubmission,
   SessionQueueMessageMutation,
@@ -60,6 +61,7 @@ export interface SessionRouteService {
   messages(ref: SessionRouteRef, page?: { before?: number; limit?: number }): Promise<ClientMessagePage>;
   /** Resolve image bytes without modifying the Pi transcript or runtime. */
   media(ref: SessionRouteRef, mediaId: string): Promise<SessionMedia | undefined>;
+  inspection(ref: SessionRouteRef): SessionInspection | Promise<SessionInspection>;
   status(ref: SessionRouteRef): Promise<ClientSessionStatus>;
   streamSnapshot(ref: SessionRouteRef): Promise<SessionStreamSnapshot>;
   transcriptSnapshot(ref: SessionRouteRef, page?: { limit?: number }): Promise<SessionTranscriptSnapshot>;

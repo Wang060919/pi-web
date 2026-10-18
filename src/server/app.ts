@@ -9,6 +9,7 @@ import { ProjectStore } from "./storage/projectStore.js";
 import { NavigationPreferenceStore } from "./storage/navigationPreferenceStore.js";
 import { registerNavigationPreferenceRoutes } from "./navigationPreferenceRoutes.js";
 import { registerUsageOverviewProxyRoutes, registerUsageOverviewRoutes } from "./usageOverviewRoutes.js";
+import { registerSkillCatalogRoutes } from "./skillCatalogRoutes.js";
 import { registerMcpManagementRoutes } from "./mcpManagementRoutes.js";
 import type { UsageOverviewService } from "./sessions/usageOverviewService.js";
 import { ProjectService } from "./projects/projectService.js";
@@ -262,6 +263,8 @@ export async function buildApp(deps: AppDependencies = {}): Promise<FastifyInsta
   registerProjectTrustRoutes(app, projects, workspaces, projectTrustDeps);
   registerProjectTrustRoutes(app, projects, workspaces, projectTrustDeps, "/api/machines/local");
   const mcpManagement = { ...projectTrustDeps, projects, workspaces };
+  registerSkillCatalogRoutes(app, mcpManagement);
+  registerSkillCatalogRoutes(app, mcpManagement, "/api/machines/local");
   registerMcpManagementRoutes(app, mcpManagement);
   registerMcpManagementRoutes(app, mcpManagement, "/api/machines/local");
   registerWorkspaceDeletionRoutes(app, sessionDaemon);

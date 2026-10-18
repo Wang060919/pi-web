@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import { statSync } from "node:fs";
 import { join } from "node:path";
 import { readFile, writeFile } from "node:fs/promises";
+import { inspectSession } from "./sessionInspection.js";
+import type { SessionInspection } from "../../shared/runtimeInspection.js";
 import type { ImageContent } from "@earendil-works/pi-ai";
 import type { AgentMessage, StreamFn } from "@earendil-works/pi-agent-core";
 import type { SessionQueueMessageMutation } from "../../shared/apiTypes.js";
@@ -482,14 +484,15 @@ export interface PiAgentSession {
   sessionFile: string | undefined;
   sessionName: string | undefined;
   messages: readonly unknown[];
+  readonly systemPrompt?: string;
   /**
-   * Narrow read of the SDK `AgentState`. Only the in-flight partial is consumed
-   * here: `state.streamingMessage` is the current streamed assistant message
+   * Narrow read of the SDK `AgentState`. `tools` exposes active definitions for
+   * inspection; `state.streamingMessage` is the current streamed assistant message
    * (an `AssistantMessage`) while a turn is mid-stream, and `undefined`
    * otherwise (idle, or during post-message tool execution). Used by
    * {@link PiSessionService.streamSnapshot} to seed a joining client.
    */
-  readonly state: { readonly streamingMessage?: unknown };
+  readonly state: { readonly streamingMessage?: unknown; readonly tools?: readonly { name: string; description: string; parameters: object }[] };
   model: AgentModel | undefined;
   thinkingLevel: ClientThinkingLevel;
   isStreaming: boolean;
@@ -2598,6 +2601,12 @@ export class PiSessionService implements SessionRouteService {
     if (path === undefined) return undefined;
     const entries = await this.sessionManager.readEntries?.(path);
     return entries === undefined ? undefined : index.find(scope, mediaId, entries);
+  }
+
+  inspection(ref: PiSessionRef): SessionInspection {
+    const session = this.activeForRef(ref)?.runtime.session;
+    if (session === undefined) throw new Error("No active runtime for this conversation; open it before inspecting its prompt and tools");
+    return inspectSession(session);
   }
 
   async status(ref: PiSessionRef): Promise<ClientSessionStatus> {

@@ -1,6 +1,9 @@
+import { renderUiIcon } from "./uiIcons";
 import { t } from "../../../shared/i18n";
 import { LitElement, css, html, nothing } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
+import type { SessionRef } from "../../../shared/apiTypes";
+import "./SessionInspectionPanel";
 import type { SessionStatus } from "../api";
 import { formatCost } from "../utils/format";
 import { sessionContextObservations, type ContextReadState, type SessionContextObservation } from "../sessionContextObservations";
@@ -13,6 +16,9 @@ function tokenCount(value: number | null | undefined): string {
 
 @customElement("usage-details")
 export class UsageDetails extends LitElement {
+  @property() machineId = "local";
+  @property({ attribute: false }) session: SessionRef | undefined;
+  @state() private inspectionOpen = false;
   @property({ attribute: false }) status?: SessionStatus;
   @property({ attribute: false }) messages: readonly ChatLine[] = [];
   @property({ type: Boolean }) historyPartial = false;
@@ -31,9 +37,13 @@ export class UsageDetails extends LitElement {
       <modal-surface .label=${t("ui.usage.title")} .initialFocus=${".usage-close"} .onClose=${() => this.onClose?.()}>
         <header>
           <strong>${t("ui.usage.title")}</strong>
-          <button class="usage-close" type="button" aria-label=${t("ui.usage.close")} @click=${() => this.onClose?.()}>×</button>
+          <button class="usage-close" type="button" aria-label=${t("ui.usage.close")} @click=${() => this.onClose?.()}>${renderUiIcon("close")}</button>
         </header>
         <div class="usage-content">
+          ${this.session === undefined ? nothing : html`<details class="inspection" @toggle=${(event: Event) => { if (event.target instanceof HTMLDetailsElement) this.inspectionOpen = event.target.open; }}>
+            <summary>${t("inspection.open")}</summary>
+            ${this.inspectionOpen ? html`<session-inspection-panel .session=${this.session} .machineId=${this.machineId}></session-inspection-panel>` : nothing}
+          </details>`}
           <section aria-labelledby="instructions-heading">
             <h2 id="instructions-heading">${t("ui.context.instructions")}</h2>
             ${sources === undefined ? html`<p class="note unavailable">${t("ui.context.unavailable")}</p>` : html`

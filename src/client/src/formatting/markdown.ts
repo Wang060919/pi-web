@@ -32,16 +32,16 @@ function markdownRenderer(codeBlocks: CodeBlockPolicy): Renderer {
 const MAX_MARKDOWN_CACHE_ENTRIES = 300;
 const markdownHtmlCache = new Map<string, string>();
 
-export function toSafeMarkdownHtml(text: string, workspace?: MarkdownWorkspaceContext, imageIntentKey?: string, imagesEnabled = true, codeBlocks: CodeBlockPolicy = DEFAULT_CODE_BLOCK_POLICY): string {
+export function toSafeMarkdownHtml(text: string, workspace?: MarkdownWorkspaceContext, imageIntentKey?: string, imagesEnabled = true, codeBlocks: CodeBlockPolicy = DEFAULT_CODE_BLOCK_POLICY, documentLinks = false): string {
   // Overflow is applied at the component boundary; preview policy does not alter HTML.
   // Only workspace links depend on the effective application base, not route/query changes.
-  const key = JSON.stringify([text, imagesEnabled, codeBlocks.presentation, codeBlocks.copy, workspace === undefined ? null : [
+  const key = JSON.stringify([text, imagesEnabled, documentLinks, codeBlocks.presentation, codeBlocks.copy, workspace === undefined ? null : [
     workspace.machineId, workspace.projectId, workspace.workspaceId, workspace.root, resolveAppUrl(""), imageIntentKey,
   ]]);
   const cached = markdownHtmlCache.get(key);
   if (cached !== undefined) return cached;
   const html = marked.parse(text, { async: false, breaks: true, gfm: true, renderer: markdownRenderer(codeBlocks) });
-  const safeHtml = sanitizeHtml(html, workspace, imageIntentKey, imagesEnabled);
+  const safeHtml = sanitizeHtml(html, workspace, imageIntentKey, imagesEnabled, documentLinks);
   markdownHtmlCache.set(key, safeHtml);
   if (markdownHtmlCache.size > MAX_MARKDOWN_CACHE_ENTRIES) {
     const oldest = markdownHtmlCache.keys().next().value;
@@ -59,13 +59,20 @@ function escapeHtml(text: string): string {
 
 const TABLE_SCROLL_CLASS = "table-scroll";
 
-function sanitizeHtml(html: string, workspace: MarkdownWorkspaceContext | undefined, imageIntentKey: string | undefined, imagesEnabled: boolean): string {
+function sanitizeHtml(html: string, workspace: MarkdownWorkspaceContext | undefined, imageIntentKey: string | undefined, imagesEnabled: boolean, documentLinks: boolean): string {
   const template = document.createElement("template");
   template.innerHTML = html;
   if (workspace !== undefined) replaceLocalMarkdownImages(template.content, workspace, imageIntentKey);
   template.content.querySelectorAll("script, style, iframe, object, embed").forEach((node) => { node.remove(); });
   template.content.querySelectorAll("*").forEach((element) => {
     const href = element.tagName === "A" ? element.getAttribute("href") : null;
+    // Document viewers handle these links themselves. Keep the browser target
+    // inert so a modifier click cannot navigate to an unintended app route.
+    if (documentLinks && href !== null && /\.md(?:[?#].*)?$/i.test(href)
+      && !/^(?:[a-z][a-z\d+.-]*:|[\\/#])/i.test(href) && !Array.from(href).some((character) => character.charCodeAt(0) <= 32)) {
+      element.setAttribute("data-document-path", href);
+      element.setAttribute("href", "#");
+    }
     if (href !== null && workspace !== undefined) {
       const path = workspaceMarkdownFilePath(href, workspace);
       if (path !== undefined) {
@@ -79,7 +86,7 @@ function sanitizeHtml(html: string, workspace: MarkdownWorkspaceContext | undefi
       if ((name === "href" || name === "src") && !isSafeUrl(attribute.value)) element.removeAttribute(attribute.name);
     }
     if (element.tagName === "A") {
-      element.setAttribute("target", element.hasAttribute("data-workspace-file") ? "_self" : "_blank");
+      element.setAttribute("target", element.hasAttribute("data-workspace-file") || element.hasAttribute("data-document-path") ? "_self" : "_blank");
       element.setAttribute("rel", "noreferrer noopener");
     }
   });

@@ -99,6 +99,12 @@ export function registerSessionProxyRoutes(app: FastifyInstance, daemon: Session
   app.all(`${prefix}/models/configuration`, (request, reply) => proxy(request, reply));
   app.all(`${prefix}/models/configuration/*`, (request, reply) => proxy(request, reply));
   app.all(`${prefix}/sessions`, (request, reply) => proxy(request, reply));
+  app.get(`${prefix}/sessions/:sessionId/inspection`, async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    const cancellation = requestCancellation(request, reply);
+    try { return await proxy(request, reply, { signal: cancellation.signal }); }
+    finally { cancellation.dispose(); }
+  });
   app.all(`${prefix}/sessions/*`, (request, reply) => proxy(request, reply));
 }
 

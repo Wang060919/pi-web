@@ -33,8 +33,7 @@ function installWindow(href: string): { pushed: string[]; replaced: string[] } {
 }
 
 describe("settings route helpers", () => {
-  it.each(["models", "mcp"])("round-trips the %s deep link without changing workspace or session routing", (section) => {
-    if (section !== "models" && section !== "mcp") throw new Error("Unexpected settings section");
+  it.each(["models", "mcp", "skills"] as const)("round-trips the %s deep link without changing workspace or session routing", (section) => {
     expect(parseSettingsSection(section)).toBe(section);
     installWindow(`https://example.test/nested/?machine=remote&project=project&workspace=workspace&session=conversation&settings=${section}#message`);
     expect(readSettingsSection()).toBe(section);

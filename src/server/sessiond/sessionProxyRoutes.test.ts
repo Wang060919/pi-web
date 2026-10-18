@@ -55,6 +55,14 @@ describe.each(["/api", "/api/machines/local"])("project mutation proxy at %s", (
 });
 
 describe("machine-scoped session proxy routes", () => {
+  it.each(["/api", "/api/machines/local"])("keeps runtime inspection uncached through %s", async (prefix) => {
+    const response = await app.inject(`${prefix}/sessions/session%201/inspection?cwd=%2Frepo`);
+    expect(response.statusCode).toBe(200);
+    expect(response.headers["cache-control"]).toBe("no-store");
+    expect(daemon.requests).toEqual([{ method: "GET", path: "/sessions/session%201/inspection?cwd=%2Frepo", body: undefined }]);
+    expect(daemon.requestOptions[0]?.signal).toBeInstanceOf(AbortSignal);
+  });
+
   it.each(["/api", "/api/machines/local"])("cancels daemon search when the HTTP client disconnects through %s", async (prefix) => {
     let started = (): void => undefined;
     let release = (): void => undefined;

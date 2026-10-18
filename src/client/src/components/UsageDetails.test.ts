@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SessionStatus } from "../api";
 import { UsageDetails } from "./UsageDetails";
+import { runtimeInspectionApi } from "../api/runtimeInspection";
 import { deepActiveElement, requiredElement, settleRenderedDialog } from "./modalSurfaceTestSupport";
 
 afterEach(() => {
@@ -11,6 +12,20 @@ afterEach(() => {
 });
 
 describe("UsageDetails context sources", () => {
+  it("loads the selected session runtime only when its inspection section opens", async () => {
+    const inspect = vi.spyOn(runtimeInspectionApi, "session").mockResolvedValue({ source: "active-runtime", systemPrompt: "Runtime prompt", tools: [] });
+    const details = await mount((element) => {
+      element.machineId = "remote";
+      element.session = { id: "s", cwd: "/repo" };
+    });
+    expect(inspect).not.toHaveBeenCalled();
+    const group = requiredElement(details.shadowRoot?.querySelector<HTMLDetailsElement>(".inspection"), "inspection section");
+    requiredElement(group.querySelector("summary"), "inspection summary").click();
+    await vi.waitFor(() => { expect(inspect).toHaveBeenCalledWith("remote", { id: "s", cwd: "/repo" }, expect.any(AbortSignal)); });
+    requiredElement(group.querySelector("summary"), "inspection summary").click();
+    await vi.waitFor(() => { expect(inspect.mock.calls[0]?.[2].aborted).toBe(true); });
+  });
+
   it("shows authoritative full paths and keeps available skills in a keyboard-focusable collapsed group", async () => {
     const details = await mount((element) => {
       element.status = { ...status(), contextSources: {

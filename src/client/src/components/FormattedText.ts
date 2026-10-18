@@ -24,9 +24,10 @@ export class FormattedText extends LitElement {
   @property() machineId = "local";
   @property({ attribute: false }) workspaceContext: MarkdownWorkspaceContext | undefined;
   @property({ type: Boolean }) fileCards = false;
+  @property({ type: Boolean }) documentLinks = false;
 
   override render() {
-    const toSafeHtml = (text: string) => toSafeMarkdownHtml(text, this.workspaceContext, this.intentKey, this.imagesEnabled, this.codeBlocks);
+    const toSafeHtml = (text: string) => toSafeMarkdownHtml(text, this.workspaceContext, this.intentKey, this.imagesEnabled, this.codeBlocks, this.documentLinks);
     // Disabling previews bypasses inspection as well as renderer mounting.
     const content = (this.codeBlocks.previews ? this.contentRendering?.renderMarkdown({
       text: this.text,

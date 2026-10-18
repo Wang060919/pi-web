@@ -27,6 +27,21 @@ afterEach(() => {
 });
 
 describe("final Markdown HTML cache", () => {
+  it("isolates document navigation from normal chat links and unsafe schemes", () => {
+    const text = "[guide](refs/guide.md) [bad](javascript:evil.md) [remote](https://example.test/guide.md)";
+    const ordinary = toSafeMarkdownHtml(text);
+    const root = document.createElement("div");
+    root.innerHTML = toSafeMarkdownHtml(text, undefined, undefined, false, DEFAULT_CODE_BLOCK_POLICY, true);
+    const links = root.querySelectorAll("a");
+    expect(links[0]?.getAttribute("data-document-path")).toBe("refs/guide.md");
+    expect(links[0]?.getAttribute("href")).toBe("#");
+    expect(links[1]?.hasAttribute("href")).toBe(false);
+    expect(links[1]?.hasAttribute("data-document-path")).toBe(false);
+    expect(links[2]?.getAttribute("href")).toBe("https://example.test/guide.md");
+    expect(toSafeMarkdownHtml(text)).toBe(ordinary);
+    expect(ordinary).not.toContain("data-document-path");
+  });
+
   it("reuses sanitized HTML without parsing or rebuilding DOM, including across route query changes", () => {
     vi.stubEnv("BASE_URL", "./");
     window.history.replaceState(null, "", "/nested/pi/?view=chat");

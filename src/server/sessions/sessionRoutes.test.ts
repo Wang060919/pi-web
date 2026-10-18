@@ -1568,6 +1568,7 @@ class CapturingRouteSessionService implements SessionRouteService {
     return notificationSnapshot(ref);
   }
 
+  inspection(): never { throw unusedRouteMethod("inspection"); }
   list(): never { throw unusedRouteMethod("list"); }
 
   start(cwd: string, options?: { startupToken?: string }): Promise<ClientSession> {
