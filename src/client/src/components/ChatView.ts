@@ -339,6 +339,7 @@ export class ChatView extends LitElement {
   @property({ type: Number }) messageTotal = 0;
   @property({ type: Boolean }) hasMore = false;
   @property({ type: Boolean }) historyReady = true;
+  @property({ type: Boolean }) showWelcome = false;
   @property({ type: Boolean }) loadingMore = false;
   @property({ type: Boolean }) isSendingPrompt = false;
   @property({ type: Boolean }) isCompacting = false;
@@ -616,7 +617,7 @@ export class ChatView extends LitElement {
       ${this.renderTopNotices()}
       ${this.renderNotificationLiveRegions()}
       <div class=${this.behaviors.visualEffects ? "chat-wrap" : "chat-wrap plain"}>
-        <div class=${this.timelineEntriesCache.length > 0 ? "chat timeline-scroll" : "chat"} tabindex="0" role="region" aria-label=${t("ui.chatTimeline.transcript")} @image-open=${(event: CustomEvent<ImageOpenDetail>) => { this.openImageZoom(event.detail.src, event.detail.alt); }}
+        <div class=${this.showWelcome ? "chat welcome-chat" : this.timelineEntriesCache.length > 0 ? "chat timeline-scroll" : "chat"} tabindex="0" role="region" aria-label=${t("ui.chatTimeline.transcript")} @image-open=${(event: CustomEvent<ImageOpenDetail>) => { this.openImageZoom(event.detail.src, event.detail.alt); }}
           @scroll=${this.handleScroll}
           @toggle=${this.behaviors.followTail ? this.handleDisclosureToggle : undefined}
           @wheel=${this.handlesScrollIntent ? this.handleWheel : undefined}
@@ -626,6 +627,7 @@ export class ChatView extends LitElement {
           @touchcancel=${this.handlesScrollIntent ? this.handleTouchEnd : undefined}
           @mouseup=${(event: MouseEvent) => { this.captureTextSelection(event); }}
           @keyup=${(event: KeyboardEvent) => { if (event.shiftKey) this.captureTextSelection(event); }}>
+          ${this.showWelcome ? html`<slot name="welcome"></slot>` : nothing}
           ${this.renderHistoryBoundary()}
           ${keyed(transcriptIdentity, repeat(
             groups,
@@ -644,13 +646,13 @@ export class ChatView extends LitElement {
         ${this.renderActivityDock()}
         ${this.renderQuoteToolbar()}
         ${this.timelineEntriesCache.length === 0 ? nothing : html`<chat-timeline .entries=${this.timelineEntriesCache} .onNavigate=${this.handleTimelineNavigate}></chat-timeline>`}
-        <nav class="chat-jumps" aria-label=${t("ui.chatTimeline.controls")}>
+        ${this.showWelcome ? nothing : html`<nav class="chat-jumps" aria-label=${t("ui.chatTimeline.controls")}>
           <button type="button" title=${t("ui.chatTimeline.top")} aria-label=${t("ui.chatTimeline.top")} @click=${this.handleJumpTop}>↑</button>
           <button type="button" class=${following ? "following" : ""}
             title=${!this.behaviors.followTail ? t("ChatView.jump_to_end.c37e7d58") : following ? t("ChatView.following_live_jump_to_end.9520bc45") : t("ChatView.jump_to_end_and_follow_live.db38db8e")}
             aria-label=${t("ui.chatTimeline.end")} aria-describedby="chat-follow-state" @click=${this.handleJumpEnd}>↓</button>
           <span id="chat-follow-state" class="visually-hidden">${!this.behaviors.followTail ? t("ChatView.automatic_following_disabled.0de38a22") : following ? t("ChatView.following_live.b062bdb4") : t("ChatView.live_following_paused.ecda395d")}</span>
-        </nav>
+        </nav>`}
       </div>
       ${this.renderImageZoom()}
     `;

@@ -146,6 +146,56 @@ describe("application rendering boundaries", () => {
     expect(usage.isConnected).toBe(false);
   });
 
+  it("shows usage in an empty conversation until the first send without remounting the composer or chat", async () => {
+    const emptySession = { ...session, messageCount: 0, firstMessage: "" };
+    const app = await mountApp({ selectedWorkspace: workspace, selectedSession: emptySession, mainView: "chat" });
+    await settle(app);
+    const chat = app.shadowRoot?.querySelector<ChatView>("chat-view");
+    const editor = promptEditor(app);
+    const usage = app.shadowRoot?.querySelector("welcome-usage-overview");
+    expect(usage).toBeInstanceOf(WelcomeUsageOverview);
+    expect(chat?.shadowRoot?.querySelector('slot[name="welcome"]')).not.toBeNull();
+    expect(app.shadowRoot?.querySelector(".welcome-actions")).toBeNull();
+    editor.replaceText("First message");
+    await settle(app);
+    expect(app.shadowRoot?.querySelector("welcome-usage-overview")).toBe(usage);
+
+    patchState(app, { sendingPrompts: { [emptySession.id]: true } });
+    await settle(app);
+    expect(app.shadowRoot?.querySelector("welcome-usage-overview")).toBeNull();
+    expect(usage?.isConnected).toBe(false);
+    expect(chat?.shadowRoot?.querySelector('slot[name="welcome"]')).toBeNull();
+    expect(chat?.shadowRoot?.textContent).toContain("Sending your message");
+    expect(app.shadowRoot?.querySelector("chat-view")).toBe(chat);
+    expect(promptEditor(app)).toBe(editor);
+    expect(editor.view?.state.doc.toString()).toBe("First message");
+
+    patchState(app, {
+      sendingPrompts: {}, messagePageTotal: 1, messagePageEnd: 1,
+      messages: [{ role: "user", parts: [{ type: "text", text: "First message" }] }],
+    });
+    await settle(app);
+    expect(app.shadowRoot?.querySelector("welcome-usage-overview")).toBeNull();
+    expect(chat?.shadowRoot?.querySelector("formatted-text")?.shadowRoot?.textContent).toContain("First message");
+    patchState(app, { selectedSession: { ...emptySession, id: "next-session" }, messages: [], messagePageTotal: 0, messagePageEnd: 0 });
+    await settle(app);
+    expect(app.shadowRoot?.querySelector("welcome-usage-overview")).toBeInstanceOf(WelcomeUsageOverview);
+  });
+
+  it("switches from welcome to a queued first message while the backend session is starting", async () => {
+    const emptySession = { ...session, messageCount: 0, firstMessage: "" };
+    const app = await mountApp({
+      selectedWorkspace: workspace, selectedSession: emptySession, mainView: "chat",
+      activity: { sessionId: session.id, phase: "active", startup: true, label: "Starting session", at: "now" },
+    });
+    await settle(app);
+    expect(app.shadowRoot?.querySelector("welcome-usage-overview")).toBeInstanceOf(WelcomeUsageOverview);
+    patchState(app, { clientQueuedSessionMessages: { [session.id]: [{ kind: "followUp", text: "Queued first message" }] } });
+    await settle(app);
+    expect(app.shadowRoot?.querySelector("welcome-usage-overview")).toBeNull();
+    expect(app.shadowRoot?.querySelector("chat-view")?.shadowRoot?.querySelector("formatted-text")?.shadowRoot?.textContent).toContain("Queued first message");
+  });
+
   it("keeps a fresh layout quiet while allowing a hidden tool to open from action search", async () => {
     localStorage.clear();
     const app = await mountApp({ selectedWorkspace: workspace, workspaces: [workspace], mainView: "chat", actionPaletteOpen: true }, () => html`<p>Selected tool</p>`);

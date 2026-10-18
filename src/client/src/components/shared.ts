@@ -111,7 +111,8 @@ export const appStyles = css`
   aside app-navigation-panel { flex: 1 1 auto; min-height: 0; }
   header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px; border-bottom: 0; }
   .header-actions { display: flex; align-items: center; gap: 8px; }
-  main { grid-column: 3; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  main { --pi-chat-content-inset: clamp(16px, 8%, 80px); grid-column: 3; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  @media (max-width: 600px) { main { --pi-chat-content-inset: 16px; } }
   .context-bar { position: relative; flex: 0 0 auto; min-width: 0; display: none; align-items: center; gap: 0; padding: 6px 0; border-bottom: 0; background: var(--pi-bg); }
   .context-bar::before, .context-bar::after { content: ""; position: absolute; top: 0; bottom: 0; z-index: 2; width: 20px; opacity: 0; pointer-events: none; transition: opacity .15s ease; }
   .context-bar::before { left: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--pi-shadow-strong) 55%, transparent) 0%, transparent 100%); }
@@ -193,11 +194,11 @@ export const appStyles = css`
   button:not(:disabled):not(.selected):hover { background: var(--pi-surface-hover); }
   button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
   .empty { margin: auto; color: var(--pi-muted); }
-  .welcome { display: flex; flex: 1 1 auto; flex-direction: column; align-items: stretch; gap: 16px; box-sizing: border-box; width: min(544px, 100%); min-height: 0; margin: 0 auto; padding: 48px 32px 32px; overflow-y: auto; }
-  .welcome-heading { display: flex; align-items: center; justify-content: flex-start; gap: 12px; padding: 0; }
+  .welcome { display: flex; flex: 1 1 auto; flex-direction: column; align-items: flex-start; gap: 16px; box-sizing: border-box; width: 100%; min-height: 0; margin: 0; padding: 24px var(--pi-chat-content-inset) 32px; overflow-y: auto; }
+  .welcome-heading { display: flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 0; }
   .welcome .pi-mark { color: var(--pi-text); }
-  .welcome h1 { margin: 0; color: var(--pi-text); font-size: 24px; line-height: 32px; font-weight: 500; letter-spacing: -.02em; }
-  .welcome-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+  .welcome h1 { margin: 0; color: var(--pi-text); font-size: 20px; line-height: 28px; font-weight: 400; letter-spacing: -.02em; }
+  .welcome-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; width: 480px; max-width: 100%; }
   .welcome p { margin: 0; font-size: 14px; line-height: 22px; }
   .welcome-actions p { flex: 1 1 200px; }
   .welcome-actions button { flex: 0 0 auto; background: var(--pi-selection-bg); }
@@ -396,6 +397,7 @@ export const chatStyles = css`
     .notification-list { padding-inline: 8px; }
   }
   .chat { --pi-chat-sticky-top: -26px; flex: 1 1 auto; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 26px 16px 16px; box-sizing: border-box; }
+  .chat.welcome-chat { padding: 0; }
   .chat:focus-visible { outline: 1px solid var(--pi-border); outline-offset: -1px; }
   .chat.timeline-scroll { padding-right: 46px; scrollbar-width: none; }
   .chat.timeline-scroll::-webkit-scrollbar { display: none; width: 0; }
@@ -600,7 +602,7 @@ export const autocompleteStyles = css`
 `;
 
 export const promptEditorStyles = css`
-  :host { position: relative; z-index: 5; display: block; box-sizing: border-box; padding: 10px 16px 6px; color: var(--pi-text); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); container-type: inline-size; }
+  :host { position: relative; z-index: 5; display: block; box-sizing: border-box; padding: 10px var(--pi-chat-content-inset, 16px) 6px; color: var(--pi-text); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); container-type: inline-size; }
   footer { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
   .composer-context { display: flex; min-width: 0; align-items: center; gap: 6px; padding: 0 0 2px; }
   .context-chip { border: 1px solid transparent; display: inline-flex; min-width: 0; max-width: 65%; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 6px; background: var(--pi-surface-hover); color: var(--pi-muted); font-size: 12px; line-height: 16px; }
