@@ -105,21 +105,13 @@ function renderAdditionalCommands(html: HtmlTemplateTag, terminal: WorkspacePane
 }
 
 function renderUpdatesPanel(html: HtmlTemplateTag, terminal: WorkspacePanelTerminal | undefined, state: PluginRuntimeState | undefined): TemplateResult {
-  const status = statusFor(state) ?? fallbackDockerStatus(runtimeHint);
-  if (status === undefined) {
-    return localizedTemplate("pi-web-plugin.updates_checking_pi_web_update_status.cef9023a", html)`
-      <section class="toolbar"><strong>Updates</strong></section>
-      <section class="viewer"><p class="muted">Checking PI WEB update status…</p></section>
-    `;
-  }
-
-  const messages = status.messages;
-  const recommended = recommendedCommand(status);
-  const additional = additionalCommands(status, recommended);
-  return localizedTemplate("pi-web-plugin.viewer_updates_status_flex_auto_min_height.4a083b3c", html)`
+  const styles = html`
     <style>
-      .viewer.updates-status { flex: 1 1 auto; min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; padding: 12px; font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); overflow-y: auto; overflow-x: hidden; }
+      .toolbar.updates-toolbar, .viewer.updates-status { width: 100%; max-width: 900px; margin-inline: auto; box-sizing: border-box; }
+      .toolbar.updates-toolbar { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 20px 24px 0; }
+      .viewer.updates-status { flex: 1 1 auto; min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; padding: 16px 24px 24px; font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); overflow-y: auto; overflow-x: hidden; }
       .viewer.updates-status section { flex: 0 0 auto; min-width: 0; display: grid; gap: 8px; }
+      .viewer.updates-status p { margin: 0; }
       .toolbar strong, .viewer.updates-status strong { font-weight: 500; }
       .updates-message { display: grid; gap: 5px; border: 0; border-radius: 8px; padding: 10px; background: var(--pi-surface); }
       .updates-message.warning { border: 1px solid var(--pi-warning-border); background: var(--pi-warning-surface); }
@@ -137,12 +129,31 @@ function renderUpdatesPanel(html: HtmlTemplateTag, terminal: WorkspacePanelTermi
       .updates-recommended > strong { color: var(--pi-text-bright); }
       .updates-recommended .updates-message { border: none; background: none; padding: 0; }
       .updates-meta { display: grid; gap: 2px; color: var(--pi-muted); font-size: 12px; line-height: 16px; }
+      @container (max-width: 760px) {
+        .toolbar.updates-toolbar { padding: 16px 16px 0; }
+        .viewer.updates-status { padding: 16px; }
+      }
       @media (max-width: 520px) {
         .updates-command { grid-template-columns: minmax(0, 1fr) auto; }
         .updates-command > span { grid-column: 1 / -1; }
       }
     </style>
-    <section class="toolbar"><strong>Updates</strong>${messages.length > 0 ? html`<span class="stale">${String(messages.length)}</span>` : null}</section>
+  `;
+  const status = statusFor(state) ?? fallbackDockerStatus(runtimeHint);
+  if (status === undefined) {
+    return localizedTemplate("pi-web-plugin.updates_checking_pi_web_update_status.cef9023a", html)`
+      ${styles}
+      <section class="toolbar updates-toolbar"><strong>Updates</strong></section>
+      <section class="viewer updates-status"><p class="muted">Checking PI WEB update status…</p></section>
+    `;
+  }
+
+  const messages = status.messages;
+  const recommended = recommendedCommand(status);
+  const additional = additionalCommands(status, recommended);
+  return localizedTemplate("pi-web-plugin.viewer_updates_status_flex_auto_min_height.4a083b3c", html)`
+    ${styles}
+    <section class="toolbar updates-toolbar"><strong>Updates</strong>${messages.length > 0 ? html`<span class="stale">${String(messages.length)}</span>` : null}</section>
     <section class="viewer updates-status">
       ${recommended === undefined
         ? renderNotices(html, messages)
