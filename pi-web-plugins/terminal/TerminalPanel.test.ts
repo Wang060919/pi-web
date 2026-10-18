@@ -17,6 +17,29 @@ afterEach(() => {
 });
 
 describe("Terminal panel lifecycle", () => {
+  it("waits for bundled fonts and does not open a terminal after the panel disconnects", async () => {
+    const fonts = deferred<undefined>();
+    const runtime = new TerminalBrowserRuntime(new InMemoryTerminalSelectionMemory());
+    const loadFont = vi.spyOn(runtime, "loadFont").mockReturnValue(fonts.promise);
+    const open = vi.spyOn(Terminal.prototype, "open");
+    const panel = createTerminalPanel();
+    panel.context = terminalContext({
+      peer: terminalPeer(vi.fn((operation) => Promise.resolve(operation === "terminal.list" ? [terminalInfo("terminal-1")] : []))),
+      navigation: terminalNavigation("terminal-1"),
+    });
+    panel.runtime = runtime;
+    Reflect.set(panel, "visible", true);
+    document.body.append(panel);
+    await vi.waitFor(() => { expect(loadFont).toHaveBeenCalledOnce(); });
+    expect(open).not.toHaveBeenCalled();
+    panel.remove();
+    fonts.resolve(undefined);
+    await fonts.promise;
+    await panel.updateComplete;
+    expect(open).not.toHaveBeenCalled();
+    runtime.dispose();
+  });
+
   it("renders the registered pi-web.terminal soft-key element from its default path", async () => {
     defineTerminalCustomElements();
     const panel = createTerminalPanel();

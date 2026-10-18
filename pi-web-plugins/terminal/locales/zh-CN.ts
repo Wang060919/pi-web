@@ -2,6 +2,7 @@
 import type { messages as englishMessages } from './en.js';
 
 export const messages: Record<keyof typeof englishMessages, string> = {
+  "TerminalPanel.font_load_failed": "终端字体加载失败，已使用系统等宽字体",
   "TerminalPanel.cancel_sent.cf3b8bfb": "已发送取消请求…",
   "TerminalPanel.cancel_command.7d5376cf": "取消命令",
   "TerminalPanel.starting_shell.92fc7e2f": "正在启动 Shell…",

@@ -1,0 +1,30 @@
+JetBrains Mono Nerd Font Mono
+
+Source: https://github.com/ryanoasis/nerd-fonts/tree/v3.5.1/patched-fonts/JetBrainsMono/Ligatures
+Nerd Fonts: 3.5.1; JetBrains Mono: 2.304
+Styles: Regular, Bold, Italic, BoldItalic
+License: SIL Open Font License 1.1; see OFL.txt and NERD-FONTS-LICENSE.
+
+Each upstream TTF was losslessly compressed to WOFF2 using Google woff2_compress.
+No glyph subsetting or font metadata changes were applied.
+Reproduce: woff2_compress JetBrainsMonoNerdFontMono-<Style>.ttf
+
+The application uses the CSS family alias "PI Web Terminal" to ensure the bundled
+font is used instead of a potentially different locally installed version.
+Assets are served with the plugin; normal builds do not download or convert fonts.
+
+JetBrainsMonoNerdFontMono-Regular.ttf
+  upstream SHA-256: f2a5ea6cfab397445ffab00c0370927b66d61e560a05db5db271b42006381c1a
+  WOFF2 SHA-256: ef153774368e109e9f9c479116f2856f4428ded652d989974ac638a65d696162
+
+JetBrainsMonoNerdFontMono-Bold.ttf
+  upstream SHA-256: bfcf9a917276ffc058867d87cbc8a5b2f1ab0f4b710e9170dc02763ccb80bd4b
+  WOFF2 SHA-256: 6830a7e12ee9f86666ea3ec8b10c208120c39629de34a965b9600563eacfd27a
+
+JetBrainsMonoNerdFontMono-Italic.ttf
+  upstream SHA-256: 31efd6ead98746f5b0afa1ee6dba60267ad48db36428360bee327bec10621f97
+  WOFF2 SHA-256: 97adf2aa4c86f8cc2286b66f31d987ab66763d8587853a39c2b7d832e4deb1bf
+
+JetBrainsMonoNerdFontMono-BoldItalic.ttf
+  upstream SHA-256: 9dba502e00e35209f6ed2a151c7376c051657b067cdebbc6e52d06cb9002cf31
+  WOFF2 SHA-256: edf5dd1ea33cab47b7da9f3ada475a5e78144626f17c8282a1af9a5811bb850e

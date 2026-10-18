@@ -315,5 +315,6 @@ function contentTypeFor(path: string): string {
   if (lowerPath.endsWith(".css")) return "text/css; charset=utf-8";
   if (lowerPath.endsWith(".html")) return "text/html; charset=utf-8";
   if (lowerPath.endsWith(".svg")) return "image/svg+xml";
+  if (lowerPath.endsWith(".woff2")) return "font/woff2";
   return "application/octet-stream";
 }

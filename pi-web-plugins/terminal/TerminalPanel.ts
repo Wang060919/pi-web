@@ -15,8 +15,7 @@ import { createTerminalCopySnapshot, DEFAULT_TERMINAL_ANSI_THEME, type TerminalC
 import { createTerminalSoftKeysDefaultEnvironmentMedia, hasTerminalSoftKeysPreference, initialTerminalSoftKeysEnabled, isTerminalSoftKeysDefaultEnvironment, writeTerminalSoftKeysPreference } from "./terminalSoftKeysPreference";
 import type { TerminalBrowserRuntime } from "./TerminalBrowserRuntime";
 import type { TerminalSoftKeyInputOptions } from "./TerminalSoftKeys";
-// Prefer single-cell Nerd Font variants so shell prompt icons stay on the terminal grid.
-const TERMINAL_FONT_FAMILY = '"JetBrainsMono Nerd Font Mono", "MesloLGS NF", "CaskaydiaCove Nerd Font Mono", "FiraCode Nerd Font Mono", "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, "Symbols Nerd Font Mono", monospace';
+import { TERMINAL_FONT_FAMILY } from "./terminalFont";
 
 const TERMINAL_FONT_SIZE = 14;
 
@@ -61,6 +60,7 @@ export class TerminalPanel extends LitElement {
   @state() private selectedId: string | undefined;
   @state() private loading = false;
   @state() private error: string | undefined;
+  @state() private fontError: string | undefined;
   @state() private connectionError: string | undefined;
   @state() private visible = false;
   @state() private cancellingRunIds: string[] = [];
@@ -71,6 +71,7 @@ export class TerminalPanel extends LitElement {
   @state() private copyStatus: string | undefined;
 
   private terminal: Terminal | undefined;
+  @state() private fontLoadState: "idle" | "loading" | "settled" = "idle";
   private fitAddon: FitAddon | undefined;
   private channel: PluginPeerChannel | undefined;
   private channelAbort: AbortController | undefined;
@@ -167,6 +168,10 @@ export class TerminalPanel extends LitElement {
       this.pendingTerminalNavigation = undefined;
     }
     if (workspaceScope !== this.observedWorkspaceScope || runtime !== this.observedRuntime) {
+      if (runtime !== this.observedRuntime) {
+        this.fontLoadState = "idle";
+        this.fontError = undefined;
+      }
       this.workspaceGeneration += 1;
       this.terminalNavigationGeneration += 1;
       this.cancelWorkspaceRequests();
@@ -590,8 +595,22 @@ export class TerminalPanel extends LitElement {
 
   private ensureTerminalView(): void {
     const context = this.context;
+    const runtime = this.runtime;
     const terminalHost = this.terminalHostElement();
-    if (!this.visible || this.terminal !== undefined || this.selectedId === undefined || terminalHost === undefined || context === undefined) return;
+    if (!this.isConnected || !this.visible || this.terminal !== undefined || this.selectedId === undefined || terminalHost === undefined || context === undefined || runtime === undefined) return;
+    if (this.fontLoadState !== "settled") {
+      if (this.fontLoadState === "idle") {
+        this.fontLoadState = "loading";
+        // Xterm measures cells when opened; loading first avoids stale fallback-font dimensions.
+        void runtime.loadFont(this.ownerDocument).catch((error: unknown) => {
+          if (this.observedRuntime === runtime) this.fontError = `${t("TerminalPanel.font_load_failed")}: ${errorMessage(error)}`;
+        }).then(() => {
+          if (this.observedRuntime !== runtime) return;
+          this.fontLoadState = "settled";
+        });
+      }
+      return;
+    }
     const terminal = new Terminal(terminalOptions(this));
     const fitAddon = new FitAddon();
     terminal.loadAddon(fitAddon);
@@ -1063,11 +1082,11 @@ export class TerminalPanel extends LitElement {
           `)}
           <button class="new" ?disabled=${this.context === undefined} @click=${() => { void this.startTerminal(); }}>${renderUiIcon("plus")} Shell</button>
         </div>
-        ${this.error === undefined ? null : html`<p class="error">${this.error}</p>`}
+        ${this.error === undefined && this.fontError === undefined ? null : html`<p class="error">${this.error ?? this.fontError}</p>`}
         ${this.connectionError === undefined ? null : html`<p class="error">${this.connectionError}</p>`}
         ${this.renderCommandRunNotice()}
         ${this.renderTerminalAccessoryBar()}
-        ${this.loading ? localizedTemplate("TerminalPanel.loading_terminals.b2b8ff3e", html)`<p class="muted">Loading terminals…</p>` : null}
+        ${this.loading || this.fontLoadState === "loading" ? localizedTemplate("TerminalPanel.loading_terminals.b2b8ff3e", html)`<p class="muted">Loading terminals…</p>` : null}
         <div class="terminal-stage">
           <div class=${this.copySnapshot === undefined ? "terminal-host" : "terminal-host copying"} ?inert=${this.copySnapshot !== undefined}></div>
           ${this.renderCopyMode()}

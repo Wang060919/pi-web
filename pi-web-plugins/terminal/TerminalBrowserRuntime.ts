@@ -1,6 +1,7 @@
 import type { WorkspacePanelContext } from "@jmfederico/pi-web/plugin-api";
 import { SessionStorageTerminalSelectionMemory, terminalSelectionScope, type TerminalSelectionMemory } from "./terminalSelection";
 import { TerminalPeerClient, type TerminalInfo } from "./terminalProtocol";
+import { loadTerminalFont } from "./terminalFont";
 
 const ACTIVE_TERMINAL_REFRESH_MS = 1_000;
 const ACTIVE_TERMINAL_FAILURE_RETRY_MS = 5_000;
@@ -22,6 +23,8 @@ interface WorkspaceRuntimeState {
 
 /** Browser-product state shared by this activation's panel, badge, and facade. */
 export class TerminalBrowserRuntime {
+  // Retained custom elements must load assets from the currently selected machine's module.
+  readonly loadFont = loadTerminalFont;
   private readonly workspaces = new Map<string, WorkspaceRuntimeState>();
   private disposed = false;
   private badgeTarget: { state: WorkspaceRuntimeState; context: WorkspacePanelContext; url: string | undefined } | undefined;

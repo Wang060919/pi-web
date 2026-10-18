@@ -75,13 +75,31 @@ describe("bundled Terminal package", () => {
       .filter((entry) => entry.isFile())
       .map((entry) => relative(packageRoot, join(entry.parentPath, entry.name)).split(sep).join("/"))
       .sort();
-    expect(files).toEqual([
+    const fonts = files.filter((file) => file.endsWith(".woff2"));
+    expect(fonts).toHaveLength(4);
+    for (const style of ["Regular", "Bold", "Italic", "BoldItalic"]) {
+      const font = fonts.find((file) => file.startsWith(`browser/assets/JetBrainsMonoNerdFontMono-${style}-`));
+      expect(font).toBeDefined();
+      if (font === undefined) throw new Error(`Missing bundled font: ${style}`);
+      const bundledFont = await readFile(join(packageRoot, font));
+      const sourceFont = await readFile(`pi-web-plugins/terminal/fonts/JetBrainsMonoNerdFontMono-${style}.woff2`);
+      expect(bundledFont.equals(sourceFont)).toBe(true);
+    }
+    expect(files.filter((file) => !file.endsWith(".woff2"))).toEqual([
+      "browser/NERD-FONTS-LICENSE",
+      "browser/OFL.txt",
+      "browser/SOURCE.txt",
       "browser/pi-web-plugin.js",
       "package.json",
       "server-plugin.js",
       "terminalService.js",
     ]);
     const browserSource = await readFile(join(packageRoot, "browser", "pi-web-plugin.js"), "utf8");
+    for (const font of fonts) expect(browserSource.includes(font.replace("browser/", "")), font).toBe(true);
+    for (const notice of ["OFL.txt", "NERD-FONTS-LICENSE", "SOURCE.txt"]) {
+      expect(await readFile(join(packageRoot, "browser", notice), "utf8"))
+        .toBe(await readFile(`pi-web-plugins/terminal/fonts/${notice}`, "utf8"));
+    }
     expect(browserSource).not.toMatch(/(?:from\s*["']|import\s*\()[^"']*(?:@jmfederico\/pi-web|src\/)/u);
     expect(browserSource).not.toMatch(/sourceMappingURL/u);
     expect(browserSource).toContain("pi-web-terminal-panel");

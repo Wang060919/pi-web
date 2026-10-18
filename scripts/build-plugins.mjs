@@ -242,6 +242,9 @@ export async function buildTerminalPackage(sourceDir, targetDir, buildBrowser = 
   await copyFile(resolve(sourceDir, "package.json"), resolve(targetDir, "package.json"));
   await buildDirectory(resolve(sourceDir, "server"), targetDir);
   await buildBrowser(complexBrowserBuildConfig(sourceDir, targetDir));
+  for (const name of ["OFL.txt", "NERD-FONTS-LICENSE", "SOURCE.txt"]) {
+    await copyFile(resolve(sourceDir, "fonts", name), resolve(targetDir, "browser", name));
+  }
 }
 
 async function buildFile(file, outputPath) {

@@ -1,5 +1,6 @@
 // English source messages. Keys are stable at the call site.
 export const messages = {
+  "TerminalPanel.font_load_failed": "Terminal font could not be loaded; using the system monospace font",
   "TerminalPanel.cancel_sent.cf3b8bfb": "Cancel sent…",
   "TerminalPanel.cancel_command.7d5376cf": "Cancel command",
   "TerminalPanel.starting_shell.92fc7e2f": "Starting shell…",

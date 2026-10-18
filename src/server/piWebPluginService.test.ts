@@ -92,6 +92,7 @@ describe("PiWebPluginService", () => {
         "public/assets/icon.svg": svg,
         "public/assets/uppercase.SVG": svg,
         "public/assets/data.bin": "unknown",
+        "public/assets/terminal.woff2": "font fixture",
         "private/secret.js": "not browser public",
       },
     });
@@ -107,6 +108,7 @@ describe("PiWebPluginService", () => {
     expect(svgAsset?.content.toString("utf8")).toBe(svg);
     await expect(service.readAsset("icons", "public/assets/uppercase.SVG")).resolves.toMatchObject({ contentType: "image/svg+xml" });
     await expect(service.readAsset("icons", "public/assets/data.bin")).resolves.toMatchObject({ contentType: "application/octet-stream" });
+    await expect(service.readAsset("icons", "public/assets/terminal.woff2")).resolves.toMatchObject({ contentType: "font/woff2" });
     await expect(service.readAsset("icons", "private/secret.js")).resolves.toBeUndefined();
     await expect(service.readAsset("icons", "public/../private/secret.js")).resolves.toBeUndefined();
     await expect(service.readAsset("icons", "public/assets/leak.js")).resolves.toBeUndefined();
