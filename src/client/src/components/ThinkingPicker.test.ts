@@ -21,7 +21,7 @@ describe("thinking-picker", () => {
       element.embedded = embedded;
       element.options = [
         { value: "low", label: "Low" },
-        { value: "max", label: "Max" },
+        { value: "max", label: "Max", description: "A description replaced by the warning." },
         { value: "custom", label: "Custom" },
       ];
       element.selectedValue = "low";
@@ -37,6 +37,8 @@ describe("thinking-picker", () => {
     await picker.updateComplete;
     expect(picker.shadowRoot?.querySelector("#strength-usage")?.textContent).toContain("Max effort may use more tokens.");
     expect(range(picker).getAttribute("aria-describedby")).toContain("strength-usage");
+    expect(picker.shadowRoot?.querySelector("#strength-description")).toBeNull();
+    expect(range(picker).getAttribute("aria-describedby")).not.toContain("strength-description");
     expect(onPick).not.toHaveBeenCalled();
     expect(picker.selectedValue).toBe("low");
 
@@ -45,6 +47,7 @@ describe("thinking-picker", () => {
     await picker.updateComplete;
     await picker.updateComplete;
     expect(picker.shadowRoot?.querySelector("#strength-usage")).toBeNull();
+    expect(picker.shadowRoot?.querySelector("#strength-description")).not.toBeNull();
     expect(range(picker).getAttribute("aria-describedby")).not.toContain("strength-usage");
     expect(levelButtons(picker).map((button) => button.getAttribute("aria-label"))).toEqual(["Low", "Max", "Custom"]);
   });
@@ -176,6 +179,7 @@ describe("thinking-picker", () => {
     expect(onPick).toHaveBeenCalledExactlyOnceWith("xhigh");
     expect(picker.defaultValue).toBe("off");
     expect(valueText(picker)).toBe("Extra high");
+    expect(deepActiveElement()).toBe(range(picker));
     expect(picker.isConnected).toBe(true);
   });
 
@@ -313,6 +317,7 @@ describe("embedded thinking-picker", () => {
     expect(picker.shadowRoot?.querySelector('[role="group"]')?.getAttribute("aria-label")).toBe("Thinking strength");
     expect(picker.shadowRoot?.querySelector(".current-value > span")?.textContent).toBe("Thinking strength");
     expect(valueText(picker)).toBe("Medium");
+    expect([...picker.renderRoot.querySelectorAll(".strength-scale span")].map((label) => label.textContent)).toEqual(["Faster", "More thorough"]);
     expect(surface.shadowRoot?.querySelectorAll('[role="dialog"]')).toHaveLength(1);
   });
 

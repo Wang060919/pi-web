@@ -4,6 +4,7 @@ import { setLocalePreference } from "../../../shared/i18n";
 import type { Locale } from "../../../shared/i18nCore";
 import type { DailyUsageRecord } from "../usageOverview";
 import { UsageOverview } from "./UsageOverview";
+import { UsageModels } from "./UsageModels";
 
 afterEach(() => {
   document.body.replaceChildren();
@@ -38,6 +39,13 @@ function dayButtons(overview: UsageOverview): HTMLButtonElement[] {
   return Array.from(overview.renderRoot.querySelectorAll<HTMLButtonElement>("button[data-date]"));
 }
 
+async function modelsView(overview: UsageOverview): Promise<UsageModels> {
+  const models = overview.renderRoot.querySelector("usage-models");
+  if (!(models instanceof UsageModels)) throw new Error("Missing model usage view");
+  await models.updateComplete;
+  return models;
+}
+
 async function key(overview: UsageOverview, button: HTMLButtonElement, key: string): Promise<void> {
   button.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
   await overview.updateComplete;
@@ -61,10 +69,14 @@ describe("UsageOverview", () => {
     button(overview, "Models").click();
     await overview.updateComplete;
     expect(overview.renderRoot.querySelector(".metrics")).toBeNull();
-    expect(Array.from(overview.renderRoot.querySelectorAll(".model-label"), (item) => item.textContent.trim())).toEqual(["Pi Mini150 Tokens"]);
+    const models = await modelsView(overview);
+    expect(models.models).toEqual([{ model: "Pi Mini", totalTokens: 150, input: 100, output: 50 }]);
+    expect(models.days.map((day) => day.date)).toEqual(["2026-10-16"]);
     button(overview, "All").click();
     await overview.updateComplete;
-    expect(Array.from(overview.renderRoot.querySelectorAll(".model-label > span:first-child"), (item) => item.textContent)).toEqual(["Pi Archive", "Pi Mini"]);
+    await modelsView(overview);
+    expect(models.models.map((model) => model.model)).toEqual(["Pi Archive", "Pi Mini"]);
+    expect(models.days.map((day) => day.date)).toEqual(["2026-09-01", "2026-10-16"]);
     button(overview, "Overview").click();
     await overview.updateComplete;
     expect(metrics(overview)["Total tokens"]).toBe("450");
@@ -77,8 +89,9 @@ describe("UsageOverview", () => {
     expect(overview.renderRoot.querySelector('[role="tooltip"]')).toBeNull();
     button(overview, "Models").click();
     await overview.updateComplete;
-    expect(overview.renderRoot.querySelector(".models p")?.textContent).toBe("Models will appear after your first conversation.");
-    expect(overview.renderRoot.querySelector(".models ol")).toBeNull();
+    const models = await modelsView(overview);
+    expect(models.renderRoot.querySelector(".empty")?.textContent).toBe("No model usage in this range.");
+    expect(models.renderRoot.querySelector("ol")).toBeNull();
   });
 
   it("offers a single keyboard entry, navigable dates, and a dismissible tooltip associated with the focused day", async () => {
@@ -90,9 +103,9 @@ describe("UsageOverview", () => {
     expect(dayButtons(overview).filter((day) => day.tabIndex === 0)).toEqual([today]);
     today.focus();
     await overview.updateComplete;
-    expect(overview.renderRoot.querySelector('[role="tooltip"]')?.textContent).toContain("Cache read30");
+    expect(overview.renderRoot.querySelector('[role="tooltip"]')?.textContent).toBe("Oct 17 — 2");
     expect(today.getAttribute("aria-describedby")).toBe("usage-day-tooltip");
-    expect(today.getAttribute("aria-label")).toContain("100 Tokens");
+    expect(today.getAttribute("aria-label")).toContain("2 Messages");
 
     await key(overview, today, "Home");
     const first = dayButtons(overview)[0];
@@ -111,6 +124,27 @@ describe("UsageOverview", () => {
     expect(dayButtons(overview).filter((day) => day.tabIndex === 0)).toEqual([today]);
   });
 
+  it("colors message activity independently of token volume and leaves future dates unfilled", async () => {
+    const overview = await mount([
+      { date: "2026-10-18", model: "Pi Mini", tokens: { input: 10000, output: 0, cacheRead: 0, cacheWrite: 0 }, sessions: 1, messages: 1 },
+      { date: "2026-10-19", model: "Pi Mini", tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, sessions: 1, messages: 8 },
+    ]);
+    overview.today = "2026-10-19";
+    await overview.updateComplete;
+    expect(overview.renderRoot.querySelector('[data-date="2026-10-18"]')?.getAttribute("data-level")).toBe("1");
+    expect(overview.renderRoot.querySelector('[data-date="2026-10-19"]')?.getAttribute("data-level")).toBe("4");
+    expect(overview.renderRoot.querySelectorAll(".future")).toHaveLength(5);
+    const today = dayButtons(overview).at(-1);
+    if (today === undefined) throw new Error("Missing today's heatmap cell");
+    today.focus();
+    await key(overview, today, "End");
+    expect(overview.shadowRoot?.activeElement).toBe(today);
+    expect(overview.renderRoot.querySelector('[role="tooltip"]')?.textContent).toBe("Oct 19 — 8");
+    button(overview, "7d").click();
+    await overview.updateComplete;
+    expect(overview.renderRoot.querySelector('[role="tooltip"]')).toBeNull();
+  });
+
   it("provides Chinese labels and accessible date descriptions without leaking translation keys", async () => {
     const overview = await mount([], "zh-CN");
     expect(button(overview, "总览").getAttribute("aria-pressed")).toBe("true");
@@ -118,7 +152,7 @@ describe("UsageOverview", () => {
     expect(dayButtons(overview).at(-1)?.getAttribute("aria-label")).toContain("2026年10月17日");
     button(overview, "模型").click();
     await overview.updateComplete;
-    expect(overview.renderRoot.querySelector(".models p")?.textContent).toBe("开始对话后，这里会显示模型用量。");
+    expect((await modelsView(overview)).renderRoot.querySelector(".empty")?.textContent).toBe("此时间范围内暂无模型用量。");
     expect(overview.renderRoot.textContent).not.toContain("ui.usageOverview.");
   });
 });

@@ -2,6 +2,7 @@ import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { getLocale, t } from "../../../shared/i18n";
 import { aggregateUsageOverview, type DailyUsageRecord, type UsageDay, type UsageOverviewRange } from "../usageOverview";
+import "./UsageModels";
 
 @customElement("usage-overview")
 export class UsageOverview extends LitElement {
@@ -19,8 +20,8 @@ export class UsageOverview extends LitElement {
     return value.toLocaleString(this.locale);
   }
 
-  private date(value: string): string {
-    return new Intl.DateTimeFormat(this.locale, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${value}T00:00:00Z`));
+  private date(value: string, short = false): string {
+    return new Intl.DateTimeFormat(this.locale, { year: short ? undefined : "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${value}T00:00:00Z`));
   }
 
   private changeRange(range: UsageOverviewRange): void {
@@ -57,10 +58,11 @@ export class UsageOverview extends LitElement {
 
   override render() {
     const data = aggregateUsageOverview(this.records, this.range, this.today);
+    const availableDays = data.days.filter((day) => !day.future);
     const activeDate = this.hoveredDate ?? this.pinnedDate ?? this.focusedDate;
     const activeIndex = data.days.findIndex((day) => day.date === activeDate);
     const activeDay = data.days[activeIndex];
-    const maximum = Math.max(1, ...data.days.map((day) => day.totalTokens));
+    const maximum = Math.max(1, ...data.days.map((day) => day.messages));
     const tabDate = data.days.some((day) => day.date === this.tabDate) ? this.tabDate : this.today;
     const metrics = [
       [t("ui.usageOverview.sessions"), this.number(data.sessions)],
@@ -82,35 +84,25 @@ export class UsageOverview extends LitElement {
           </div>
         </header>
         ${this.view === "overview" ? html`
-          <dl class="metrics">${metrics.map(([label, value]) => html`<div><dt>${label}</dt><dd>${value}</dd></div>`)}</dl>
+          <dl class="metrics">${metrics.map(([label, value], index) => html`<div><dt>${label}</dt><dd class=${index === 5 ? "model-value" : ""} title=${value}>${value}</dd></div>`)}</dl>
           <div class="heatmap-wrap" @pointerleave=${() => { this.hoveredDate = undefined; }}>
             <div class="heatmap-scroll"><div class="heatmap" role="group" aria-label=${t("ui.usageOverview.heatmap")}>
               ${data.days.map((day, index) => html`
-                <button type="button" class="day" data-date=${day.date} data-level=${day.totalTokens === 0 ? 0 : Math.max(1, Math.ceil(day.totalTokens / maximum * 4))} data-in-range=${String(day.inRange)}
+                ${day.future ? html`<span class="day future" aria-hidden="true"></span>` : html`<button type="button" class="day" data-date=${day.date} data-level=${day.messages === 0 ? 0 : Math.max(1, Math.ceil(day.messages / maximum * 4))} data-in-range=${String(day.inRange)}
                   tabindex=${day.date === tabDate ? 0 : -1}
-                  aria-label=${`${this.date(day.date)}: ${this.number(day.totalTokens)} ${t("ui.usageOverview.tokens")}`}
+                  aria-label=${`${this.date(day.date)}: ${this.number(day.messages)} ${t("ui.usageOverview.messages")}`}
                   aria-describedby=${activeDay === day ? "usage-day-tooltip" : nothing}
                   @pointerenter=${() => { this.hoveredDate = day.date; }}
                   @focus=${() => { this.focusedDate = day.date; this.tabDate = day.date; }}
                   @blur=${() => { if (this.focusedDate === day.date) this.focusedDate = undefined; }}
                   @click=${() => { const close = this.pinnedDate === day.date; this.pinnedDate = close ? undefined : day.date; if (close) this.closeTooltip(); }}
-                  @keydown=${(event: KeyboardEvent) => { this.navigateDay(event, index, data.days); }}
-                ></button>
+                  @keydown=${(event: KeyboardEvent) => { this.navigateDay(event, index, availableDays); }}
+                ></button>`}
               `)}
             </div>
             </div>
             ${activeDay === undefined ? nothing : html`
-              <div class="tooltip" id="usage-day-tooltip" role="tooltip" style=${`--column:${String(Math.floor(activeIndex / 7))}; --row:${String(activeIndex % 7)}`}>
-                <strong>${this.date(activeDay.date)}</strong>
-                <dl>${[
-                  [t("ui.usageOverview.totalTokens"), activeDay.totalTokens],
-                  [t("ui.usageOverview.input"), activeDay.tokens.input],
-                  [t("ui.usageOverview.output"), activeDay.tokens.output],
-                  [t("ui.usageOverview.cacheRead"), activeDay.tokens.cacheRead],
-                  [t("ui.usageOverview.cacheWrite"), activeDay.tokens.cacheWrite],
-                  [t("ui.usageOverview.sessions"), activeDay.sessions],
-                ].map(([label, value]) => html`<div><dt>${label}</dt><dd>${this.number(Number(value))}</dd></div>`)}</dl>
-              </div>
+              <div class="tooltip" id="usage-day-tooltip" role="tooltip" data-edge=${activeIndex < 21 ? "start" : activeIndex >= 161 ? "end" : "middle"} style=${`--column:${String(Math.floor(activeIndex / 7))}; --row:${String(activeIndex % 7)}`}>${this.date(activeDay.date, true)} — ${this.number(activeDay.messages)}</div>
             `}
           </div>
           <div class="legend">
@@ -119,11 +111,7 @@ export class UsageOverview extends LitElement {
             <span>${t("ui.usageOverview.more")}</span>
           </div>
         ` : html`
-          <div class="models">
-            ${data.models.length === 0 ? html`<p>${t("ui.usageOverview.emptyModels")}</p>` : html`<ol>${data.models.map((model) => html`
-              <li><div class="model-label"><span>${model.model}</span><span>${this.number(model.totalTokens)} ${t("ui.usageOverview.tokens")}</span></div><div class="model-track" aria-hidden="true"><span style=${`width:${String(data.totalTokens > 0 ? model.totalTokens / data.totalTokens * 100 : 0)}%`}></span></div></li>
-            `)}</ol>`}
-          </div>
+          <usage-models .models=${data.models} .days=${data.modelDays} .totalTokens=${data.totalTokens} .locale=${this.locale}></usage-models>
         `}
       </section>
     `;
@@ -132,21 +120,22 @@ export class UsageOverview extends LitElement {
   static override styles = css`
     :host { display: block; width: 480px; max-width: 100%; color: var(--pi-text, light-dark(#171717, #e5e5e5)); font: var(--pi-font-weight-regular, 360) 12px/16px var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
     * { box-sizing: border-box; }
-    .panel { --usage-surface: light-dark(#fff, var(--pi-surface, #282828)); --usage-cell: light-dark(#e8e8e6, #3e3e3e); --usage-label: light-dark(#605e59, #b3b0aa); --usage-level-1: light-dark(hsl(217 70% 72%), hsl(217 70% 48%)); --usage-level-2: light-dark(hsl(217 70% 64%), hsl(217 70% 56%)); --usage-level-3: light-dark(hsl(217 70% 56%), hsl(217 70% 64%)); --usage-level-4: light-dark(hsl(217 70% 48%), hsl(217 70% 72%)); padding: 12px; border: 0; border-radius: 12px; background: var(--usage-surface); }
+    .panel { --usage-surface: light-dark(#f0f0ef, #282828); --usage-cell: light-dark(#dadad9, #3e3e3e); --usage-label: light-dark(#8f8d88, #898781); --usage-level-1: hsl(217 70% 72%); --usage-level-2: hsl(217 70% 64%); --usage-level-3: hsl(217 70% 56%); --usage-level-4: hsl(217 70% 48%); padding: 8px 12px 12px; border: 0; border-radius: 8px; background: var(--usage-surface); }
     header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 20px; }
     .switch { display: inline-flex; align-items: center; gap: 1px; }
     button { border: 0; font: inherit; color: inherit; cursor: pointer; }
-    .switch button { padding: 2px 6px; border-radius: 5px; color: var(--usage-label); background: transparent; white-space: nowrap; }
+    .switch button { height: 20px; padding: 0 6px; border-radius: 6px; color: var(--usage-label); background: transparent; white-space: nowrap; }
     .switch button[aria-pressed="true"] { background: light-dark(#e5e5e4, #383838); color: var(--pi-text, light-dark(#171717, #e5e5e5)); }
     .switch button:hover { color: var(--pi-text); }
     button:focus-visible { outline: 2px solid var(--pi-accent, #d97757); outline-offset: 2px; }
     dl { margin: 0; }
     .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-bottom: 6px; }
-    .metrics > div { min-width: 0; min-height: 44px; padding: 4px; border-radius: 4px; background: var(--usage-cell); }
+    .metrics > div { min-width: 0; min-height: 44px; padding: 4px; border-radius: 5px; background: var(--usage-cell); }
     dt { color: var(--usage-label); }
     dd { margin: 0; font-variant-numeric: tabular-nums; }
     .metrics dt, .metrics dd { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .metrics dd { margin-top: 2px; font-size: 13px; }
+    .metrics dd { margin-top: 2px; font-size: 13px; line-height: 18px; font-weight: var(--pi-font-weight-semibold, 540); }
+    .metrics dd.model-value { font-size: 12px; font-weight: var(--pi-font-weight-regular, 360); }
     .heatmap-wrap { position: relative; }
     .heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, minmax(0, 1fr)); grid-template-columns: repeat(26, minmax(0, 1fr)); gap: 3px; }
     .day { display: block; width: 100%; min-width: 0; padding: 0; aspect-ratio: 1; border-radius: 2px; background: var(--usage-cell); }
@@ -158,27 +147,17 @@ export class UsageOverview extends LitElement {
     .legend-scale { display: flex; gap: 3px; }
     .legend-cell { width: 11px; height: 11px; border-radius: 2px; background: var(--usage-cell); }
     .day[data-in-range="false"] { opacity: .42; }
-    .day:hover { outline: 1px solid var(--pi-muted, #999); outline-offset: 1px; }
-    .tooltip { position: absolute; z-index: 2; width: min(220px, 100%); left: clamp(0px, calc(var(--column) * (100% + 3px) / 26), max(0px, 100% - 220px)); top: calc(var(--row) * (100% + 3px) / 7 - 6px); transform: translateY(-100%); padding: 10px 12px; border-radius: 8px; background: light-dark(#fcfcfc, #303030); box-shadow: 0 4px 20px #0003; pointer-events: none; }
-    .tooltip strong { display: block; margin-bottom: 6px; font-weight: var(--pi-font-weight-medium, 460); }
-    .tooltip dl > div { display: flex; justify-content: space-between; gap: 12px; }
-    .models { min-height: 215px; }
-    .models > p { margin: 0; padding: 70px 8px; text-align: center; color: var(--usage-label); }
-    ol { margin: 0; padding: 0; list-style: none; }
-    li { padding: 8px 0; }
-    .model-label { display: flex; justify-content: space-between; gap: 10px; }
-    .model-label > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .model-label > span:last-child { flex-shrink: 0; color: var(--usage-label); font-variant-numeric: tabular-nums; }
-    .model-track { height: 4px; margin-top: 5px; border-radius: 2px; background: var(--usage-cell); overflow: hidden; }
-    .model-track > span { display: block; height: 100%; background: light-dark(#969695, #969695); border-radius: inherit; }
+    button.day:hover { outline: 1px solid var(--pi-muted, #999); outline-offset: 1px; }
+    .future { background: transparent; }
+    .tooltip { position: absolute; z-index: 2; width: max-content; max-width: min(240px, 100%); left: calc((var(--column) + .5) * (100% + 3px) / 26 - 1.5px); top: calc(var(--row) * (100% + 3px) / 7 - 4px); transform: translate(-50%, -100%); padding: 2px 8px; border-radius: 6px; background: light-dark(#131313, #252524); color: #efeeeb; font-size: 13px; line-height: 18px; font-weight: var(--pi-font-weight-regular, 360); box-shadow: 0 1px 3px #0003, 0 0 0 1px #ffffff14; pointer-events: none; }
+    .tooltip[data-edge="start"] { transform: translate(0, -100%); }
+    .tooltip[data-edge="end"] { transform: translate(-100%, -100%); }
     @media (max-width: 760px), (pointer: coarse) {
       header { flex-wrap: wrap; gap: 4px 8px; margin-bottom: 10px; }
       .switch button { min-width: 44px; min-height: 44px; padding-inline: 6px; }
       .metrics dt { white-space: normal; overflow-wrap: anywhere; }
       .metrics > div { min-height: 56px; }
-      .heatmap-scroll { overflow-x: auto; overscroll-behavior-x: contain; direction: rtl; scrollbar-width: thin; }
-      .heatmap { direction: ltr; min-width: 699px; }
-      .tooltip { position: static; box-sizing: border-box; width: 100%; margin-top: 8px; transform: none; }
+      .tooltip { max-width: 100%; }
     }
     @media (max-width: 360px) { .panel { padding-inline: 9px; } header { gap: 4px; } .switch button { padding-inline: 4px; } }
   `;
