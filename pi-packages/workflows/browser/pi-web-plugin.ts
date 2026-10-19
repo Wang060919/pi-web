@@ -1,5 +1,5 @@
 import { t } from "./i18n.js";
-import type { PiWebPlugin, PluginRuntimeContext } from "@jmfederico/pi-web/plugin-api";
+import type { PiWebPlugin, PluginRuntimeContext } from "@wang060919/pi-web/plugin-api";
 
 type WorktreePromptContext = Pick<PluginRuntimeContext, "state" | "prompt" | "focusPrompt">;
 

@@ -1,5 +1,5 @@
 import { localizedText, t } from "./i18n.js";
-import type { WorkspacePanelContext } from "@jmfederico/pi-web/plugin-api";
+import type { WorkspacePanelContext } from "@wang060919/pi-web/plugin-api";
 import { isMarkdownDocumentPath, renderRelayDocumentHtml } from "./markdownDocument.js";
 import { isRelayPacketPath } from "./relayIdentity.js";
 import {

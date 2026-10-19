@@ -40,7 +40,7 @@ import type {
   WorkspaceProviderIntegration,
   WorkspaceRemovalPresentation,
   WorkspaceRemovePlan,
-} from "@jmfederico/pi-web/server-plugin-api";
+} from "@wang060919/pi-web/server-plugin-api";
 
 const project: ProjectInput = { id: "project-1", name: "Project", path: "/repo" };
 const commandResult: ServerPluginExecFileResult = {

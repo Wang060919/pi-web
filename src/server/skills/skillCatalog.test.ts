@@ -20,11 +20,11 @@ const context = (projectTrusted = false) => ({ agentDir: join(root, "agent"), cw
 describe("read-only skill browser", () => {
   it("uses SDK skill discovery and trust, preserving source and invocation metadata", async () => {
     const global = await readSkillCatalog(context());
-    expect(global.skills.map((skill) => skill.name)).toEqual(["review"]);
-    expect(global.skills[0]).toMatchObject({ scope: "user", modelInvocation: false });
+    expect(global.skills).toEqual(expect.arrayContaining([expect.objectContaining({ name: "review", scope: "user", modelInvocation: false })]));
+    expect(global.skills.some((skill) => skill.name === "project-review")).toBe(false);
     const trusted = await readSkillCatalog(context(true));
     expect(trusted.skills).toEqual(expect.arrayContaining([expect.objectContaining({ name: "project-review", scope: "project" })]));
-    const skill = global.skills[0];
+    const skill = global.skills.find((entry) => entry.name === "review");
     if (skill === undefined) throw new Error("Missing review skill");
     const document = await readSkillDocument(global, skill.id);
     expect(document.path).toBe("SKILL.md");
@@ -38,13 +38,14 @@ describe("read-only skill browser", () => {
     await writeFile(join(root, "agent/explode.ts"), "throw new Error('must not import this extension');");
     const catalog = await readSkillCatalog(context());
     expect(catalog.diagnostics).toContain("Package is not installed: npm:pi-web-intentionally-missing-browser-fixture@0.0.0");
-    expect(catalog.skills).toHaveLength(1);
+    expect(catalog.skills).toEqual(expect.arrayContaining([expect.objectContaining({ name: "review" })]));
+    expect(catalog.skills.some((skill) => skill.source.includes("pi-web-intentionally-missing-browser-fixture"))).toBe(false);
     expect(await readFile(join(root, "agent/settings.json"), "utf8")).toBe(settings);
   });
 
   it("rejects unknown skills, traversal, symlink escapes, non-Markdown links and oversized files", async () => {
     const catalog = await readSkillCatalog(context());
-    const id = catalog.skills[0]?.id;
+    const id = catalog.skills.find((skill) => skill.name === "review")?.id;
     if (id === undefined) throw new Error("Missing review skill");
     await writeFile(join(root, "agent/private.md"), "secret");
     await symlink(join(root, "agent/private.md"), join(root, "agent/skills/review/escape.md"));

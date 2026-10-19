@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { JsonValue, PluginPeer, WorkspacePanelContext } from "@jmfederico/pi-web/plugin-api";
+import type { JsonValue, PluginPeer, WorkspacePanelContext } from "@wang060919/pi-web/plugin-api";
 import { TerminalBrowserRuntime } from "./TerminalBrowserRuntime";
 import { InMemoryTerminalSelectionMemory } from "./terminalSelection";
 

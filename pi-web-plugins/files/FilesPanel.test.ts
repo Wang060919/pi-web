@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { FileContentResponse, FileTreeResponse, WorkspaceFilesCapabilityV1, WorkspacePanelContext, WorkspacePanelNavigationV1, WriteWorkspaceFileResponse } from "@jmfederico/pi-web/plugin-api";
+import type { FileContentResponse, FileTreeResponse, WorkspaceFilesCapabilityV1, WorkspacePanelContext, WorkspacePanelNavigationV1, WriteWorkspaceFileResponse } from "@wang060919/pi-web/plugin-api";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WorkspaceFilesPanel, startDirectWorkspaceUpload, uploadBatchProgressValue, uploadBatchStatusLabel, workspaceUploadReviewDefaults, workspaceUploadReviewError } from "./FilesPanel";
 import { FilesRuntime, type WorkspaceUploadBatchState } from "./FilesRuntime";

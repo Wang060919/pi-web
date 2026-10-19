@@ -45,7 +45,7 @@ The Docker bootstrap does not require Node.js or npm on the host. It only needs 
 Install with the bootstrap one-liner:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jmfederico/pi-web/main/docker/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Wang060919/pi-web/main/docker/install.sh | sh
 ```
 
 The one-liner is idempotent. Each run refreshes Docker assets from the requested Git ref, writes host-specific `.env` values, rebuilds the local image from npm with `--pull --no-cache`, and recreates the split services without deleting persistent data. After installation, use the canonical runtime command in the install directory, for example `~/.local/share/pi-web-docker/pi-web-docker update`.
@@ -55,7 +55,7 @@ Defaults:
 - install directory: `~/.local/share/pi-web-docker` (or `$XDG_DATA_HOME/pi-web-docker`);
 - persistent data: `<install-dir>/data`, mounted at `/data`;
 - browser URL: <http://127.0.0.1:8504>;
-- npm packages: latest `@jmfederico/pi-web`; Pi Coding Agent is resolved as PI WEB's npm peer dependency (newest compatible version) and the peer-provided `pi` binary is linked into the image.
+- npm packages: latest `@wang060919/pi-web`; Pi Coding Agent is resolved as PI WEB's npm peer dependency (newest compatible version) and the peer-provided `pi` binary is linked into the image.
 
 Updating recreates the Docker `sessiond` container. Active Pi agent runtimes in this Docker install may stop, so update while sessions are idle. Persisted PI WEB state, Pi config, and session history under the data directory are kept.
 
@@ -91,7 +91,7 @@ Do not run `docker compose down -v` unless you intentionally want to remove Comp
 The installer accepts flags and equivalent environment variables:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jmfederico/pi-web/main/docker/install.sh \
+curl -fsSL https://raw.githubusercontent.com/Wang060919/pi-web/main/docker/install.sh \
   | sh -s -- \
       --install-dir ~/.local/share/pi-web-docker \
       --data-dir ~/.local/share/pi-web-docker/data \
@@ -112,7 +112,7 @@ Common environment variables written to `.env`:
 | `PI_WEB_DOCKER_HOST_PROFILE`, `PI_WEB_DOCKER_SOCKET_SOURCE`, `HOSTEXEC_MODE` | Docker host facts: detected host profile, host Docker socket path, and host-command capability toggle |
 | `PI_WEB_DOCKER_EXTRA_HOST_PATHS` | optional whitespace-separated existing absolute paths to bind-mount read/write at the same path |
 | `PI_WEB_BIND_ADDR`, `PI_WEB_PORT` | host bind address and port |
-| `PI_WEB_VERSION` | npm version/range for `@jmfederico/pi-web`; Pi Coding Agent resolves from PI WEB's npm peer dependency |
+| `PI_WEB_VERSION` | npm version/range for `@wang060919/pi-web`; Pi Coding Agent resolves from PI WEB's npm peer dependency |
 | `PI_WEB_OPENSUSE_IMAGE` | openSUSE base image used for the runtime build |
 | `PI_WEB_NODEJS_MAJOR` | Node.js major package to install, defaulting to `22` |
 | `PI_WEB_NODEJS_REPO` | Node.js zypper repository URL, `auto`, or `disabled` |
@@ -133,7 +133,7 @@ Install extra distro packages without writing a hook by setting a whitespace-del
 
 ```bash
 PI_WEB_EXTRA_ZYPPER_PACKAGES="go rustup kubernetes-client" \
-  curl -fsSL https://raw.githubusercontent.com/jmfederico/pi-web/main/docker/install.sh | sh
+  curl -fsSL https://raw.githubusercontent.com/Wang060919/pi-web/main/docker/install.sh | sh
 ```
 
 You can also pass installer flags such as `--opensuse-image`, `--nodejs-major`, `--nodejs-repo`, and `--extra-zypper-packages`, or edit the generated `.env` and rerun the installer.
@@ -160,7 +160,7 @@ zypper --non-interactive install --no-recommends glab kubernetes-client
 zypper clean --all
 EOF
 chmod +x ~/.local/share/pi-web-docker/custom-image.d/10-extra-tools.sh
-curl -fsSL https://raw.githubusercontent.com/jmfederico/pi-web/main/docker/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Wang060919/pi-web/main/docker/install.sh | sh
 ```
 
 Keep credentials out of these scripts. Authenticate tools after the container starts so secrets live in the persistent `/data` mount, for example through `/data/home` and `/data/config`.
@@ -194,7 +194,7 @@ This switch only has an effect where PI WEB has facts to add, which today means 
 Pi Coding Agent is resolved from PI WEB's npm peer dependency, and Docker links the peer-provided `pi` binary into `PATH`. Pin the PI WEB npm package when you want to stay on a specific PI WEB release:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jmfederico/pi-web/main/docker/install.sh \
+curl -fsSL https://raw.githubusercontent.com/Wang060919/pi-web/main/docker/install.sh \
   | sh -s -- --pi-web-version 1.202606.4
 ```
 
@@ -210,7 +210,7 @@ To pin the Docker asset templates themselves, fetch the installer from a specifi
 
 ```bash
 ref=<git-ref>
-curl -fsSL "https://raw.githubusercontent.com/jmfederico/pi-web/$ref/docker/install.sh" \
+curl -fsSL "https://raw.githubusercontent.com/Wang060919/pi-web/$ref/docker/install.sh" \
   | sh -s -- --asset-ref "$ref"
 ```
 
@@ -271,7 +271,7 @@ ssh -L 8504:127.0.0.1:8504 user@server
 For a trusted VPN/private interface, bind to that private address:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jmfederico/pi-web/main/docker/install.sh \
+curl -fsSL https://raw.githubusercontent.com/Wang060919/pi-web/main/docker/install.sh \
   | sh -s -- --bind-address 100.x.y.z --port 8504
 ```
 

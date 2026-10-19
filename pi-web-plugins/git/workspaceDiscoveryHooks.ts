@@ -6,7 +6,7 @@ import type {
   ServerPluginActivationContext,
   ServerPluginExecFileResult,
   WorkspaceProviderIntegration,
-} from "@jmfederico/pi-web/server-plugin-api";
+} from "@wang060919/pi-web/server-plugin-api";
 
 type RunGit = (cwd: string, args: readonly string[], signal: AbortSignal) => Promise<ServerPluginExecFileResult>;
 interface ConfigValue { scope: string; value: string }

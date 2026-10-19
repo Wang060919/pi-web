@@ -10,7 +10,7 @@ import type {
   PiWebServerPlugin,
   ServerPluginActivation,
   ServerPluginActivationContext,
-} from "@jmfederico/pi-web/server-plugin-api";
+} from "@wang060919/pi-web/server-plugin-api";
 import {
   TerminalService,
   type CreateTerminalOptions,

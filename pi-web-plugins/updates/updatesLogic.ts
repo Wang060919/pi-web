@@ -1,5 +1,5 @@
 import { t } from "./i18n.js";
-import type { PiWebDockerMode, PiWebInstallationInfo, PiWebStatusMessage, PiWebStatusResponse, PluginRuntimeState } from "@jmfederico/pi-web/plugin-api";
+import type { PiWebDockerMode, PiWebInstallationInfo, PiWebStatusMessage, PiWebStatusResponse, PluginRuntimeState } from "@wang060919/pi-web/plugin-api";
 
 export interface CommandEntry {
   label: string;
@@ -67,13 +67,13 @@ export function fallbackDockerStatus(hint: UpdatesRuntimeHint, generatedAt = t("
   const commandPrefix = hint.dockerMode === "dev" ? "pi-web-docker --dev" : "pi-web-docker";
   const installation: PiWebInstallationInfo = { kind: "docker", dockerMode: hint.dockerMode };
   return {
-    packageName: "@jmfederico/pi-web",
+    packageName: "@wang060919/pi-web",
     generatedAt,
     components: {
       web: { component: "web", label: t("updatesLogic.web_ui.2cd4616e"), stale: false, available: true, installation },
       sessiond: { component: "sessiond", label: t("updatesLogic.session_daemon.9e3fe90d"), stale: false, available: true, installation },
     },
-    release: { packageName: "@jmfederico/pi-web", updateAvailable: false, skipped: true },
+    release: { packageName: "@wang060919/pi-web", updateAvailable: false, skipped: true },
     commands: {
       // The development image mounts its built checkout at /workspace and does
       // not install a global pi-web executable. Both invoke the same CLI.

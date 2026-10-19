@@ -47,7 +47,7 @@ describe("PI WEB status", () => {
 
     const status = await getPiWebVersionStatus(daemon);
 
-    expect(status.packageName).toBe("@jmfederico/pi-web");
+    expect(status.packageName).toBe("@wang060919/pi-web");
     expect(status.components.web.component).toBe("web");
     expect(status.components.sessiond.runtimeVersion).toBe("1.202605.7");
     expect(status).not.toHaveProperty("release");
@@ -323,7 +323,7 @@ describe("PI WEB status", () => {
     const hasCommand = vi.fn(() => Promise.resolve(true));
 
     const updateCommand = updateCommandFor(
-      { kind: "pi-package", source: "npm:@jmfederico/pi-web", scope: "user", path: "/tmp/pi-web" },
+      { kind: "pi-package", source: "npm:@wang060919/pi-web", scope: "user", path: "/tmp/pi-web" },
       { activeAgentProfile: undefined, hasCommand },
     );
 
@@ -334,7 +334,7 @@ describe("PI WEB status", () => {
   it("preserves and shell-quotes the active state profile in Pi-package update commands", () => {
     const dir = "/tmp/profile's/state";
     const updateCommand = updateCommandFor(
-      { kind: "pi-package", source: "npm:@jmfederico/pi-web", scope: "user", path: "/tmp/pi-web" },
+      { kind: "pi-package", source: "npm:@wang060919/pi-web", scope: "user", path: "/tmp/pi-web" },
       {
         activeAgentProfile: activeProfile(dir),
         hasCommand: () => Promise.resolve(false),
@@ -346,27 +346,27 @@ describe("PI WEB status", () => {
 
   it("delegates npm-global updates to the interactive shared CLI", () => {
     const updateCommand = updateCommandFor(
-      { kind: "npm-global", path: "/opt/npm/@jmfederico/pi-web" },
+      { kind: "npm-global", path: "/opt/npm/@wang060919/pi-web" },
       { activeAgentProfile: undefined, hasCommand: (candidate) => Promise.resolve(candidate === "pi-web") },
     );
 
-    expect(updateCommand).toBe(`${shellQuote(process.execPath)} ${shellQuote(join("/opt/npm/@jmfederico/pi-web", "dist", "cli.js"))} update`);
+    expect(updateCommand).toBe(`${shellQuote(process.execPath)} ${shellQuote(join("/opt/npm/@wang060919/pi-web", "dist", "cli.js"))} update`);
   });
 
   it("targets the same npm installation even when pi-web is unavailable on PATH", () => {
     const updateCommand = updateCommandFor(
-      { kind: "npm-global", path: "/opt/npm/@jmfederico/pi-web" },
+      { kind: "npm-global", path: "/opt/npm/@wang060919/pi-web" },
       { activeAgentProfile: undefined, hasCommand: () => Promise.resolve(false) },
     );
 
-    expect(updateCommand).toBe(`${shellQuote(process.execPath)} ${shellQuote(join("/opt/npm/@jmfederico/pi-web", "dist", "cli.js"))} update`);
+    expect(updateCommand).toBe(`${shellQuote(process.execPath)} ${shellQuote(join("/opt/npm/@wang060919/pi-web", "dist", "cli.js"))} update`);
   });
 
   it("suppresses Pi-package updates when the active state profile cannot be represented safely", () => {
     const hasCommand = vi.fn(() => Promise.resolve(true));
 
     const updateCommand = updateCommandFor(
-      { kind: "pi-package", source: "npm:@jmfederico/pi-web", scope: "user", path: "/tmp/pi-web" },
+      { kind: "pi-package", source: "npm:@wang060919/pi-web", scope: "user", path: "/tmp/pi-web" },
       { activeAgentProfile: activeProfile("relative/state"), hasCommand },
     );
 

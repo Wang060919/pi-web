@@ -30,10 +30,10 @@ function fixture(installation: PiWebInstallationInfo = { kind: "docker", dockerM
   return deps;
 }
 const globalInstall: PiWebInstallationInfo = {
-  kind: "npm-global", path: "/opt/node/lib/node_modules/@jmfederico/pi-web", npmRoot: "/opt/node/lib/node_modules",
+  kind: "npm-global", path: "/opt/node/lib/node_modules/@wang060919/pi-web", npmRoot: "/opt/node/lib/node_modules",
 };
 const piInstall: PiWebInstallationInfo = {
-  kind: "pi-package", path: "/profiles/active agent/npm/node_modules/@jmfederico/pi-web", scope: "user", source: "npm:@jmfederico/pi-web",
+  kind: "pi-package", path: "/profiles/active agent/npm/node_modules/@wang060919/pi-web", scope: "user", source: "npm:@wang060919/pi-web",
 };
 const localInstall: PiWebInstallationInfo = { kind: "local", path: "/workspace/pi-web" };
 
@@ -312,8 +312,8 @@ describe("runPiWebUpdate", () => {
     const npmPrefix = basename(dirname(globalInstall.npmRoot ?? "")) === "lib" ? dirname(dirname(globalInstall.npmRoot ?? "")) : dirname(globalInstall.npmRoot ?? "");
     expect(deps.capture).toHaveBeenCalledWith({ executable: "npm", args: ["root", "--global", "--prefix", npmPrefix], env: deps.env });
     expect(deps.run.mock.calls.map(([command]) => [command.executable, command.args])).toEqual([
-      ["npm", ["install", "--global", "--prefix", resolve(npmPrefix), "@jmfederico/pi-web@latest", "--allow-scripts=node-pty"]],
-      ["/tools/node", [join("/opt/node/lib/node_modules/@jmfederico/pi-web", "dist", "cli.js"), "restart"]],
+      ["npm", ["install", "--global", "--prefix", resolve(npmPrefix), "@wang060919/pi-web@latest", "--allow-scripts=node-pty"]],
+      ["/tools/node", [join("/opt/node/lib/node_modules/@wang060919/pi-web", "dist", "cli.js"), "restart"]],
     ]);
   });
 
@@ -335,7 +335,7 @@ describe("runPiWebUpdate", () => {
     await runPiWebUpdate(["--yes"], deps);
     expect(deps.detectInstallation).toHaveBeenCalledWith("/profiles/active agent");
     expect(deps.run.mock.calls[0]).toEqual([{
-      executable: "/tools/node", args: ["/owned/pi/dist/cli.js", "update", "--no-approve", "--extension", "npm:@jmfederico/pi-web"],
+      executable: "/tools/node", args: ["/owned/pi/dist/cli.js", "update", "--no-approve", "--extension", "npm:@wang060919/pi-web"],
       env: { PATH: "/tools/bin", PI_CODING_AGENT_DIR: "/profiles/active agent" },
     }]);
     expect(deps.run.mock.calls[1]?.[0].args).toEqual([join(piInstall.path ?? "", "dist", "cli.js"), "restart"]);

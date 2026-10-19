@@ -1,4 +1,4 @@
-import type { ContentRendererInput, PiWebPlugin } from "@jmfederico/pi-web/plugin-api";
+import type { ContentRendererInput, PiWebPlugin } from "@wang060919/pi-web/plugin-api";
 import { loadMermaidEngine, MermaidPreview } from "./MermaidPreview";
 
 const plugin: PiWebPlugin = {

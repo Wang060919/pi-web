@@ -1,13 +1,15 @@
 # PI WEB
 
-[![CI](https://github.com/jmfederico/pi-web/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jmfederico/pi-web/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/@jmfederico/pi-web)](https://www.npmjs.com/package/@jmfederico/pi-web)
-[![Node.js](https://img.shields.io/node/v/@jmfederico/pi-web)](package.json)
+[![CI](https://github.com/Wang060919/pi-web/actions/workflows/ci.yml/badge.svg?branch=codex%2Fpi-web-dev)](https://github.com/Wang060919/pi-web/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/@wang060919/pi-web)](https://www.npmjs.com/package/@wang060919/pi-web)
+[![Node.js](https://img.shields.io/node/v/@wang060919/pi-web)](package.json)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **PI WEB is a web UI for [Pi Coding Agent](https://github.com/earendil-works/pi/tree/main/packages/coding-agent) that keeps agent sessions running in real workspaces on your machine or server.**
 
 Run agents where your code, tools, credentials, and build caches live. Supervise multiple sessions from any browser, even after disconnecting.
+
+This is Wang060919's customized distribution of [upstream PI WEB](https://github.com/jmfederico/pi-web), published as `@wang060919/pi-web`.
 
 ![PI WEB desktop screenshot](docs/assets/pi-web-desktop.png)
 
@@ -16,7 +18,7 @@ Run agents where your code, tools, credentials, and build caches live. Supervise
 Requires Node.js 22.19.0+, npm, Pi Coding Agent 1.x configured for your user, git, and the development tools your agents need.
 
 ```bash
-npm install -g @jmfederico/pi-web --allow-scripts=node-pty
+npm install -g @wang060919/pi-web --allow-scripts=node-pty
 pi-web install
 pi-web doctor
 ```
@@ -33,7 +35,7 @@ pi-web update
 pi-web uninstall
 ```
 
-For installation variants, Docker, and remote access, see the [installation guide](https://pi-web.dev/install).
+For installation variants, Docker, and remote access, see the [installation guide](docs/install.html). See [independent distribution](docs/npm-release.md) for migration and release setup.
 
 ## Core model
 
@@ -52,13 +54,12 @@ For remote access, use a trusted private network, VPN, SSH tunnel, or authentica
 
 ## Documentation
 
-- [Website](https://pi-web.dev/)
-- [Install](https://pi-web.dev/install)
-- [Remote-first development](https://pi-web.dev/remote-first)
-- [Machines / fleet](https://pi-web.dev/machines)
-- [Configuration](https://pi-web.dev/config)
-- [Plugins](https://pi-web.dev/plugins)
-- [FAQ](https://pi-web.dev/faq)
+- [Install](docs/install.html)
+- [Remote-first development](docs/remote-first.html)
+- [Machines / fleet](docs/machines.html)
+- [Configuration](docs/config.md)
+- [Plugins](docs/plugins.md)
+- [FAQ](docs/faq.html)
 
 ## Development
 

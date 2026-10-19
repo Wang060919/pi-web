@@ -1,4 +1,4 @@
-import type { PluginActivationContext } from "@jmfederico/pi-web/plugin-api";
+import type { PluginActivationContext } from "@wang060919/pi-web/plugin-api";
 import { Lexer, type MarkedToken, type Token } from "marked";
 
 type Html = PluginActivationContext["html"];

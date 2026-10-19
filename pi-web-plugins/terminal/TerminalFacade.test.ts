@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { JsonValue, PluginPeer, TerminalCommandRun, Workspace } from "@jmfederico/pi-web/plugin-api";
+import type { JsonValue, PluginPeer, TerminalCommandRun, Workspace } from "@wang060919/pi-web/plugin-api";
 import { TerminalFacade } from "./TerminalFacade";
 
 const workspace: Workspace = {

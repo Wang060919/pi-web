@@ -1,4 +1,4 @@
-import type { PluginActivationContext, WorkspacePanelContext } from "@jmfederico/pi-web/plugin-api";
+import type { PluginActivationContext, WorkspacePanelContext } from "@wang060919/pi-web/plugin-api";
 import type { LogEntry } from "./protocol.js";
 import { renderCaptainMarkdown } from "./markdown.js";
 

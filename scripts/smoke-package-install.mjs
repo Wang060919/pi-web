@@ -59,7 +59,7 @@ try {
     "--no-fund",
   ], root);
 
-  const packageRoot = join(globalPrefix, "lib", "node_modules", "@jmfederico", "pi-web");
+  const packageRoot = join(globalPrefix, "lib", "node_modules", "@wang060919", "pi-web");
   await smokeInstalledPiSdk(packageRoot);
   await smokeInstalledTypebox(packageRoot, true);
   await smokePiPackageExtension(packageRoot);
@@ -74,7 +74,7 @@ try {
     "install", tarballPath, "--prefix", managedRoot, "--legacy-peer-deps",
     "--ignore-scripts", "--no-audit", "--no-fund",
   ], managedRoot);
-  const managedPackageRoot = join(managedRoot, "node_modules", "@jmfederico", "pi-web");
+  const managedPackageRoot = join(managedRoot, "node_modules", "@wang060919", "pi-web");
   assert.throws(() => createRequire(join(managedPackageRoot, "package.json")).resolve("@earendil-works/pi-coding-agent"),
     { code: "MODULE_NOT_FOUND" }, "Managed fixture must not auto-install the Pi SDK peer");
   // Only TypeBox resolution is under test here, not provisioning the server's Pi SDK peers.

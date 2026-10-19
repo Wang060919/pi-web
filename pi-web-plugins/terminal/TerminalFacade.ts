@@ -9,7 +9,7 @@ import type {
   PluginPeer,
   WorkspacePanelTerminal,
   WorkspaceTerminalCommandInput,
-} from "@jmfederico/pi-web/plugin-api";
+} from "@wang060919/pi-web/plugin-api";
 import { TerminalPeerClient, parseTerminalCommandRun, type TerminalCommandRunFilter } from "./terminalProtocol";
 
 type TimerId = ReturnType<typeof globalThis.setTimeout>;

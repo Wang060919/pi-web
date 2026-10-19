@@ -24,7 +24,7 @@ import type {
   WorkspacePanelContext,
   WorkspacePanelContribution,
   WorkspacePanelFiles,
-} from "@jmfederico/pi-web/plugin-api";
+} from "@wang060919/pi-web/plugin-api";
 
 export function checkPanelContributionIds(application: ApplicationPanelContribution, workspace: WorkspacePanelContribution): void {
   // @ts-expect-error Panel migration aliases are not public API.

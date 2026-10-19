@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { html } from "lit";
 import { createContentRenderingCapability } from "../../src/client/src/formatting/contentRendering";
 import { ContentRendererHost } from "../../src/client/src/components/ContentRendererHost";
-import type { ContentRenderingCapability, FileContentResponse } from "@jmfederico/pi-web/plugin-api";
+import type { ContentRenderingCapability, FileContentResponse } from "@wang060919/pi-web/plugin-api";
 import { adoptWorkspaceFileViewMode, WORKSPACE_FILE_VIEW_MODE_STORAGE_KEY, type WorkspaceFileViewMode, type WorkspaceFileViewModeStore } from "./workspaceFileViewMode";
 import { DEFAULT_MAX_INLINE_PREVIEW_BYTES as MAX_INLINE_PREVIEW_BYTES, WorkspaceFileViewer, workspaceFilePreviewKind, workspaceFileViewerIdentityKey, type WorkspaceFileViewerIdentity } from "./FilesViewer";
 

@@ -7,7 +7,7 @@
   "keywords": ["pi-package"],
   "scripts": { "build": "tsc -p tsconfig.json" },
   "devDependencies": {
-    "@jmfederico/pi-web": "^1.202609.1",
+    "@wang060919/pi-web": "^1.202609.1",
     "@earendil-works/pi-coding-agent": "^1.1.0",
     "@types/node": "^24.19.2",
     "typescript": "^6.0.3"

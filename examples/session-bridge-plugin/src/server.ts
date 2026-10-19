@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { PI_WEB_HOST_PI_SESSIONS_CAPABILITY, PI_WEB_HOST_PI_SESSION_EVENTS_CAPABILITY } from "@jmfederico/pi-web/server-plugin-api";
-import type { PiWebHostPiSessionsV1, PiWebHostPiSessionEventsV1, PiWebServerPlugin, ServerPluginActivationContext } from "@jmfederico/pi-web/server-plugin-api";
+import { PI_WEB_HOST_PI_SESSIONS_CAPABILITY, PI_WEB_HOST_PI_SESSION_EVENTS_CAPABILITY } from "@wang060919/pi-web/server-plugin-api";
+import type { PiWebHostPiSessionsV1, PiWebHostPiSessionEventsV1, PiWebServerPlugin, ServerPluginActivationContext } from "@wang060919/pi-web/server-plugin-api";
 import type { Review } from "./browser/protocol.js";
 import { collectReview } from "./reviewRun.js";
 import { ReviewStore, reviewScope } from "./store.js";

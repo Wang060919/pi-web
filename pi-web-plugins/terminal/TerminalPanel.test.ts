@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { JsonValue, PluginPeerChannelOptions, PluginPeer, WorkspacePanelContext, WorkspacePanelNavigationV1 } from "@jmfederico/pi-web/plugin-api";
+import type { JsonValue, PluginPeerChannelOptions, PluginPeer, WorkspacePanelContext, WorkspacePanelNavigationV1 } from "@wang060919/pi-web/plugin-api";
 import { Terminal } from "@xterm/xterm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TerminalBrowserRuntime } from "./TerminalBrowserRuntime";

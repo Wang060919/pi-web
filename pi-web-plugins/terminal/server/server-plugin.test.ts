@@ -8,7 +8,7 @@ import type {
   ProjectInput,
   ServerPluginActivationContext,
   ServerPluginNoticeInput,
-} from "@jmfederico/pi-web/server-plugin-api";
+} from "@wang060919/pi-web/server-plugin-api";
 import {
   activateTerminalPlugin,
   createTerminalPeer,

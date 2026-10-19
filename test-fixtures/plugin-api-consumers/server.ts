@@ -1,14 +1,14 @@
 import {
   PI_WEB_HOST_PI_SESSIONS_CAPABILITY,
   PI_WEB_HOST_WORKSPACES_CAPABILITY,
-} from "@jmfederico/pi-web/server-plugin-api";
+} from "@wang060919/pi-web/server-plugin-api";
 import type {
   PiWebHostPiSessionsV1,
   PiWebHostWorkspacesV1,
   PluginCapability,
   ServerPluginPeer,
   PiWebServerPlugin,
-} from "@jmfederico/pi-web/server-plugin-api";
+} from "@wang060919/pi-web/server-plugin-api";
 
 interface FixtureDependencyV1 {
   readonly status: () => string;

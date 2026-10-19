@@ -59,7 +59,7 @@ export interface ReconcileAutoInstallablePiPackagesOptions {
   installer: PiPackageAutoInstaller;
   dismissalChecker?: PiPackageAutoInstallDismissalChecker;
   identityResolver?: PiPackageAutoInstallIdentityResolver;
-  /** Running `@jmfederico/pi-web` package root; shipped package paths resolve relative to this. Defaults to this module's own package root. */
+  /** Running `@wang060919/pi-web` package root; shipped package paths resolve relative to this. Defaults to this module's own package root. */
   packageRoot?: string;
   /** Known auto-installable packages to reconcile. Defaults to the production registry; overridable for tests. */
   knownPackages?: readonly KnownAutoInstallablePiPackage[];

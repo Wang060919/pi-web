@@ -4,14 +4,14 @@ This standalone package is a copyable starting point for a trusted PI WEB plugin
 
 The example imports only the supported package declarations:
 
-- `@jmfederico/pi-web/plugin-api`
-- `@jmfederico/pi-web/server-plugin-api`
+- `@wang060919/pi-web/plugin-api`
+- `@wang060919/pi-web/server-plugin-api`
 
 It requires PI WEB `^1.202609.1`; `1.202609.1` is the first release of the API v4/v3 plugin platform used here.
 
 ## Build and install
 
-Copy `examples/workspace-provider-plugin/` out of the PI WEB repository or installed `@jmfederico/pi-web` package, then run:
+Copy `examples/workspace-provider-plugin/` out of the PI WEB repository or installed `@wang060919/pi-web` package, then run:
 
 ```bash
 npm install

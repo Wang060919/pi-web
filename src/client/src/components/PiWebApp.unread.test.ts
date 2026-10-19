@@ -1,10 +1,12 @@
+// @vitest-environment happy-dom
+// @vitest-environment-options {"url":"https://pi.example.test/"}
 import type { TemplateResult } from "lit";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Machine, SessionInfo, SessionUnreadEvent, SessionUnreadSummary } from "../api";
 import { initialAppState, type AppState } from "../appState";
 import type { BrowserRealtimeEvent } from "../sessionSocket";
 import type { AppMobileMainTab } from "./appShell/AppMobileMainTabs";
-// Template inspection is proportionate here because this node-environment test
+// Template inspection is proportionate here because this controller wiring test
 // verifies only PiWebApp's unread-state property wiring into navigation.
 import { templateValueAfterMarker } from "../templateInspection.testSupport";
 import { PiWebApp } from "./PiWebApp";

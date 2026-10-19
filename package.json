@@ -1,7 +1,7 @@
 {
-  "name": "@jmfederico/pi-web",
-  "version": "1.202610.3",
-  "description": "Web UI for persistent Pi Coding Agent sessions in real workspaces.",
+  "name": "@wang060919/pi-web",
+  "version": "1.202610.4",
+  "description": "Customized PI WEB for persistent Pi Coding Agent sessions, maintained by Wang060919.",
   "license": "MIT",
   "author": "Federico Jaramillo Martinez",
   "type": "module",
@@ -134,12 +134,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jmfederico/pi-web.git"
+    "url": "git+https://github.com/Wang060919/pi-web.git"
   },
   "bugs": {
-    "url": "https://github.com/jmfederico/pi-web/issues"
+    "url": "https://github.com/Wang060919/pi-web/issues"
   },
-  "homepage": "https://pi-web.dev/",
+  "homepage": "https://github.com/Wang060919/pi-web#readme",
   "packageManager": "npm@11.11.0",
   "peerDependencies": {
     "@earendil-works/pi-agent-core": "^1.0.0",
@@ -168,6 +168,9 @@
     "extensions": [
       "./extensions"
     ],
-    "image": "https://raw.githubusercontent.com/jmfederico/pi-web/main/docs/assets/pi-web-banner.png"
-  }
+    "image": "https://raw.githubusercontent.com/Wang060919/pi-web/codex/pi-web-dev/docs/assets/pi-web-banner.png"
+  },
+  "contributors": [
+    "Wang060919"
+  ]
 }

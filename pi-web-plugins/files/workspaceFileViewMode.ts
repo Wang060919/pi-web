@@ -1,4 +1,4 @@
-import type { WorkspacePanelNavigationV1 } from "@jmfederico/pi-web/plugin-api";
+import type { WorkspacePanelNavigationV1 } from "@wang060919/pi-web/plugin-api";
 
 export type WorkspaceFileViewMode = "preview" | "raw";
 

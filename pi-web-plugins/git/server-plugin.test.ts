@@ -10,7 +10,7 @@ import type {
   ServerPluginExecFileResult,
   ServerPluginPeer,
   WorkspaceProvider,
-} from "@jmfederico/pi-web/server-plugin-api";
+} from "@wang060919/pi-web/server-plugin-api";
 import type { Project } from "../../src/shared/apiTypes.js";
 import { PluginBackendRegistry } from "../../src/server/plugins/pluginBackendRegistry.js";
 import { createServerPluginExecFile } from "../../src/server/plugins/serverPluginExec.js";

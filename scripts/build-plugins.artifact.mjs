@@ -253,7 +253,7 @@ describe("plugin delivery artifacts", () => {
       for (const packagePath of browserJavaScript) {
         const file = join(target, packagePath);
         const sourceText = await readFile(file, "utf8");
-        expect(sourceText).not.toMatch(/@jmfederico\/pi-web|src\/client\/src|(?:\.\.\/)+src\//u);
+        expect(sourceText).not.toMatch(/@wang060919\/pi-web|src\/client\/src|(?:\.\.\/)+src\//u);
         for (const specifier of moduleSpecifiers(sourceText)) {
           expect(specifier, `${packagePath} contains a bare or absolute runtime import`).toMatch(/^\.\.?\//u);
           const dependency = resolve(dirname(file), specifier);

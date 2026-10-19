@@ -9,7 +9,7 @@ import type {
   WorkspacePanelContext,
   WorkspacePanelNavigationV1,
   WriteWorkspaceFileResponse,
-} from "@jmfederico/pi-web/plugin-api";
+} from "@wang060919/pi-web/plugin-api";
 
 const MAX_RECENT_SCOPES = 8;
 

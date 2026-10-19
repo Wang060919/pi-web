@@ -7,7 +7,7 @@ import { getLocale, localizedTemplate, localizedText, t } from "./i18n.js";
 // lives in pi-web-plugin.ts.
 
 import type { TemplateResult } from "lit";
-import type { ApplicationPanelContext, HtmlTemplateTag, MachineKind, PiWebComponentStatus, PiWebInstallationInfo, PiWebReleaseStatus, PiWebStatusResponse, PluginMachine, PluginRuntimeContext, Workspace } from "@jmfederico/pi-web/plugin-api";
+import type { ApplicationPanelContext, HtmlTemplateTag, MachineKind, PiWebComponentStatus, PiWebInstallationInfo, PiWebReleaseStatus, PiWebStatusResponse, PluginMachine, PluginRuntimeContext, Workspace } from "@wang060919/pi-web/plugin-api";
 
 export type ComponentHealth = "current" | "restart needed" | "unavailable";
 

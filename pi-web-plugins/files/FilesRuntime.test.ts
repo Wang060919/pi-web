@@ -6,7 +6,7 @@ import type {
   WorkspacePanelContext,
   WorkspacePanelNavigationV1,
   WriteWorkspaceFileResponse,
-} from "@jmfederico/pi-web/plugin-api";
+} from "@wang060919/pi-web/plugin-api";
 import { describe, expect, it, vi } from "vitest";
 import { FilesRuntime } from "./FilesRuntime";
 

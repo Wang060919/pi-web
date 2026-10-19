@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ContentRendererInput } from "@jmfederico/pi-web/plugin-api";
+import type { ContentRendererInput } from "@wang060919/pi-web/plugin-api";
 import { mermaidFrameDocument } from "./MermaidPreview";
 
 let tag = 0;

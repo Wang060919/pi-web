@@ -16,7 +16,7 @@ export interface KnownAutoInstallablePiPackage {
   /** Short human-friendly description for Settings UI affordances. */
   description: string;
   /**
-   * Path segments, relative to the running `@jmfederico/pi-web` package root
+   * Path segments, relative to the running `@wang060919/pi-web` package root
    * (see `defaultPluginRoots`/`bundledPluginRoot` in `piWebPluginCatalog.ts`
    * for the equivalent resolution), to this package's shipped local
    * directory. Used as the install source when auto-installing it.
@@ -46,7 +46,7 @@ export function isKnownAutoInstallablePiPackageId(id: string): boolean {
 }
 
 /**
- * Running `@jmfederico/pi-web` package root; {@link resolveShippedPiPackagePath}
+ * Running `@wang060919/pi-web` package root; {@link resolveShippedPiPackagePath}
  * resolves shipped package paths relative to this by default. Resolution is
  * anchored to this module's own on-disk location (`src/server/`, one level
  * under the package root) rather than the caller's, so every caller gets the

@@ -13,13 +13,13 @@ const workspace: Workspace = {
 
 function piWebStatusResponse() {
   return {
-    packageName: "@jmfederico/pi-web",
+    packageName: "@wang060919/pi-web",
     generatedAt: "now",
     components: {
       web: { component: "web", label: "PI WEB", available: true, stale: false },
       sessiond: { component: "sessiond", label: "PI WEB Session Daemon", available: true, stale: false },
     },
-    release: { packageName: "@jmfederico/pi-web", updateAvailable: false },
+    release: { packageName: "@wang060919/pi-web", updateAvailable: false },
     commands: {},
     messages: [],
   };

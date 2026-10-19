@@ -1,4 +1,4 @@
-import type { WorkspacePanelContext } from "@jmfederico/pi-web/plugin-api";
+import type { WorkspacePanelContext } from "@wang060919/pi-web/plugin-api";
 import { SessionStorageTerminalSelectionMemory, terminalSelectionScope, type TerminalSelectionMemory } from "./terminalSelection";
 import { TerminalPeerClient, type TerminalInfo } from "./terminalProtocol";
 import { loadTerminalFont } from "./terminalFont";

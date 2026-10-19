@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { JsonValue, PluginPeerChannel, PluginPeer } from "@jmfederico/pi-web/plugin-api";
+import type { JsonValue, PluginPeerChannel, PluginPeer } from "@wang060919/pi-web/plugin-api";
 import { TERMINAL_CHANNEL_DATA_JSON_MAX_BYTES, TerminalPeerClient, parseTerminalCommandRun, parseTerminalServerFrame, terminalChannelFailureMessage, terminalInputFrames } from "./terminalProtocol";
 
 const terminal = {

@@ -55,7 +55,7 @@
             <a href="faq">FAQ</a>
           </div>
           <div class="nav-actions">
-            <a class="github-link" href="https://github.com/jmfederico/pi-web" aria-label="PI WEB on GitHub">
+            <a class="github-link" href="https://github.com/Wang060919/pi-web" aria-label="PI WEB on GitHub">
               <svg class="github-icon" viewBox="0 0 16 16" aria-hidden="true">
                 <path
                   fill="currentColor"
@@ -211,7 +211,7 @@
 <h3 id="content-previews-in-chat-and-files">Content previews in chat and Files</h3>
 <p>Plugins can preview diagrams and other text formats in chat code blocks, Markdown files, and standalone Files previews. Manual rendering is the default: choose <strong>Render</strong> to view a preview. Plugins may opt into automatic rendering. If several renderers match, use the chooser to compare them.</p>
 <p><strong>Raw</strong> shows source; <strong>Copy</strong> copies source even while a preview is visible. Files uses <strong>Raw</strong>/<strong>Preview</strong> beside <strong>Download</strong> and remembers your file-view preference; Preview also permits manual renderers in Markdown files. Chat choices are temporary and clear on reload.</p>
-<p>Incomplete, truncated, or oversized input is not rendered. Files also limits the size of inline previews. Failed previews fall back to source. Renderers must treat text as untrusted, sanitize output, and avoid executing source. For implementation, see the <a href="https://github.com/jmfederico/pi-web/blob/main/pi-web-plugins/files/pi-web-plugin.ts">Files consumer</a> and <a href="https://github.com/jmfederico/pi-web/tree/main/pi-web-plugins/mermaid">Mermaid contribution</a>.</p>
+<p>Incomplete, truncated, or oversized input is not rendered. Files also limits the size of inline previews. Failed previews fall back to source. Renderers must treat text as untrusted, sanitize output, and avoid executing source. For implementation, see the <a href="https://github.com/Wang060919/pi-web/blob/codex/pi-web-dev/pi-web-plugins/files/pi-web-plugin.ts">Files consumer</a> and <a href="https://github.com/Wang060919/pi-web/tree/codex/pi-web-dev/pi-web-plugins/mermaid">Mermaid contribution</a>.</p>
 <span id="host-capabilities"></span><h3 id="conversations-and-companion-extensions">Conversations and companion extensions</h3>
 <p>A server plugin can create a normal, visible Pi conversation, with or without an initial prompt. A companion Pi extension can exchange messages with the backend and use Pi&#39;s own APIs to do agent work.</p>
 <p><strong>The conversation belongs to the user once it is published.</strong> Finishing the initial task, closing the browser, or disposing the initiating plugin does not discard it or stop later user work. Users can continue it like any other conversation.</p>
@@ -312,7 +312,7 @@ ln -s /path/to/plugin-folder ~/.pi-web/plugins/my-plugin</code></pre></div>
 <li>Select a conversation, open <strong>Captain&#39;s Log</strong>, and choose <strong>Let the Captain tell it</strong>.</li>
 </ol>
 <p>The package is prebuilt; no compilation is required. It reads the source reply without modifying that conversation and uses a separate pirate conversation. Model credentials are required, and the source text goes to the pirate&#39;s model provider. Previous results are saved. After a daemon restart, open the previous pirate conversation in Sessions if you want to reuse its context.</p>
-<p>See the <a href="https://github.com/jmfederico/pi-web/blob/main/pi-packages/captains-log/docs/usage.md">Captain&#39;s Log usage guide</a> for the demo&#39;s behavior and troubleshooting.</p>
+<p>See the <a href="https://github.com/Wang060919/pi-web/blob/codex/pi-web-dev/pi-packages/captains-log/docs/usage.md">Captain&#39;s Log usage guide</a> for the demo&#39;s behavior and troubleshooting.</p>
 </section>
 <section id="pi-extension-dialogs"><h2>Pi extension dialogs</h2>
 <p>Pi extensions can ask for confirmation, a selection, or text input. PI WEB shows these questions inline in the conversation, including during session startup or while a tool is waiting. They remain answerable after a browser reload, and the first answer wins across tabs.</p>
@@ -346,35 +346,35 @@ Test the behavior, including failures and cleanup.</code></pre></div>
 </thead>
 <tbody><tr>
 <td>Browser contributions and helpers</td>
-<td><a href="https://github.com/jmfederico/pi-web/blob/main/src/plugin-api.ts"><code>plugin-api.ts</code></a>, published as <code>@jmfederico/pi-web/plugin-api</code></td>
+<td><a href="https://github.com/Wang060919/pi-web/blob/codex/pi-web-dev/src/plugin-api.ts"><code>plugin-api.ts</code></a>, published as <code>@wang060919/pi-web/plugin-api</code></td>
 </tr>
 <tr>
 <td>Server lifecycle, peers, providers, and host capabilities</td>
-<td><a href="https://github.com/jmfederico/pi-web/blob/main/src/server-plugin-api.ts"><code>server-plugin-api.ts</code></a>, published as <code>@jmfederico/pi-web/server-plugin-api</code></td>
+<td><a href="https://github.com/Wang060919/pi-web/blob/codex/pi-web-dev/src/server-plugin-api.ts"><code>server-plugin-api.ts</code></a>, published as <code>@wang060919/pi-web/server-plugin-api</code></td>
 </tr>
 <tr>
 <td>A small browser plugin</td>
-<td><a href="https://github.com/jmfederico/pi-web/tree/main/pi-web-plugins/info">Info</a></td>
+<td><a href="https://github.com/Wang060919/pi-web/tree/codex/pi-web-dev/pi-web-plugins/info">Info</a></td>
 </tr>
 <tr>
 <td>A standalone browser/server package</td>
-<td><a href="https://github.com/jmfederico/pi-web/tree/main/examples/workspace-provider-plugin">Workspace-provider example</a></td>
+<td><a href="https://github.com/Wang060919/pi-web/tree/codex/pi-web-dev/examples/workspace-provider-plugin">Workspace-provider example</a></td>
 </tr>
 <tr>
 <td>A production workspace provider and paired UI</td>
-<td><a href="https://github.com/jmfederico/pi-web/tree/main/pi-web-plugins/git">Git</a></td>
+<td><a href="https://github.com/Wang060919/pi-web/tree/codex/pi-web-dev/pi-web-plugins/git">Git</a></td>
 </tr>
 <tr>
 <td>Hosted sessions, live updates, and a Pi companion</td>
-<td><a href="https://github.com/jmfederico/pi-web/tree/main/pi-packages/captains-log">Captain&#39;s Log</a></td>
+<td><a href="https://github.com/Wang060919/pi-web/tree/codex/pi-web-dev/pi-packages/captains-log">Captain&#39;s Log</a></td>
 </tr>
 <tr>
 <td>A simpler initial-prompt workflow</td>
-<td><a href="https://github.com/jmfederico/pi-web/tree/main/examples/session-bridge-plugin">Workspace Reviews example</a></td>
+<td><a href="https://github.com/Wang060919/pi-web/tree/codex/pi-web-dev/examples/session-bridge-plugin">Workspace Reviews example</a></td>
 </tr>
 <tr>
 <td>Package discovery rules and diagnostics</td>
-<td><a href="https://github.com/jmfederico/pi-web/blob/main/src/server/piWebPluginCatalog.ts">Plugin catalog</a></td>
+<td><a href="https://github.com/Wang060919/pi-web/blob/codex/pi-web-dev/src/server/piWebPluginCatalog.ts">Plugin catalog</a></td>
 </tr>
 </tbody></table>
 </div>
@@ -422,7 +422,7 @@ pi-web plugins safe-start clear --restart</code></pre></div>
           <a href="install">Install</a>
           <a href="config">Config</a>
           <a href="faq">FAQ</a>
-          <a href="https://github.com/jmfederico/pi-web">GitHub</a>
+          <a href="https://github.com/Wang060919/pi-web">GitHub</a>
           <span class="version-switcher" role="group" aria-label="Documentation version">
             <a class="version-switcher-option" data-version-option="stable" href="https://pi-web.dev/plugins" aria-current="true">Stable</a>
             <a class="version-switcher-option" data-version-option="dev" href="https://pi-web.dev/dev/plugins">Dev</a>

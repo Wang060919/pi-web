@@ -1,4 +1,4 @@
-import type { WorkspacePanelContext } from "@jmfederico/pi-web/plugin-api";
+import type { WorkspacePanelContext } from "@wang060919/pi-web/plugin-api";
 
 const legacyDiffNamespace = "core.workspace.git";
 const diffQueryKey = "diff";

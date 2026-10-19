@@ -119,7 +119,7 @@ Plugins can preview diagrams and other text formats in chat code blocks, Markdow
 
 **Raw** shows source; **Copy** copies source even while a preview is visible. Files uses **Raw**/**Preview** beside **Download** and remembers your file-view preference; Preview also permits manual renderers in Markdown files. Chat choices are temporary and clear on reload.
 
-Incomplete, truncated, or oversized input is not rendered. Files also limits the size of inline previews. Failed previews fall back to source. Renderers must treat text as untrusted, sanitize output, and avoid executing source. For implementation, see the [Files consumer](https://github.com/jmfederico/pi-web/blob/main/pi-web-plugins/files/pi-web-plugin.ts) and [Mermaid contribution](https://github.com/jmfederico/pi-web/tree/main/pi-web-plugins/mermaid).
+Incomplete, truncated, or oversized input is not rendered. Files also limits the size of inline previews. Failed previews fall back to source. Renderers must treat text as untrusted, sanitize output, and avoid executing source. For implementation, see the [Files consumer](https://github.com/Wang060919/pi-web/blob/codex/pi-web-dev/pi-web-plugins/files/pi-web-plugin.ts) and [Mermaid contribution](https://github.com/Wang060919/pi-web/tree/codex/pi-web-dev/pi-web-plugins/mermaid).
 
 ### Conversations and companion extensions
 
@@ -257,7 +257,7 @@ Captain's Log is an optional example that retells a conversation's latest assist
 
 The package is prebuilt; no compilation is required. It reads the source reply without modifying that conversation and uses a separate pirate conversation. Model credentials are required, and the source text goes to the pirate's model provider. Previous results are saved. After a daemon restart, open the previous pirate conversation in Sessions if you want to reuse its context.
 
-See the [Captain's Log usage guide](https://github.com/jmfederico/pi-web/blob/main/pi-packages/captains-log/docs/usage.md) for the demo's behavior and troubleshooting.
+See the [Captain's Log usage guide](https://github.com/Wang060919/pi-web/blob/codex/pi-web-dev/pi-packages/captains-log/docs/usage.md) for the demo's behavior and troubleshooting.
 
 ## Pi extension dialogs
 
@@ -301,14 +301,14 @@ Use the smallest example that fits. Source links below track development on `mai
 
 | Need | Start here |
 | --- | --- |
-| Browser contributions and helpers | [`plugin-api.ts`](https://github.com/jmfederico/pi-web/blob/main/src/plugin-api.ts), published as `@jmfederico/pi-web/plugin-api` |
-| Server lifecycle, peers, providers, and host capabilities | [`server-plugin-api.ts`](https://github.com/jmfederico/pi-web/blob/main/src/server-plugin-api.ts), published as `@jmfederico/pi-web/server-plugin-api` |
-| A small browser plugin | [Info](https://github.com/jmfederico/pi-web/tree/main/pi-web-plugins/info) |
-| A standalone browser/server package | [Workspace-provider example](https://github.com/jmfederico/pi-web/tree/main/examples/workspace-provider-plugin) |
-| A production workspace provider and paired UI | [Git](https://github.com/jmfederico/pi-web/tree/main/pi-web-plugins/git) |
-| Hosted sessions, live updates, and a Pi companion | [Captain's Log](https://github.com/jmfederico/pi-web/tree/main/pi-packages/captains-log) |
-| A simpler initial-prompt workflow | [Workspace Reviews example](https://github.com/jmfederico/pi-web/tree/main/examples/session-bridge-plugin) |
-| Package discovery rules and diagnostics | [Plugin catalog](https://github.com/jmfederico/pi-web/blob/main/src/server/piWebPluginCatalog.ts) |
+| Browser contributions and helpers | [`plugin-api.ts`](https://github.com/Wang060919/pi-web/blob/codex/pi-web-dev/src/plugin-api.ts), published as `@wang060919/pi-web/plugin-api` |
+| Server lifecycle, peers, providers, and host capabilities | [`server-plugin-api.ts`](https://github.com/Wang060919/pi-web/blob/codex/pi-web-dev/src/server-plugin-api.ts), published as `@wang060919/pi-web/server-plugin-api` |
+| A small browser plugin | [Info](https://github.com/Wang060919/pi-web/tree/codex/pi-web-dev/pi-web-plugins/info) |
+| A standalone browser/server package | [Workspace-provider example](https://github.com/Wang060919/pi-web/tree/codex/pi-web-dev/examples/workspace-provider-plugin) |
+| A production workspace provider and paired UI | [Git](https://github.com/Wang060919/pi-web/tree/codex/pi-web-dev/pi-web-plugins/git) |
+| Hosted sessions, live updates, and a Pi companion | [Captain's Log](https://github.com/Wang060919/pi-web/tree/codex/pi-web-dev/pi-packages/captains-log) |
+| A simpler initial-prompt workflow | [Workspace Reviews example](https://github.com/Wang060919/pi-web/tree/codex/pi-web-dev/examples/session-bridge-plugin) |
+| Package discovery rules and diagnostics | [Plugin catalog](https://github.com/Wang060919/pi-web/blob/codex/pi-web-dev/src/server/piWebPluginCatalog.ts) |
 
 The current browser contract is **API v4** and the server contract is **API v3**. Older entries need migration; there is no compatibility shim. The public source contracts and their tests are the reference for signatures, validation, limits, and lifecycle details.
 

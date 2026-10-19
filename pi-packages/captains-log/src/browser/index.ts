@@ -1,4 +1,4 @@
-import type { PiWebPlugin, WorkspacePanelContext, PluginPeerChannel } from "@jmfederico/pi-web/plugin-api";
+import type { PiWebPlugin, WorkspacePanelContext, PluginPeerChannel } from "@wang060919/pi-web/plugin-api";
 import { isLogEntry, MAX_FINDINGS, type LogEntry } from "./protocol.js";
 import { renderCaptainPanel, selectedSourceSession } from "./panel.js";
 import { LOG_CHANNEL, isCaptainServerFrame, type CaptainClientFrame } from "./channelProtocol.js";

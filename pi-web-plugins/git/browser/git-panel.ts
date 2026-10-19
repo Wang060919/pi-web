@@ -9,7 +9,7 @@ import type {
   Workspace,
   WorkspacePanelContext,
   WorkspacePanelContribution,
-} from "@jmfederico/pi-web/plugin-api";
+} from "@wang060919/pi-web/plugin-api";
 import {
   GIT_DIFF_OPERATION,
   GIT_STATUS_OPERATION,

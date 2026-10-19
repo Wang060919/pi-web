@@ -12,6 +12,7 @@ permissions:
 jobs:
   publish:
     name: Publish to npm
+    if: github.repository == 'Wang060919/pi-web'
     runs-on: ubuntu-latest
     environment: npm
     steps:
@@ -24,6 +25,24 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
           cache: npm
+
+      - name: Use npm 12
+        run: npm install --global npm@12.0.1 --ignore-scripts --no-audit --no-fund
+
+      - name: Check package and release target
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+          if (pkg.name !== '@wang060919/pi-web'
+            || pkg.repository?.url !== 'git+https://github.com/Wang060919/pi-web.git') {
+            throw new Error('Package identity must match the independent repository.');
+          }
+          if (process.env.GITHUB_REF_TYPE === 'tag'
+            && process.env.GITHUB_REF_NAME !== `v${pkg.version}`) {
+            throw new Error('Release tag must match package.json version.');
+          }
+          NODE
 
       - name: Install dependencies
         run: npm ci
@@ -42,25 +61,10 @@ jobs:
 
       - name: Publish
         # Verify/build already ran above; publish the exact artifacts checked here.
-        run: npm publish --access public --provenance --ignore-scripts
-
-  deploy-docs:
-    name: Deploy stable docs to pi-web.dev
-    # Stable docs only move on GitHub Releases; the dev variant at pi-web.dev/dev/
-    # deploys from main via docs-dev.yml. Skipped on manual workflow_dispatch runs.
-    if: github.event_name == 'release'
-    needs: publish
-    runs-on: ubuntu-latest
-    steps:
-      # Release events check out the published tag, so docs match the npm release.
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Deploy stable docs worker
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          # Keep in sync with docs-dev.yml so both sites deploy with the same wrangler.
-          wranglerVersion: "4.119.0"
-          command: deploy --config docs/wrangler.jsonc
+        run: npm publish --access public --ignore-scripts
+        env:
+          # OIDC is used after configuring the package's trusted publisher.
+          # A granular token in the npm environment can bootstrap the first release.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # npm provenance is only supported for public source repositories.
+          NPM_CONFIG_PROVENANCE: ${{ !github.event.repository.private }}

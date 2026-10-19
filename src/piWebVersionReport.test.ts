@@ -50,7 +50,7 @@ describe("probeRunningComponentReady", () => {
       const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       requests.push(url);
       return Promise.resolve(url.endsWith("/health") ? new Response("Not found", { status: 404 }) : new Response(JSON.stringify({
-        packageName: "@jmfederico/pi-web", generatedAt: "2026-08-01T00:00:00.000Z",
+        packageName: "@wang060919/pi-web", generatedAt: "2026-08-01T00:00:00.000Z",
         components: { web: componentStatus(), sessiond: sessiondStatus({ available: false }) },
       }), { status: 200 }));
     };
@@ -98,10 +98,10 @@ describe("probeRunningComponentReady", () => {
 describe("printPiWebVersionReport release checks", () => {
   let directory: string;
   let configEnv: NodeJS.ProcessEnv;
-  const npmUrl = "https://registry.npmjs.org/%40jmfederico%2Fpi-web/latest";
+  const npmUrl = "https://registry.npmjs.org/%40wang060919%2Fpi-web/latest";
   const output = (): string => vi.mocked(console.log).mock.calls.map((args) => args.join(" ")).join("\n");
   const localResponse = (): Response => Response.json({
-    packageName: "@jmfederico/pi-web", generatedAt: "2026-08-01T00:00:00.000Z",
+    packageName: "@wang060919/pi-web", generatedAt: "2026-08-01T00:00:00.000Z",
     components: { web: componentStatus(), sessiond: sessiondStatus() },
   });
   const reportFetch = (remote: typeof globalThis.fetch) => vi.fn<typeof globalThis.fetch>((input, init) =>
@@ -142,7 +142,7 @@ describe("printPiWebVersionReport release checks", () => {
     expect(remote).toHaveBeenCalledTimes(1);
     expect(remote.mock.calls[0]?.[0]).toBe(npmUrl);
     expect(remote.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
-    expect(output()).toContain("Latest npm release:\n✓ @jmfederico/pi-web: 1.202612.4");
+    expect(output()).toContain("Latest npm release:\n✓ @wang060919/pi-web: 1.202612.4");
   });
 
   it.each(["PI_WEB_SKIP_VERSION_CHECK", "PI_WEB_OFFLINE", "PI_SKIP_VERSION_CHECK", "PI_OFFLINE"])("respects %s even on explicit checks", async (key) => {

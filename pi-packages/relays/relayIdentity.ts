@@ -1,4 +1,4 @@
-import type { JsonObject, SessionUiMetadata } from "@jmfederico/pi-web/plugin-api";
+import type { JsonObject, SessionUiMetadata } from "@wang060919/pi-web/plugin-api";
 
 /** Relay owns this schema; core treats it as opaque browser-public JSON. */
 export const RELAY_METADATA_NAMESPACE = "@jmfederico/pi-relay";

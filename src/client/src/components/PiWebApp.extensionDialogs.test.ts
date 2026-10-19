@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import type { TemplateResult } from "lit";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ExtensionDialogAnswer, PendingExtensionDialog, SessionInfo, SessionStatus } from "../api";

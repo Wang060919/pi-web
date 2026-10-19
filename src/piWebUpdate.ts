@@ -14,7 +14,7 @@ import { SessionDaemonClient } from "./sessiond/sessionDaemonClient.js";
 import type { PiWebInstallationInfo } from "./shared/apiTypes.js";
 import { nativeServiceManagerRefs } from "./nativeServices/servicePlan.js";
 
-const PACKAGE_NAME = "@jmfederico/pi-web";
+const PACKAGE_NAME = "@wang060919/pi-web";
 const UPDATE_HANDOFF_LABEL_PREFIX = "com.pi-web.update";
 const WARNING = "Updating PI WEB will restart services and interrupt active sessions and terminals, including this terminal.";
 const HELP = "Usage: pi-web update [--yes]\nWithout --yes, an interactive confirmation is required. Nested Linux updates use a detached systemd user service. Nested macOS updates use a detached launchd user agent.";

@@ -1,4 +1,4 @@
-import type { PiWebHostPiSessionConnection } from "@jmfederico/pi-web/server-plugin-api";
+import type { PiWebHostPiSessionConnection } from "@wang060919/pi-web/server-plugin-api";
 import { MAX_FINDINGS, CAPTAIN_REPLY, CAPTAIN_REQUEST, SOURCE_REPLY, SOURCE_REQUEST } from "./browser/protocol.js";
 
 export function collectReply(connection: PiWebHostPiSessionConnection, requestId: string, text: string, lifetime: AbortSignal, progress: (stage: string) => void): Promise<string> {

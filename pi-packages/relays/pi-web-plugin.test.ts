@@ -2,7 +2,7 @@
 
 import { html, render, svg } from "lit";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { PluginActivationContext, SessionLabelContext, SessionUiMetadata } from "@jmfederico/pi-web/plugin-api";
+import type { PluginActivationContext, SessionLabelContext, SessionUiMetadata } from "@wang060919/pi-web/plugin-api";
 import plugin from "./pi-web-plugin";
 import { RELAY_METADATA_NAMESPACE } from "./relayIdentity";
 

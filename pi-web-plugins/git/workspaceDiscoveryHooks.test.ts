@@ -10,7 +10,7 @@ import type {
   ServerPluginExecFileResult,
   WorkspaceProvider,
   WorkspaceProviderIntegration,
-} from "@jmfederico/pi-web/server-plugin-api";
+} from "@wang060919/pi-web/server-plugin-api";
 import { createServerPluginExecFile } from "../../src/server/plugins/serverPluginExec.js";
 import plugin from "./server-plugin.js";
 import { createWorkspaceDiscoveryHooks } from "./workspaceDiscoveryHooks.js";

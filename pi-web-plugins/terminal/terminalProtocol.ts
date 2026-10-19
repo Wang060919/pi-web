@@ -7,7 +7,7 @@ import type {
   PluginPeerChannelClose,
   PluginPeer,
   WorkspaceTerminalCommandInput,
-} from "@jmfederico/pi-web/plugin-api";
+} from "@wang060919/pi-web/plugin-api";
 
 export interface TerminalInfo {
   id: string;

@@ -48,7 +48,7 @@ import type {
   WorkspaceRemovalPresentation,
   WriteWorkspaceFileOptions,
   WriteWorkspaceFileResponse,
-} from "@jmfederico/pi-web/plugin-api";
+} from "@wang060919/pi-web/plugin-api";
 import type {
   ApplicationPanelContext as InternalApplicationPanelContext,
   PluginRuntimeContext as InternalPluginRuntimeContext,

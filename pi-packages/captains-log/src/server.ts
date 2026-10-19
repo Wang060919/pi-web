@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { PI_WEB_HOST_PI_SESSIONS_CAPABILITY, PI_WEB_HOST_PI_SESSION_EVENTS_CAPABILITY } from "@jmfederico/pi-web/server-plugin-api";
-import type { PiWebHostPiSessionsV1, PiWebHostPiSessionEventsV1, PiWebServerPlugin } from "@jmfederico/pi-web/server-plugin-api";
+import { PI_WEB_HOST_PI_SESSIONS_CAPABILITY, PI_WEB_HOST_PI_SESSION_EVENTS_CAPABILITY } from "@wang060919/pi-web/server-plugin-api";
+import type { PiWebHostPiSessionsV1, PiWebHostPiSessionEventsV1, PiWebServerPlugin } from "@wang060919/pi-web/server-plugin-api";
 import { type LogEntry } from "./browser/protocol.js";
 import { LOG_CHANNEL, entryFrames, isCaptainClientFrame, type CaptainServerFrame } from "./browser/channelProtocol.js";
 import { collectReply, collectSourceReply } from "./roundtrip.js";

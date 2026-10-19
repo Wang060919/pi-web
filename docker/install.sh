@@ -26,7 +26,7 @@ Options:
   --data-dir DIR          Persistent data directory (default: INSTALL_DIR/data)
   --bind-address ADDR     Host bind address (default: 127.0.0.1)
   --port PORT             Host port (default: 8504)
-  --pi-web-version VER    npm @jmfederico/pi-web version pin (default: latest)
+  --pi-web-version VER    npm @wang060919/pi-web version pin (default: latest)
   --opensuse-image IMAGE  openSUSE base image (default: opensuse/tumbleweed)
   --nodejs-major MAJOR    Node.js major version package to install (default: 22)
   --nodejs-repo REPO      Node.js zypper repository URL, auto, or disabled
@@ -34,7 +34,7 @@ Options:
   --extra-zypper-packages LIST
                           extra openSUSE packages to install during image build
   --asset-dir DIR         Copy Docker assets from a local docker/ directory
-  --asset-ref REF         Fetch Docker assets from a Git ref (default: main)
+  --asset-ref REF         Fetch Docker assets from a Git ref (default: codex/pi-web-dev)
   --skip-compose          Write assets/.env but skip build and service recreate
   -h, --help              Show this help
 
@@ -308,8 +308,8 @@ install_dir_input=${PI_WEB_DOCKER_HOME:-$default_install_dir}
 install_dir=$(absolute_dir "$install_dir_input") || die "could not create install directory"
 env_file=$install_dir/.env
 
-asset_ref=$(value_from_env_or_existing_or_default PI_WEB_DOCKER_REF main)
-asset_base=${PI_WEB_DOCKER_ASSET_BASE:-https://raw.githubusercontent.com/jmfederico/pi-web/$asset_ref/docker}
+asset_ref=$(value_from_env_or_existing_or_default PI_WEB_DOCKER_REF codex/pi-web-dev)
+asset_base=${PI_WEB_DOCKER_ASSET_BASE:-https://raw.githubusercontent.com/Wang060919/pi-web/$asset_ref/docker}
 use_local_asset_dir=1
 if [ "${PI_WEB_DOCKER_REFRESH_ASSETS:-0}" = 1 ] || [ "${PI_WEB_DOCKER_REF+x}" = x ] || [ "${PI_WEB_DOCKER_ASSET_BASE+x}" = x ]; then
   use_local_asset_dir=0

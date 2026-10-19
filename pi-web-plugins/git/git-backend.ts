@@ -6,7 +6,7 @@ import type {
   ServerPluginActivationContext,
   ServerPluginPeerRequestContext,
   ServerPluginExecFileResult,
-} from "@jmfederico/pi-web/server-plugin-api";
+} from "@wang060919/pi-web/server-plugin-api";
 import {
   GIT_DIFF_OPERATION,
   GIT_STATUS_OPERATION,

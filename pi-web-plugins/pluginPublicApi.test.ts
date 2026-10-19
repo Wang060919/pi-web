@@ -49,7 +49,7 @@ describe("PI WEB plugin packages", () => {
       visited.add(file);
       const source = await readFile(file, "utf8");
       for (const specifier of moduleSpecifiers(source)) {
-        if (specifier === "@jmfederico/pi-web/plugin-api") continue;
+        if (specifier === "@wang060919/pi-web/plugin-api") continue;
         if (!specifier.startsWith("./")) {
           violations.push(`${relative(process.cwd(), file)}: browser import ${specifier}`);
           continue;

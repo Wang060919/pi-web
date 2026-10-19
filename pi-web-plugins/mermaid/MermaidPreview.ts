@@ -1,5 +1,5 @@
 import { localizedTemplate, localizedText, t } from "./i18n.js";
-import type { ContentRendererInput } from "@jmfederico/pi-web/plugin-api";
+import type { ContentRendererInput } from "@wang060919/pi-web/plugin-api";
 import { LitElement, css, html, type PropertyValues } from "lit";
 import { property, state } from "lit/decorators.js";
 

@@ -1,6 +1,6 @@
 import { renderUiIcon } from "./uiIcons";
 import { getLocale, localizedTemplate, localizedText, t } from "./i18n.js";
-import type { ContentRenderingCapability, FileTreeEntry, WorkspacePanelContext } from "@jmfederico/pi-web/plugin-api";
+import type { ContentRenderingCapability, FileTreeEntry, WorkspacePanelContext } from "@wang060919/pi-web/plugin-api";
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
 import { property, query, state } from "lit/decorators.js";
 import {

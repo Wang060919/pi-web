@@ -1,6 +1,6 @@
 import { open, realpath, stat } from "node:fs/promises";
 import { basename, isAbsolute, join, relative, resolve, sep } from "node:path";
-import type { SessionUiMetadata } from "@jmfederico/pi-web/plugin-api";
+import type { SessionUiMetadata } from "@wang060919/pi-web/plugin-api";
 import { isRelayPacketPath, RELAY_METADATA_NAMESPACE, relaySessionName, requireRelayLeg, type RelayIdentity } from "./relayIdentity.js";
 
 const MAX_PACKET_DOCUMENT_BYTES = 256 * 1024;

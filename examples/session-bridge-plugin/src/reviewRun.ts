@@ -1,4 +1,4 @@
-import type { PiWebHostPiSessionConnection } from "@jmfederico/pi-web/server-plugin-api";
+import type { PiWebHostPiSessionConnection } from "@wang060919/pi-web/server-plugin-api";
 import { MAX_FINDINGS, REVIEW_REPLY, REVIEW_REQUEST } from "./browser/protocol.js";
 
 /** Receipt and completion are separate, correlated events. Neither close nor timeout cancels Pi. */

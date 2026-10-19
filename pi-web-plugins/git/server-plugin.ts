@@ -9,7 +9,7 @@ import type {
   ServerPluginExecFileResult,
   WorkspaceProvider,
   WorkspaceRemovePlan,
-} from "@jmfederico/pi-web/server-plugin-api";
+} from "@wang060919/pi-web/server-plugin-api";
 import { requestGitBackend } from "./git-backend.js";
 import { createWorkspaceDiscoveryHooks } from "./workspaceDiscoveryHooks.js";
 

@@ -46,12 +46,12 @@ export async function smokeInstalledPluginApi({ packageRoot, fixtureRoot, repoRo
   await cp(join(packageRoot, "examples", "workspace-provider-plugin"), join(consumerRoot, "dual-entry"), { recursive: true });
   await cp(join(packageRoot, "examples", "session-bridge-plugin"), join(consumerRoot, "session-bridge"), { recursive: true });
   await Promise.all([
-    mkdir(join(consumerRoot, "node_modules", "@jmfederico"), { recursive: true }),
+    mkdir(join(consumerRoot, "node_modules", "@wang060919"), { recursive: true }),
     mkdir(join(consumerRoot, "node_modules", "@types"), { recursive: true }),
     writeFile(join(consumerRoot, "package.json"), '{"private":true,"type":"module"}\n', "utf8"),
   ]);
   await Promise.all([
-    symlink(packageRoot, join(consumerRoot, "node_modules", "@jmfederico", "pi-web"), "dir"),
+    symlink(packageRoot, join(consumerRoot, "node_modules", "@wang060919", "pi-web"), "dir"),
     symlink(join(repoRoot, "node_modules", "@earendil-works"), join(consumerRoot, "node_modules", "@earendil-works"), "dir"),
     symlink(join(repoRoot, "node_modules", "@types", "node"), join(consumerRoot, "node_modules", "@types", "node"), "dir"),
   ]);
@@ -92,7 +92,7 @@ export async function smokeInstalledPluginApi({ packageRoot, fixtureRoot, repoRo
 
 async function buildSessionBridgeExample(exampleRoot, repoRoot) {
   const manifest = JSON.parse(await readFile(join(exampleRoot, "package.json"), "utf8"));
-  if (manifest.devDependencies?.["@jmfederico/pi-web"] !== workspaceProviderExamplePiWebRange) {
+  if (manifest.devDependencies?.["@wang060919/pi-web"] !== workspaceProviderExamplePiWebRange) {
     throw new Error("Session bridge example must use the plugin platform release floor");
   }
   const configPath = join(exampleRoot, "tsconfig.json");
@@ -137,14 +137,14 @@ async function assertInstalledDeclarationArtifacts(packageRoot) {
 async function assertExampleCompatibilityFloor(packageRoot) {
   const manifestPath = join(packageRoot, "examples", "workspace-provider-plugin", "package.json");
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-  const actualRange = manifest?.devDependencies?.["@jmfederico/pi-web"];
+  const actualRange = manifest?.devDependencies?.["@wang060919/pi-web"];
   if (actualRange !== workspaceProviderExamplePiWebRange) {
-    throw new Error(`Installed workspace-provider example must require @jmfederico/pi-web ${workspaceProviderExamplePiWebRange}; received ${JSON.stringify(actualRange)}`);
+    throw new Error(`Installed workspace-provider example must require @wang060919/pi-web ${workspaceProviderExamplePiWebRange}; received ${JSON.stringify(actualRange)}`);
   }
   const captainsLog = JSON.parse(await readFile(join(packageRoot, "dist", "pi-packages", "captains-log", "package.json"), "utf8"));
   for (const field of ["devDependencies", "peerDependencies"]) {
-    if (captainsLog[field]?.["@jmfederico/pi-web"] !== workspaceProviderExamplePiWebRange) {
-      throw new Error(`Installed Captain's Log ${field} must require @jmfederico/pi-web ${workspaceProviderExamplePiWebRange}`);
+    if (captainsLog[field]?.["@wang060919/pi-web"] !== workspaceProviderExamplePiWebRange) {
+      throw new Error(`Installed Captain's Log ${field} must require @wang060919/pi-web ${workspaceProviderExamplePiWebRange}`);
     }
   }
 }
@@ -156,7 +156,7 @@ async function assertServerRuntimeApi(consumerRoot) {
       PI_WEB_HOST_PI_SESSIONS_CAPABILITY,
       PI_WEB_HOST_PI_SESSION_EVENTS_CAPABILITY,
       PI_WEB_HOST_WORKSPACES_CAPABILITY,
-    } from "@jmfederico/pi-web/server-plugin-api";
+    } from "@wang060919/pi-web/server-plugin-api";
     export default [PI_WEB_HOST_WORKSPACES_CAPABILITY, PI_WEB_HOST_PI_SESSIONS_CAPABILITY, PI_WEB_HOST_PI_SESSION_EVENTS_CAPABILITY];
   `, "utf8");
   const serverApi = await import(pathToFileURL(fixturePath).href);
@@ -207,8 +207,8 @@ function isDeclarationPath(path) {
 
 function assertPluginApiResolution(consumerPath, compilerOptions, packageRoot) {
   const expectedDeclarations = new Map([
-    ["@jmfederico/pi-web/plugin-api", join(packageRoot, "dist", "plugin-api.d.ts")],
-    ["@jmfederico/pi-web/server-plugin-api", join(packageRoot, "dist", "server-plugin-api.d.ts")],
+    ["@wang060919/pi-web/plugin-api", join(packageRoot, "dist", "plugin-api.d.ts")],
+    ["@wang060919/pi-web/server-plugin-api", join(packageRoot, "dist", "server-plugin-api.d.ts")],
   ]);
   for (const [specifier, expected] of expectedDeclarations) {
     const resolved = ts.resolveModuleName(specifier, consumerPath, compilerOptions, ts.sys).resolvedModule;
@@ -218,10 +218,10 @@ function assertPluginApiResolution(consumerPath, compilerOptions, packageRoot) {
   }
 
   for (const specifier of [
-    "@jmfederico/pi-web/plugin-api/unstable",
-    "@jmfederico/pi-web/dist/plugin-api",
-    "@jmfederico/pi-web/dist/shared/pluginApiTypes",
-    "@jmfederico/pi-web/package.json",
+    "@wang060919/pi-web/plugin-api/unstable",
+    "@wang060919/pi-web/dist/plugin-api",
+    "@wang060919/pi-web/dist/shared/pluginApiTypes",
+    "@wang060919/pi-web/package.json",
   ]) {
     if (ts.resolveModuleName(specifier, consumerPath, compilerOptions, ts.sys).resolvedModule !== undefined) {
       throw new Error(`Unsupported package path resolved from the installed package: ${specifier}`);

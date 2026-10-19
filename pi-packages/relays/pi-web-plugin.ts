@@ -1,5 +1,5 @@
 import { localizedTemplate, localizedText, t } from "./i18n.js";
-import type { PiWebPlugin } from "@jmfederico/pi-web/plugin-api";
+import type { PiWebPlugin } from "@wang060919/pi-web/plugin-api";
 import { RELAYS_ROOT } from "./relayDiscovery.js";
 import { relayIdentityFromMetadata } from "./relayIdentity.js";
 import { defineRelaysPanelElement, RELAY_SELECTION_QUERY_KEY } from "./relaysPanelElement.js";

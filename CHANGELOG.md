@@ -1,4 +1,65 @@
-# @jmfederico/pi-web
+# @wang060919/pi-web
+
+## 1.202610.4
+
+### Patch Changes
+
+- 701bdcd: Apply Cowork typography with Anthropic Sans for the interface, Anthropic Serif for assistant replies, Anthropic Mono for code, a 16px composer, and the 360/460/540/560 weight ramp. Retain the existing layout, interactions, and system fallbacks for Chinese text.
+- 6742339: Prevent concurrent remote machine settings updates from overwriting each other. Remote machines must support atomic configuration updates; older versions report an upgrade requirement instead of risking lost settings.
+- dd6408f: Simplify chat navigation, sidebar rows, process details, and content cards with borderless controls and neutral surface hierarchy.
+- dd6408f: Align terminal tabs, toolbar controls, soft keys, and neutral navigation count badges with the borderless interface styling.
+- 36abb35: Bundle JetBrains Mono Nerd Font in regular, bold, italic, and bold italic styles with the terminal plugin. Shell prompt icons now work without installing fonts on each device or contacting a font CDN, and terminal sizing waits for the bundled fonts to load.
+- 787ce0a: Center the Updates and Info pages in a bounded content column, align their headings with the body, and use consistent spacing on wide and narrow panels.
+- dd6408f: Replace the chat scrollbar with compact conversation ticks, message previews, and click or keyboard navigation while preserving live-follow and history position behavior.
+- 49945cd: Add saved-message search with original-message previews and navigation, full saved-history HTML export, and per-turn file links for successful write/edit/apply_patch tools.
+
+  Add selected-text follow-ups, loaded-prompt history, webpage-link-aware paste, raw MCP result copying, and optional per-image compression. Manage model configuration, model discovery and small connection tests, plus global/project MCP servers and isolated connection probes, from browser settings with masked credentials and endpoint-origin safeguards.
+- dd6408f: Refine the composer with a compact code-focused input, a bottom attachment and model toolbar, and inline send controls while preserving queue, steer, and stop actions.
+- 9dee63c: Simplify the sidebar with borderless workspace selectors, a clear new-session entry, quieter session groups, and neutral conversation selection in light and dark themes.
+- dd6408f: Improve Chinese and English chat typography, summarize execution steps with clearer running and failure states, and keep model controls, attachments, and composer actions usable on narrow screens.
+- dd6408f: Add attachment cards with local previews, compact project and workspace selectors, usage details, and workspace file cards in assistant replies.
+- dd6408f: Refine the chat composer with a compact code-focused layout, machine and workspace switching, separate model and thinking controls, and inline context usage.
+- 49945cd: Show compact quote actions next to selected reply text, with automatic placement inside the chat and dismissal when scrolling or clicking elsewhere. Keep adding quotes to the current draft and asking in a new session as separate actions.
+- 5b2ce83: Keep selected rows highlighted while hovering in authentication, command, and project pickers. Align machine name inputs and model manager headings with the shared interface typography.
+- dd6408f: Unify settings, workspace tools, dialogs, and pickers with the chat interface's neutral colors, lighter typography, and borderless controls.
+- 7bf7116: Use consistent SVG icons for compact UI actions, including message history and copying, session selection, menus, dialogs, and file, Git and terminal controls. Improve small action targets and preserve translated labels and feedback states.
+- d4e3bbf: Dismiss session action menus on Escape, outside interaction, and dialog focus changes so they do not remain above cleanup or settings.
+- bd91fb3: Let the Files panel divider resize the file list and preview vertically by dragging or using the keyboard, with a double-click to restore the default layout.
+- 6cbbb79: Show the workspace usage heatmap in new, empty conversations until the first message is sent. Use a smaller welcome heading and icon, and align the heading, heatmap, and message composer with wider, responsive side margins while keeping the composer available.
+- 329306b: Keep drafts, undo history and completion results within their session and machine. Restore provider authentication for MCP connection tests, reject conflicting MCP tool names across scopes, and allow anonymous model endpoints to change without weakening credential protections. Cancel abandoned history searches and prevent isolated previews from offering production service commands.
+- Distribute this customized PI WEB as `@wang060919/pi-web`, with installation commands and update checks targeting the independent package. Preserve the existing CLI commands and user data locations.
+- e49c581: Show only the selected file's Git diff when its name contains brackets or other pathspec characters, including files in submodules.
+- 07c48f9: Align the mobile welcome heading, usage heatmap and composer, and keep new conversations at the welcome heading until messages begin. Enlarge touch controls and heatmap cells, keep horizontal scrolling inside the chart, and fit the composer and dialogs to the visible viewport when an on-screen keyboard opens. Replace the mobile Actions lightning icon with a matching command grid.
+- dd6408f: Choose models from a compact searchable menu anchored to the composer, with current-model and new-session-default markers. Keep availability management in the full catalog and retain the menu when switching fails.
+- dd6408f: Refine chat typography, message spacing, navigation density, and neutral dark colors to match the native Claude-style interface more closely.
+- e1f7b0d: Clarify Chinese interface labels for search, message roles, processing steps, tool details, system information, and message counts. Keep thinking-strength terminology consistent and preserve English product and tool names alongside Chinese guidance without changing session content.
+- b0181fd: Unify the sidebar, welcome view, and application icons around Pi's pixel mark, with neutral theme colors and a distinct development indicator.
+- 9dee63c: Improve sidebar hierarchy with grouped project and workspace controls, distinct history search and command entries, readable collapsed-session summaries, and clearer selected and archived conversations.
+- 7be2eb5: Preserve drafts and attachments when prompt submission fails, without clearing newer edits or another conversation's input. Prevent duplicate submissions while a request is pending after returning to the conversation.
+- dd6408f: Soften the PI WEB light and dark themes, unify the message composer into a rounded panel, and make chat messages and tool execution summaries easier to scan.
+- 4b8eac9: Start new browser layouts with Chat, Files, and Terminal tabs, with other tools available through a searchable More menu. Preserve existing pinned tabs, offer essential or full navigation presets, and find pages directly in action search.
+- dd6408f: Refine the light theme with softer neutral borders and white dialogs, and remove orange highlights from workspace tabs and panel dividers.
+- fce2c75: Refine the welcome usage card and thinking strength controls with compact styling, message-based heatmap colors, calendar-aligned weeks, and dark activity tooltips. Add daily stacked model usage charts with input/output totals, usage percentages, and expandable legends. Preserve model-provided thinking levels and separate new-session defaults.
+- 8d54dc5: Refine the usage heatmap with blue levels, a legend, dark-theme contrast, and a borderless card with subtle date-cell corners. Make model and thinking controls more compact with current-model dots, rectangular slider thumbs, default-level markers, and a Max-effort usage hint, while preserving runtime choices and default settings.
+- e678b8b: Keep the file tree refreshable after expanded directories are removed, while continuing to report errors when reading existing directories.
+- 356e654: Prevent workspace file writes from following links outside the workspace, preserve concurrent machine changes, and apply remote JSON request timeouts through response completion.
+
+  Keep pending attachments with their original conversation, preserve existing settings when saving gateway options, and retain keyboard focus when pinning navigation items.
+
+  Read usage history through its owning session daemon, enforce file limits before scanning, reuse unchanged history, and recover usage refreshes after reconnecting the view. Restart the session daemon after updating to enable the usage endpoint.
+- cdb2d84: Animate thinking-strength names vertically when changing levels, while preserving the independent picker, slider, and reduced-motion preferences.
+- 2aa450f: Prevent concurrent file moves from overwriting existing destinations, move symbolic links without moving their targets, and reject escaping destination paths before creating directories.
+- c1e10e9: Add a context view showing loaded instruction-file paths, available skills, and observed conversation references alongside usage. Keep prompt contents private, distinguish availability from completed reads, and explain missing runtime metadata or unloaded history.
+- 4b8eac9: Avoid duplicate Files and Terminal navigation when a wide-screen workspace panel is collapsed into the tabbed layout.
+- 6a12679: Add read-only skill browsing in Settings, including source scopes, instructions and linked Markdown documents. Inspect the current conversation's runtime system prompt and active tool schemas from context usage details without starting another agent run.
+- cdb2d84: Keep thinking-strength controls and the mouse pointer visually stable while saving, and show delayed save feedback without changing the popover height.
+- ee7dccb: Improve terminal readability with larger text, more spacing, and stronger text contrast. Prefer installed monospace Nerd Fonts so shell prompt icons render correctly, including in the selectable copy view.
+- dd6408f: Expose model selection and thinking strength as separate composer controls, with compact menus and supported reasoning levels.
+- dd6408f: Choose thinking strength with a horizontal slider that previews supported levels while dragging and applies changes on release. Show the current level in the composer and keep new-session defaults separate.
+- 9dee63c: Align model and MCP settings, chat controls, search previews, session selection and upload dialogs with the current light and dark interface. Show a recoverable error when settings cannot load instead of leaving them in a loading state.
+- dce6a48: Keep side-panel collapse controls visible and improve usage-label contrast and attachment removal feedback in both light and dark themes.
+- dd6408f: Align the light and dark themes with neutral Claude-style surfaces, subtle borders, gray message bubbles, and terracotta accents.
+- 9dee63c: Show real workspace token usage on the welcome page, with daily activity, model breakdowns, time-zone-aware reporting, and deduplicated branch history in both light and dark themes.
 
 ## 1.202610.3
 

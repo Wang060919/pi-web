@@ -23,7 +23,7 @@ describe.skipIf(process.platform === "win32")("global install script", () => {
     expect((await readFile(fixture.npmArgsPath, "utf8")).trim().split("\n")).toEqual([
       "install",
       "-g",
-      "@jmfederico/pi-web",
+      "@wang060919/pi-web",
       "--allow-scripts=node-pty",
     ]);
     expect((await readFile(fixture.piWebArgsPath, "utf8")).trim().split("\n")).toEqual(["install"]);

@@ -57,12 +57,12 @@ it("uses bundled Info with no project, workspace or session and follows selectio
   expect(panel.shadowRoot?.textContent).not.toContain("Workspace");
   expect(panel.shadowRoot?.querySelector('[aria-label="Info"]')).not.toBeNull();
   const status: PiWebStatusResponse = {
-    packageName: "@jmfederico/pi-web", generatedAt: "now",
+    packageName: "@wang060919/pi-web", generatedAt: "now",
     components: {
       web: { component: "web", label: "Web/UI", runtimeVersion: "1.202610.0", stale: false, available: true },
       sessiond: { component: "sessiond", label: "Session daemon", stale: false, available: true },
     },
-    release: { packageName: "@jmfederico/pi-web", updateAvailable: false }, commands: {}, messages: [],
+    release: { packageName: "@wang060919/pi-web", updateAvailable: false }, commands: {}, messages: [],
   };
   patchState(app, { piWebStatus: status });
   await settle(app);
@@ -498,12 +498,12 @@ it("offers Updates Run only with a selected-workspace Terminal on the current ma
 });
 
 const updatesStatus: PiWebStatusResponse = {
-  packageName: "@jmfederico/pi-web", generatedAt: "now",
+  packageName: "@wang060919/pi-web", generatedAt: "now",
   components: {
     web: { component: "web", label: "Web/UI", stale: false, available: true, installation: { kind: "docker" } },
     sessiond: { component: "sessiond", label: "Session daemon", stale: false, available: true, installation: { kind: "docker" } },
   },
-  release: { packageName: "@jmfederico/pi-web", updateAvailable: true },
+  release: { packageName: "@wang060919/pi-web", updateAvailable: true },
   commands: { update: "node /workspace/dist/cli.js update" },
   messages: [{ id: "update", severity: "info", title: "PI WEB update available", body: "Update and restart to use the new release." }],
 };

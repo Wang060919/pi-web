@@ -2,7 +2,7 @@
 
 import { html, render, svg } from "lit";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { PiWebComponentStatus, PiWebStatusResponse, PluginRuntimeState, TerminalCommandRun, TerminalCommandRunHandle, ApplicationPanelContext, WorkspacePanelTerminal } from "@jmfederico/pi-web/plugin-api";
+import type { PiWebComponentStatus, PiWebStatusResponse, PluginRuntimeState, TerminalCommandRun, TerminalCommandRunHandle, ApplicationPanelContext, WorkspacePanelTerminal } from "@wang060919/pi-web/plugin-api";
 import plugin from "./pi-web-plugin.js";
 
 function component(overrides: Partial<PiWebComponentStatus> = {}): PiWebComponentStatus {
@@ -19,13 +19,13 @@ function component(overrides: Partial<PiWebComponentStatus> = {}): PiWebComponen
 
 function status(overrides: Partial<PiWebStatusResponse> = {}): PiWebStatusResponse {
   return {
-    packageName: "@jmfederico/pi-web",
+    packageName: "@wang060919/pi-web",
     generatedAt: "2026-06-14T00:00:00.000Z",
     components: {
       web: component({ component: "web", label: "Web/UI" }),
       sessiond: component({ component: "sessiond", label: "Session daemon" }),
     },
-    release: { packageName: "@jmfederico/pi-web", updateAvailable: false },
+    release: { packageName: "@wang060919/pi-web", updateAvailable: false },
     commands: {},
     messages: [],
     ...overrides,
@@ -102,7 +102,7 @@ describe("Updates plugin panel layout", () => {
   it("folds the update notice into one recommended action above the services and optional commands", () => {
     const update = "pi-web update";
     const container = renderPanel(status({
-      release: { packageName: "@jmfederico/pi-web", updateAvailable: true, latestVersion: "1.202605.9" },
+      release: { packageName: "@wang060919/pi-web", updateAvailable: true, latestVersion: "1.202605.9" },
       commands: {
         update,
         restart: "pi-web restart",
@@ -160,7 +160,7 @@ describe("Updates plugin panel layout", () => {
 
   it("explains confirmation and safe-execution limits rather than promising a seamless update", () => {
     const container = renderPanel(status({
-      release: { packageName: "@jmfederico/pi-web", updateAvailable: true },
+      release: { packageName: "@wang060919/pi-web", updateAvailable: true },
       commands: { update: "pi-web update" },
     }));
     expect(container.querySelector(".updates-recommended")?.textContent).toContain("Updates require confirmation in the terminal");
@@ -182,7 +182,7 @@ describe("Updates plugin panel layout", () => {
   ])("runs the recommended command unchanged in the panel-scoped terminal: %s", (update) => {
     const runCommand = vi.fn<WorkspacePanelTerminal["runCommand"]>((input) => Promise.resolve(commandRunHandle(input)));
     const container = renderPanel(status({
-      release: { packageName: "@jmfederico/pi-web", updateAvailable: true, latestVersion: "1.202605.9" },
+      release: { packageName: "@wang060919/pi-web", updateAvailable: true, latestVersion: "1.202605.9" },
       commands: { update, restart: "pi-web-docker restart" },
       messages: [{
         id: "update-available",

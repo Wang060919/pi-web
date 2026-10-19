@@ -1,4 +1,4 @@
-import type { PluginRuntimeContext, PluginRuntimeState } from "@jmfederico/pi-web/plugin-api";
+import type { PluginRuntimeContext, PluginRuntimeState } from "@wang060919/pi-web/plugin-api";
 import { describe, expect, it, vi } from "vitest";
 import plugin from "./pi-web-plugin.js";
 

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { PluginActivationContext, PluginRuntimeContext, WorkspacePanelContext } from "@jmfederico/pi-web/plugin-api";
+import type { PluginActivationContext, PluginRuntimeContext, WorkspacePanelContext } from "@wang060919/pi-web/plugin-api";
 import { html, svg, type TemplateResult } from "lit";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FilesRuntime } from "./FilesRuntime";

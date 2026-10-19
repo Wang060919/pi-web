@@ -4,7 +4,7 @@ import { realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it, vi } from "vitest";
-import type { ServerPluginActivationContext, ServerPluginExecFileResult } from "@jmfederico/pi-web/server-plugin-api";
+import type { ServerPluginActivationContext, ServerPluginExecFileResult } from "@wang060919/pi-web/server-plugin-api";
 import { createServerPluginExecFile } from "../../src/server/plugins/serverPluginExec.js";
 import { gitDiff as requestGitDiff, gitStatus as requestGitStatus } from "./git-backend.js";
 
