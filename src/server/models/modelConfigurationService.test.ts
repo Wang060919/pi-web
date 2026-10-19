@@ -70,7 +70,7 @@ describe("model configuration", () => {
     const updated = await service.write(first.revision, [provider]);
     expect(updated.revision).not.toBe(first.revision);
     expect(JSON.parse(await readFile(join(path, "models.json"), "utf8"))).toEqual(fixture());
-    expect((await stat(join(path, "models.json"))).mode & 0o777).toBe(0o600);
+    if (process.platform !== "win32") expect((await stat(join(path, "models.json"))).mode & 0o777).toBe(0o600);
     expect(saved).toHaveBeenCalledOnce();
   });
 

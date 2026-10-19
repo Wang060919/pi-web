@@ -55,6 +55,11 @@ async function scopedConfigPath(context: McpConfigContext, scope: McpConfigScope
 async function readConfig(context: McpConfigContext, scope: McpConfigScope): Promise<ConfigFile> {
   const path = await scopedConfigPath(context, scope);
   let text = "";
+  const entry = await lstat(path).catch((error: unknown) => {
+    if (isNodeErrorWithCode(error, "ENOENT")) return undefined;
+    throw error;
+  });
+  if (entry?.isSymbolicLink() === true) throw new McpManagementError("MCP configuration symbolic links must be edited at their target; this panel reads regular files only");
   const noFollow = process.platform === "win32" ? 0 : constants.O_NOFOLLOW;
   const nonBlocking = process.platform === "win32" ? 0 : constants.O_NONBLOCK;
   // Nonblocking open cannot wait forever for a FIFO writer. Never follow a
@@ -73,6 +78,7 @@ async function readConfig(context: McpConfigContext, scope: McpConfigScope): Pro
       // or final path while open was pending cannot redirect the byte read.
       if (await scopedConfigPath(context, scope) !== path) throw new McpManagementError("MCP configuration directory changed; reload before continuing", 409);
       const current = await lstat(path);
+      if (current.isSymbolicLink()) throw new McpManagementError("MCP configuration symbolic links must be edited at their target; this panel reads regular files only");
       if (!current.isFile() || current.dev !== opened.dev || current.ino !== opened.ino) throw new McpManagementError("MCP configuration changed while opening; reload before continuing", 409);
       const buffer = Buffer.alloc(CONFIG_LIMIT_BYTES + 1);
       let length = 0;

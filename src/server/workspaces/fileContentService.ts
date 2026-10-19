@@ -1,5 +1,5 @@
 import { constants } from "node:fs";
-import { link, lstat, mkdir, open, readlink, realpath, rename, stat, symlink, unlink } from "node:fs/promises";
+import { link, lstat, mkdir, mkdtemp, open, readlink, realpath, rename, rm, stat, symlink, unlink } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import type { DeleteWorkspaceFileResponse, FileContentMediaType, FileContentResponse, MoveWorkspaceFileOptions, MoveWorkspaceFileResponse, PiWebPathAccessConfig, WriteWorkspaceFileOptions, WriteWorkspaceFileResponse } from "../../shared/apiTypes.js";
 import { classifyWorkspaceFile, MAX_WORKSPACE_FILE_CONTENT_BYTES, type WorkspaceFileClassification } from "../../shared/workspaceFiles.js";
@@ -68,23 +68,35 @@ export async function writeWorkspaceFile(rootPath: string, path: string | undefi
   const { root, target, relativePath } = await resolveParentInsideWorkspace(rootPath, path);
 
   const realParent = await prepareWriteParent(root, dirname(target), createDirs);
-  // Existing internal symlinks keep writing their validated target. New files
-  // use exclusive creation, which never follows a dangling final symlink.
-  const writeTarget = existing?.target ?? join(realParent, basename(target));
+  // Publish a new directory entry with link(), which fails if any entry already
+  // exists. Windows open("wx") can follow a dangling symlink and create its target.
+  if (existing === undefined) {
+    const staging = await mkdtemp(join(realParent, ".pi-web-write-"));
+    try {
+      const temporary = join(staging, "content");
+      const handle = await open(temporary, "wx");
+      try { await handle.writeFile(content); }
+      finally { await handle.close(); }
+      const s = await stat(temporary);
+      await link(temporary, join(realParent, basename(target)));
+      return { path: relativePath, size: s.size, modifiedAt: s.mtime.toISOString(), created: true };
+    } finally { await rm(staging, { recursive: true, force: true }); }
+  }
+
+  // Existing internal symlinks keep writing their validated target.
+  const writeTarget = existing.target;
   const noFollow = process.platform === "win32" ? 0 : constants.O_NOFOLLOW;
-  const handle = await open(writeTarget, existing === undefined ? "wx" : constants.O_WRONLY | noFollow);
+  const handle = await open(writeTarget, constants.O_WRONLY | noFollow);
   try {
     const opened = await handle.stat();
     if (!opened.isFile()) throw new Error("Path is not a file");
     // Open without truncation, then verify the handle before changing bytes.
     // This also protects platforms that cannot use O_NOFOLLOW, including Windows.
-    if (existing !== undefined) {
-      if (opened.dev !== existing.dev || opened.ino !== existing.ino) throw new Error("File changed while preparing write");
-      await handle.truncate(0);
-    }
+    if (opened.dev !== existing.dev || opened.ino !== existing.ino) throw new Error("File changed while preparing write");
+    await handle.truncate(0);
     await handle.writeFile(content);
     const s = await handle.stat();
-    return { path: relativePath, size: s.size, modifiedAt: s.mtime.toISOString(), created: existing === undefined };
+    return { path: relativePath, size: s.size, modifiedAt: s.mtime.toISOString(), created: false };
   } finally {
     await handle.close();
   }

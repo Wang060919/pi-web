@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, realpath, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -36,7 +36,7 @@ describe("MCP config management", () => {
     await store.write(context, "global", "local", { ...entry?.config, enabled: false }, snapshot.revisions.global, sdk);
     const updated: unknown = JSON.parse(await readFile(path, "utf8"));
     expect(updated).toEqual({ ...original, mcpServers: { ...original.mcpServers, local: { ...original.mcpServers.local, enabled: false } } });
-    expect((await stat(path)).mode & 0o777).toBe(0o600);
+    if (process.platform !== "win32") expect((await stat(path)).mode & 0o777).toBe(0o600);
   });
 
   it("does not read project configuration until trust has been granted", async () => {
@@ -208,7 +208,7 @@ describe("MCP config management", () => {
     const store = new McpConfigStore();
     const snapshot = await store.list(context);
     expect(snapshot.servers.map((server) => server.name)).toEqual(["local"]);
-    expect((await store.entry(context, "project", "local", sdk)).source).toBe(join(inside, "mcp.json"));
+    expect((await store.entry(context, "project", "local", sdk)).source).toBe(await realpath(join(inside, "mcp.json")));
     await store.write(context, "project", "local", { command: "node", enabled: false }, snapshot.revisions.project ?? "", sdk);
     expect((await store.list(context)).servers[0]?.enabled).toBe(false);
   });

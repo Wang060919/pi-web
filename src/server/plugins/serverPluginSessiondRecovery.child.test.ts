@@ -14,6 +14,7 @@ type FixtureChild = ChildProcessByStdio<null, Readable, Readable>;
 
 const tempRoots = new Set<string>();
 const children = new Set<FixtureChild>();
+const closedChildren = new WeakSet<FixtureChild>();
 const liveTerminalRoot = resolve("dist/pi-web-plugins/terminal");
 let liveTerminalBefore: string;
 
@@ -24,13 +25,15 @@ beforeEach(async () => {
 afterEach(async () => {
   for (const child of children) {
     child.kill("SIGKILL");
-    await waitForExit(child, 10_000);
+    await waitForClose(child, 10_000);
   }
   children.clear();
   for (const root of tempRoots) {
     assertOwnedRoot(root);
     if ((await lstat(root)).isSymbolicLink()) throw new Error(`Refusing to clean symlink: ${root}`);
-    await rm(root, { recursive: true, force: true });
+    // Windows can briefly retain filesystem handles after a child closes.
+    // Retry only transient removal errors; persistent locks still fail cleanup.
+    await rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     tempRoots.delete(root);
   }
   // Check after cleanup too: the original regression deleted the live bundle here.
@@ -106,7 +109,7 @@ describe("sessiond persisted server plugin recovery", () => {
     expect(existsSync(markerPath)).toBe(false);
 
     child.kill("SIGTERM");
-    const exit = await waitForExit(child, 10_000);
+    const exit = await waitForClose(child, 10_000);
     children.delete(child);
 
     // Windows has no POSIX signal delivery: SIGTERM force-terminates the
@@ -303,7 +306,7 @@ describe("sessiond persisted server plugin recovery", () => {
       .toEqual({ phase: "early" });
 
     child.kill("SIGTERM");
-    const exit = await waitForExit(child, 10_000);
+    const exit = await waitForClose(child, 10_000);
     children.delete(child);
 
     expect(exit).toEqual({ code: 0, signal: null });
@@ -366,7 +369,7 @@ describe("sessiond persisted server plugin recovery", () => {
     await waitForOutput(child, "PLUGIN_STARTED", 15_000);
     expect(existsSync(startedMarker)).toBe(true);
     child.kill("SIGTERM");
-    const exit = await waitForExit(child, 15_000);
+    const exit = await waitForClose(child, 15_000);
     children.delete(child);
 
     expect(exit).toEqual({ code: 0, signal: null });
@@ -426,6 +429,7 @@ function spawnFixtureDaemon(root: string): FixtureChild {
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
+  child.once("close", () => { closedChildren.add(child); });
   children.add(child);
   return child;
 }
@@ -474,11 +478,13 @@ function waitForOutput(child: FixtureChild, expected: string, timeoutMs: number)
   });
 }
 
-function waitForExit(
+function waitForClose(
   child: FixtureChild,
   timeoutMs: number,
 ): Promise<{ code: number | null; signal: NodeJS.Signals | null }> {
-  if (child.exitCode !== null || child.signalCode !== null) {
+  // Exit alone can precede stdio closure. Wait for close before deleting the
+  // fixture used as the child's working directory, including in afterEach.
+  if (closedChildren.has(child)) {
     return Promise.resolve({ code: child.exitCode, signal: child.signalCode });
   }
   return new Promise((resolvePromise, rejectPromise) => {
@@ -486,14 +492,14 @@ function waitForExit(
       cleanup();
       rejectPromise(new Error("Timed out waiting for sessiond shutdown"));
     }, timeoutMs);
-    const onExit = (code: number | null, signal: NodeJS.Signals | null): void => {
+    const onClose = (code: number | null, signal: NodeJS.Signals | null): void => {
       cleanup();
       resolvePromise({ code, signal });
     };
     const cleanup = (): void => {
       clearTimeout(timeout);
-      child.off("exit", onExit);
+      child.off("close", onClose);
     };
-    child.once("exit", onExit);
+    child.once("close", onClose);
   });
 }

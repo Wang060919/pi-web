@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { expect, it } from "vitest";
 import { developmentEnvironment, ownsRunner, parseProcessStat } from "./dev-local.mjs";
 
@@ -8,10 +9,10 @@ it("isolates state and drops credentials, daemon overrides, and loader injection
     PI_WEB_SESSIOND_URL: "http://production", PI_WEB_PROJECTS_FILE: "/production/projects.json",
     PI_WEB_ISOLATED_DEVELOPMENT: "0",
   });
-  expect(env.PI_CODING_AGENT_DIR).toBe("/repo/.local/dev/agent");
-  expect(env.PI_CODING_AGENT_SESSION_DIR).toBe("/repo/.local/dev/sessions");
-  expect(env.PI_WEB_DATA_DIR).toBe("/repo/.local/dev/state");
-  expect(env.PI_WEB_CONFIG).toBe("/repo/.local/dev/config.json");
+  expect(env.PI_CODING_AGENT_DIR).toBe(join("/repo", ".local", "dev", "agent"));
+  expect(env.PI_CODING_AGENT_SESSION_DIR).toBe(join("/repo", ".local", "dev", "sessions"));
+  expect(env.PI_WEB_DATA_DIR).toBe(join("/repo", ".local", "dev", "state"));
+  expect(env.PI_WEB_CONFIG).toBe(join("/repo", ".local", "dev", "config.json"));
   expect(env.PI_WEB_SESSIOND_SOCKET).toBe("/tmp/private/sessiond.sock");
   expect(env.PI_WEB_ISOLATED_DEVELOPMENT).toBe("1");
   for (const key of ["OPENAI_API_KEY", "NODE_OPTIONS", "LD_LIBRARY_PATH", "PI_WEB_AGENT_DIR", "PI_WEB_AGENT_SESSION_DIR", "PI_WEB_SESSIOND_URL", "PI_WEB_PROJECTS_FILE"]) {
