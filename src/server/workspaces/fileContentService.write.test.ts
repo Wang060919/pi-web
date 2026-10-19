@@ -1,4 +1,4 @@
-import { mkdir, open, readFile, stat, symlink, unlink, writeFile } from "node:fs/promises";
+import { link, mkdir, open, readFile, readdir, stat, symlink, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { writeWorkspaceFile } from "./fileContentService.js";
@@ -6,11 +6,12 @@ import { cleanupTempWorkspaces, createTempWorkspace } from "./fileContentService
 
 vi.mock("node:fs/promises", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:fs/promises")>();
-  return { ...actual, open: vi.fn(actual.open) };
+  return { ...actual, open: vi.fn(actual.open), link: vi.fn(actual.link) };
 });
 
 afterEach(async () => {
   vi.mocked(open).mockReset();
+  vi.mocked(link).mockReset();
   await cleanupTempWorkspaces();
 });
 
@@ -105,6 +106,22 @@ describe("writeWorkspaceFile", () => {
 
     await expect(writeWorkspaceFile(root, "link.txt", Buffer.from("unsafe"), { overwrite })).rejects.toThrow();
     await expect(stat(outside)).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it.each([true, false])("rejects a dangling link inserted at publication without creating its target (overwrite=%s)", async (overwrite) => {
+    const root = await createTempWorkspace();
+    const outsideDir = await createTempWorkspace("pi-web-publish-race-");
+    const outside = join(outsideDir, "new.txt");
+    const target = join(root, "new.txt");
+    const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+    vi.mocked(link).mockImplementationOnce(async (source, destination) => {
+      await symlink(outside, target, "file");
+      return actual.link(source, destination);
+    });
+
+    await expect(writeWorkspaceFile(root, "new.txt", Buffer.from("unsafe"), { overwrite })).rejects.toThrow();
+    await expect(stat(outside)).rejects.toMatchObject({ code: "ENOENT" });
+    expect(await readdir(root)).toEqual(["new.txt"]);
   });
 
   it.each([true, false])("does not truncate a replaced final symlink (native no-follow=%s)", async (noFollow) => {

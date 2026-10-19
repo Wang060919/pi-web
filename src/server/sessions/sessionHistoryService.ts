@@ -1,5 +1,5 @@
 import { constants } from "node:fs";
-import { open } from "node:fs/promises";
+import { lstat, open } from "node:fs/promises";
 import type { SessionInfo, SessionRef } from "../../shared/apiTypes.js";
 import type { SessionHistoryEntry, SessionSearchResponse } from "../../shared/sessionHistory.js";
 import { cwdPathsEqual, normalizeRequestCwd } from "../workingDirectory.js";
@@ -95,10 +95,18 @@ export class SessionHistoryService {
 }
 
 async function readTranscript(session: SessionInfo, maxBytes: number, allowPartial: boolean, resolvedPath = session.path): Promise<{ lines: string[]; truncated: boolean }> {
-  const file = await open(resolvedPath, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  const before = await lstat(resolvedPath);
+  if (!before.isFile()) throw new Error("Session transcript must be a regular file");
+  const noFollow = process.platform === "win32" ? 0 : constants.O_NOFOLLOW;
+  const nonBlocking = process.platform === "win32" ? 0 : constants.O_NONBLOCK;
+  const file = await open(resolvedPath, constants.O_RDONLY | noFollow | nonBlocking);
   try {
     const metadata = await file.stat();
-    if (!metadata.isFile()) throw new Error("Session transcript must be a regular file");
+    const current = await lstat(resolvedPath);
+    if (!metadata.isFile() || !current.isFile()) throw new Error("Session transcript must be a regular file");
+    if (metadata.dev !== before.dev || metadata.ino !== before.ino || current.dev !== metadata.dev || current.ino !== metadata.ino) {
+      throw new Error("Session transcript changed while opening");
+    }
     if (!allowPartial && metadata.size > maxBytes) throw new Error("Session is too large to export (64 MiB limit)");
     const chunks: Buffer[] = [];
     let bytes = 0;

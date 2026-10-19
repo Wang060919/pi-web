@@ -1,7 +1,7 @@
 import { createReadStream } from "node:fs";
 import { appendFile, mkdir, mkdtemp, open, rm, truncate, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { UsageOverviewResponse } from "../../shared/usageOverview.js";
 import { defaultPiSessionDir } from "./piSessionManagerGateway.js";
@@ -19,7 +19,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
   return { ...actual, open: vi.fn(actual.open) };
 });
 
-const CWD = "/srv/usage-workspace";
+const CWD = resolve("/srv/usage-workspace");
 const DAY_ONE = "2026-10-14T10:00:00.000Z";
 const DAY_TWO = "2026-10-15T10:00:00.000Z";
 const USAGE = { input: 100, output: 20, cacheRead: 30, cacheWrite: 40, totalTokens: 190, cost: { total: 0.1 } };

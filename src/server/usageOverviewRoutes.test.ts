@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import Fastify from "fastify";
 import { describe, expect, it, vi } from "vitest";
 import type { UsageOverviewResponse } from "../shared/usageOverview.js";
@@ -26,7 +26,7 @@ describe("usage overview routes", () => {
         expect(response.json<UsageOverviewResponse>()).toEqual(overview);
         expect(response.headers["cache-control"]).toBe("no-store");
       }
-      expect(read).toHaveBeenCalledWith("/tmp/project space", "Asia/Shanghai");
+      expect(read).toHaveBeenCalledWith(resolve("/tmp/project space"), "Asia/Shanghai");
     } finally { await app.close(); }
   });
 
@@ -120,7 +120,7 @@ describe("usage overview routes", () => {
       const response = await app.inject({ url: "/api/usage-overview?cwd=%2Fworkspace&timeZone=UTC" });
       expect(response.statusCode).toBe(503);
       expect(response.json<unknown>()).toEqual({ error: "Usage history is unavailable" });
-      expect(request).toHaveBeenCalledExactlyOnceWith("GET", "/usage-overview?cwd=%2Fworkspace&timeZone=UTC");
+      expect(request).toHaveBeenCalledExactlyOnceWith("GET", `/usage-overview?${new URLSearchParams({ cwd: resolve("/workspace"), timeZone: "UTC" })}`);
     } finally { await app.close(); }
   });
 });
