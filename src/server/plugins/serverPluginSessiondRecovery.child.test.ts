@@ -398,7 +398,13 @@ async function createDaemonFixture(): Promise<string> {
   tempRoots.add(root);
   // Keep import.meta.url-based discovery in the fixture without adding a production
   // environment override. Only dependencies are linked; source and bundles are owned.
-  await cp(resolve("src"), join(root, "src"), { recursive: true });
+  const sourceRoot = resolve("src");
+  await cp(sourceRoot, join(root, "src"), {
+    recursive: true,
+    // The real daemon imports production server/shared sources, not UI or test
+    // modules. Avoid copying hundreds of unrelated files before startup begins.
+    filter: (source) => source !== join(sourceRoot, "client") && !/\.(?:test|testSupport)\.ts$/u.test(source),
+  });
   await copyFile(resolve("package.json"), join(root, "package.json"));
   await symlink(resolve("node_modules"), join(root, "node_modules"), "junction");
   return root;
