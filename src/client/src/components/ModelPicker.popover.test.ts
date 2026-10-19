@@ -81,7 +81,7 @@ describe("model-picker popover", () => {
     expect(thinking.disabled).toBe(false);
   });
 
-  it("shows model names and providers with the actual current check separate from keyboard focus", async () => {
+  it("shows model names and providers with the current indicator separate from keyboard focus", async () => {
     const picker = await mountPicker();
     expect(picker.hasAttribute("popover")).toBe(false);
     expect(picker.shadowRoot?.querySelector(".popover-surface")).not.toBeNull();
@@ -93,14 +93,14 @@ describe("model-picker popover", () => {
     const other = requiredElement(modelChoices(picker)[1], "other model choice");
     expect(current.title).toBe("openai/gpt-5");
     expect(current.getAttribute("aria-current")).toBe("true");
-    expect(current.querySelector('.current-check[aria-label="Current model"] svg')).not.toBeNull();
+    expect(current.querySelector('[role="img"][aria-label="Current model"]')).not.toBeNull();
 
     pressKey(search(picker), "ArrowDown");
     await settleRenderedDialog(picker);
     expect(other.closest(".popover-row")?.classList.contains("selected")).toBe(true);
     expect(other.getAttribute("aria-current")).toBeNull();
     expect(current.getAttribute("aria-current")).toBe("true");
-    expect(current.querySelector('.current-check[aria-label="Current model"] svg')).not.toBeNull();
+    expect(current.querySelector('[role="img"][aria-label="Current model"]')).not.toBeNull();
   });
 
   it("searches displayed names and commits the keyboard choice with its wire identity", async () => {

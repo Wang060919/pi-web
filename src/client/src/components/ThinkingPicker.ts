@@ -99,7 +99,7 @@ export class ThinkingPicker extends LitElement {
           </div>${description}` : html`
             <div class="strength-scale" aria-hidden="true"><span>${t("ui.thinkingPicker.faster")}</span><span>${t("ui.thinkingPicker.smarter")}</span></div>
           `}
-          <div class=${`slider${index < 0 ? " unknown" : ""}`}>
+          <div class=${`slider${index < 0 ? " unknown" : ""}`} data-high-usage=${String(option?.value === "max")} style=${`--strength-position: ${String(this.options.length < 2 ? 0 : Math.max(0, index) / (this.options.length - 1) * 100)}%`}>
             <input
               id="thinking-strength"
               type="range"
@@ -109,7 +109,7 @@ export class ThinkingPicker extends LitElement {
               .value=${String(Math.max(0, index))}
               aria-label=${this.title}
               aria-valuetext=${label}
-              aria-describedby="strength-description strength-help"
+              aria-describedby=${`strength-description strength-help${option?.value === "max" ? " strength-usage" : ""}`}
               ?disabled=${rangeDisabled}
               @input=${(event: Event) => { this.preview(event); }}
               @change=${(event: Event) => { void this.commitRange(event); }}
@@ -118,6 +118,7 @@ export class ThinkingPicker extends LitElement {
               ${this.options.map((level, levelIndex) => html`
                 <button
                   class=${level.value === value ? "level selected" : "level"}
+                  data-default=${String(level.value === this.defaultValue)}
                   type="button"
                   style=${`--level-position: ${String(this.options.length < 2 ? 50 : levelIndex / (this.options.length - 1) * 100)}%`}
                   title=${level.label}
@@ -130,6 +131,7 @@ export class ThinkingPicker extends LitElement {
             </div>
           </div>
           ${this.embedded ? nothing : description}
+          ${option?.value === "max" ? html`<p id="strength-usage" class="usage-warning"><strong>${t("ui.thinkingPicker.highUsage")}</strong><span>${t("ui.thinkingPicker.highUsageHint")}</span></p>` : nothing}
           <p id="strength-help" class=${this.showSavingFeedback ? "help saving" : "help"} role="status">${this.showSavingFeedback ? t("ui.thinkingPicker.saving") : this.options.length === 0 ? t("ui.thinkingPicker.unavailable") : this.options.length === 1 ? t("ui.thinkingPicker.fixed") : t("ui.thinkingPicker.hint")}</p>
           ${this.pickError === undefined ? nothing : html`<p class="error" role="alert">${this.pickError}</p>`}
           ${this.onSetDefault !== undefined || this.defaultValue !== undefined || this.defaultsLoading ? html`
@@ -276,7 +278,7 @@ export class ThinkingPicker extends LitElement {
       this.removeAttribute("anchored");
       return;
     }
-    const width = Math.min(260, window.innerWidth - 24);
+    const width = Math.min(220, window.innerWidth - 24);
     const left = Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12));
     this.style.setProperty("--thinking-picker-left", `${String(left)}px`);
     this.style.setProperty("--thinking-picker-bottom", `${String(window.innerHeight - rect.top + 8)}px`);
@@ -287,7 +289,7 @@ export class ThinkingPicker extends LitElement {
   static override styles = css`
     :host { position: fixed; inset: 0; z-index: 10; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     :host([embedded]) { position: static; inset: auto; z-index: auto; display: block; min-width: 0; }
-    modal-surface { --pi-overlay: transparent; --modal-surface-width: min(260px, calc(100vw - 24px)); --modal-surface-max-height: calc(100dvh - 24px); --modal-surface-backdrop-padding: 12px; --modal-surface-radius: 12px; }
+    modal-surface { --pi-overlay: transparent; --modal-surface-width: min(220px, calc(100vw - 24px)); --modal-surface-max-height: calc(100dvh - 24px); --modal-surface-backdrop-padding: 12px; --modal-surface-radius: 12px; }
     :host([anchored]) modal-surface { --modal-surface-place-items: end start; --modal-surface-backdrop-padding: 12px 12px var(--thinking-picker-bottom) var(--thinking-picker-left); --modal-surface-max-height: var(--thinking-picker-height); }
     header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px 4px; }
     header .current-value { min-width: 0; justify-content: flex-start; gap: 8px; }
@@ -304,26 +306,29 @@ export class ThinkingPicker extends LitElement {
     output { color: var(--pi-accent); font-size: 17px; font-weight: var(--pi-font-weight-semibold, 540); overflow-wrap: anywhere; text-align: right; }
     p { margin: 0; }
     .description { min-height: 34px; margin-top: 8px; color: var(--pi-muted); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
-    .slider { margin-top: 12px; }
+    .slider { --strength-fill: var(--pi-muted); --strength-track: color-mix(in srgb, var(--pi-text) 15%, var(--pi-surface)); --strength-thumb-border: var(--pi-border); margin-top: 12px; }
+    .slider[data-high-usage="true"] { --strength-fill: var(--pi-accent); --strength-thumb-border: var(--pi-accent); }
     input[type=range] { box-sizing: border-box; display: block; width: calc(100% - 18px); height: 24px; margin: 0 9px; padding: 0; appearance: none; -webkit-appearance: none; background: transparent; accent-color: var(--pi-accent); cursor: pointer; }
     input[type=range]:disabled { opacity: .45; cursor: not-allowed; }
     .save-pending button:disabled, .save-pending input[type=range]:disabled { opacity: 1; cursor: pointer; }
-    input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 99px; background: color-mix(in srgb, var(--pi-accent) 32%, var(--pi-border)); }
-    input[type=range]::-moz-range-track { height: 4px; border-radius: 99px; background: color-mix(in srgb, var(--pi-accent) 32%, var(--pi-border)); }
-    input[type=range]::-webkit-slider-thumb { width: 16px; height: 16px; margin-top: -6px; border: 3px solid var(--pi-surface); border-radius: 50%; appearance: none; -webkit-appearance: none; background: var(--pi-accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--pi-accent) 70%, transparent); }
-    input[type=range]::-moz-range-thumb { box-sizing: border-box; width: 16px; height: 16px; border: 3px solid var(--pi-surface); border-radius: 50%; background: var(--pi-accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--pi-accent) 70%, transparent); }
+    input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 99px; background: linear-gradient(to right, var(--strength-fill) 0% var(--strength-position), var(--strength-track) var(--strength-position) 100%); }
+    input[type=range]::-moz-range-track { height: 4px; border-radius: 99px; background: linear-gradient(to right, var(--strength-fill) 0% var(--strength-position), var(--strength-track) var(--strength-position) 100%); }
+    input[type=range]::-webkit-slider-thumb { box-sizing: border-box; width: 12px; height: 16px; margin-top: -6px; border: 1px solid var(--strength-thumb-border); border-radius: 4px; appearance: none; -webkit-appearance: none; background: var(--pi-surface); box-shadow: 0 1px 3px var(--pi-shadow-soft); }
+    input[type=range]::-moz-range-thumb { box-sizing: border-box; width: 12px; height: 16px; border: 1px solid var(--strength-thumb-border); border-radius: 4px; background: var(--pi-surface); box-shadow: 0 1px 3px var(--pi-shadow-soft); }
     .unknown input[type=range]::-webkit-slider-thumb { background: var(--pi-muted); box-shadow: 0 0 0 1px var(--pi-border); }
     .unknown input[type=range]::-moz-range-thumb { background: var(--pi-muted); box-shadow: 0 0 0 1px var(--pi-border); }
     .level-labels { position: relative; height: 34px; margin: 0 16px; }
     .level { position: absolute; top: 0; left: var(--level-position); max-width: calc(100% / var(--level-count) + 12px); min-width: 26px; min-height: 32px; padding: 10px 2px 3px; transform: translateX(-50%); border: 0; border-radius: 4px; background: transparent; color: var(--pi-muted); font-size: 11px; line-height: 1.2; }
-    .level::before { position: absolute; top: 1px; left: calc(50% - 1px); width: 2px; height: 4px; border-radius: 1px; background: var(--pi-border); content: ""; }
+    .level::before { position: absolute; top: -13px; left: calc(50% - 1.5px); width: 3px; height: 3px; border-radius: 1px; background: var(--pi-surface); content: ""; pointer-events: none; }
+    .level[data-default="true"]::before { top: -16px; height: 9px; }
     .level > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .level.selected { color: var(--pi-accent); font-weight: var(--pi-font-weight-semibold, 540); }
-    .level.selected::before { background: var(--pi-accent); }
     .level:not(:disabled):hover { background: var(--pi-selection-bg); color: var(--pi-accent); }
     .help, .saving { color: var(--pi-muted); font-size: 11px; line-height: 1.5; }
     .saving { color: var(--pi-accent); }
     .error { margin-top: 8px; color: var(--pi-danger); font-size: 12px; line-height: 1.5; }
+    .usage-warning { display: grid; gap: 2px; margin: 6px 0; color: var(--pi-warning); font-size: 11px; line-height: 1.5; }
+    .usage-warning strong { font-weight: var(--pi-font-weight-medium, 460); }
     .default-section { display: grid; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--pi-border-muted); }
     .stored-default { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
     .stored-default strong { font-size: 12px; font-weight: var(--pi-font-weight-medium, 460); overflow-wrap: anywhere; text-align: right; }
@@ -341,15 +346,10 @@ export class ThinkingPicker extends LitElement {
     .strength-scale { display: flex; justify-content: space-between; gap: 12px; margin: 4px 0 5px; color: var(--pi-muted); font-size: 11px; }
     :host(:not([embedded])) .slider { position: relative; margin-top: 0; }
     :host(:not([embedded])) input[type=range] { position: relative; z-index: 1; width: 100%; height: 26px; margin: 0; }
-    :host(:not([embedded])) input[type=range]::-webkit-slider-runnable-track { height: 20px; border-radius: 6px; background: color-mix(in srgb, var(--pi-text) 15%, var(--pi-surface)); }
-    :host(:not([embedded])) input[type=range]::-moz-range-track { height: 20px; border-radius: 6px; background: color-mix(in srgb, var(--pi-text) 15%, var(--pi-surface)); }
-    :host(:not([embedded])) input[type=range]::-webkit-slider-thumb { width: 16px; height: 20px; margin-top: 0; border: 0; border-radius: 6px; background: var(--pi-text); box-shadow: 0 1px 3px var(--pi-shadow-soft); }
-    :host(:not([embedded])) input[type=range]::-moz-range-thumb { width: 16px; height: 20px; border: 0; border-radius: 6px; background: var(--pi-text); box-shadow: 0 1px 3px var(--pi-shadow-soft); }
-    :host(:not([embedded])) .unknown input[type=range]::-webkit-slider-thumb { background: var(--pi-muted); }
-    :host(:not([embedded])) .unknown input[type=range]::-moz-range-thumb { background: var(--pi-muted); }
     :host(:not([embedded])) .level-labels { position: absolute; z-index: 2; inset: 0 8px; height: 26px; margin: 0; pointer-events: none; }
     :host(:not([embedded])) .level { top: 0; width: 20px; min-width: 20px; max-width: none; min-height: 26px; padding: 0; }
-    :host(:not([embedded])) .level::before { top: 12px; left: 9px; width: 3px; height: 3px; border-radius: 50%; background: var(--pi-muted); }
+    :host(:not([embedded])) .level::before { top: 12px; left: 9px; }
+    :host(:not([embedded])) .level[data-default="true"]::before { top: 9px; }
     :host(:not([embedded])) .level.selected::before { visibility: hidden; }
     :host(:not([embedded])) .level > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     :host(:not([embedded])) .description { min-height: 2.8em; margin: 8px 0 4px; font-size: 11px; line-height: 1.4; }

@@ -285,8 +285,8 @@ export class ModelPicker extends LitElement {
                 <button class="model-choice" type="button" ?disabled=${this.popoverBusy || this.membershipChangePending}
                   title=${option.value} aria-current=${current ? "true" : nothing}
                   @focus=${() => { this.selectedIndex = index; }} @click=${() => { this.requestPick(option.value); }}>
+                  ${current ? html`<span class="current-indicator" role="img" aria-label=${t("ui.modelPicker.current")}></span>` : html`<span class="current-indicator" aria-hidden="true"></span>`}
                   <span class="model-copy"><strong>${option.label}</strong>${option.description === undefined || option.description === "" ? nothing : html`<small>${option.description}</small>`}</span>
-                  ${current ? html`<span class="current-check" role="img" aria-label=${t("ui.modelPicker.current")}>${renderUiIcon("check")}</span>` : html`<span class="current-check" aria-hidden="true"></span>`}
                 </button>
                 ${this.renderDefaultPin(option.value, option.label, catalogEntry?.enabled !== false)}
               </div>
@@ -628,7 +628,7 @@ export class ModelPicker extends LitElement {
       this.removeAttribute("anchored");
       return;
     }
-    const width = Math.min(320, window.innerWidth - 24);
+    const width = Math.min(300, window.innerWidth - 24);
     const left = Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12));
     this.style.setProperty("--model-picker-left", `${String(left)}px`);
     this.style.setProperty("--model-picker-bottom", `${String(window.innerHeight - rect.top + 8)}px`);
@@ -670,27 +670,28 @@ export class ModelPicker extends LitElement {
     small { display: block; margin-top: 4px; color: var(--pi-muted); }
     .empty { padding: 24px; color: var(--pi-muted); text-align: center; }
   `, defaultPinStyles, css`
-    .popover-surface { --pi-overlay: transparent; --modal-surface-width: min(320px, calc(100vw - 24px)); --modal-surface-max-height: calc(100dvh - 24px); --modal-surface-backdrop-padding: 12px; --modal-surface-radius: 10px; font-family: var(--pi-font-family, system-ui, sans-serif); }
+    .popover-surface { --pi-overlay: transparent; --modal-surface-width: min(300px, calc(100vw - 24px)); --modal-surface-max-height: calc(100dvh - 24px); --modal-surface-backdrop-padding: 12px; --modal-surface-radius: 12px; font-family: var(--pi-font-family, system-ui, sans-serif); }
     :host([anchored]) .popover-surface { --modal-surface-place-items: end start; --modal-surface-backdrop-padding: 12px 12px var(--model-picker-bottom) var(--model-picker-left); --modal-surface-max-height: var(--model-picker-height); }
     .popover-header { gap: 12px; padding: 12px 14px 2px; border: 0; }
     .popover-header strong { font-size: 13px; font-weight: var(--pi-font-weight-medium, 460); }
     .popover-close { display: grid; place-items: center; flex: none; width: 28px; height: 28px; padding: 0; border-radius: 6px; }
     .popover-surface button:disabled { cursor: not-allowed; opacity: .5; }
     .popover-surface button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
-    .popover-surface .search-row { margin: 8px 12px; }
-    .popover-surface input.search { padding: 8px 10px; border-color: var(--pi-border-muted); border-radius: 9px; background: var(--pi-surface); }
+    .popover-surface .search-row { margin: 6px 10px 8px; }
+    .popover-surface input.search { padding: 6px 8px; border-color: transparent; border-radius: 8px; background: color-mix(in srgb, var(--pi-text) 6%, var(--pi-bg)); }
     .popover-surface input.search:focus { border-color: var(--pi-accent); }
     .popover-default-help { margin: 0; padding: 0 14px 6px; color: var(--pi-muted); font-size: 11px; line-height: 1.5; }
     .popover-content { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; overflow-y: auto; }
     .popover-options { flex: 1 1 auto; min-height: 58px; max-height: 360px; padding: 2px 6px 6px; }
     thinking-picker { flex: none; border-top: 1px solid var(--pi-border-muted); }
-    .popover-row { display: flex; min-width: 0; align-items: center; margin: 2px 0; border-radius: 9px; }
+    .popover-row { display: flex; min-width: 0; align-items: center; margin: 2px 0; border-radius: 8px; }
     .popover-row.selected, .popover-row:hover { background: var(--pi-selection-bg); }
-    .popover-row .model-choice { display: flex; flex: 1 1 0; min-width: 0; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 9px; font: inherit; text-align: left; }
+    .popover-row .model-choice { display: flex; flex: 1 1 0; min-width: 0; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; font: inherit; text-align: left; }
     .model-copy { display: block; flex: 1 1 0; min-width: 0; }
     .model-copy strong { display: block; overflow: hidden; color: var(--pi-text); font-size: 13px; font-weight: var(--pi-font-weight-medium, 460); line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
     .model-copy small { margin-top: 2px; overflow: hidden; font-size: 11px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
-    .current-check { flex: none; width: 18px; color: var(--pi-accent); font-size: 15px; text-align: center; }
+    .current-indicator { flex: none; width: 6px; height: 6px; border-radius: 50%; background: transparent; }
+    .current-indicator[role="img"] { background: var(--pi-accent); }
     .popover-options button.default-pin { width: 32px; height: 32px; margin: 0 6px 0 0; }
     .popover-options .default-pin svg { width: 16px; height: 16px; }
     .popover-message { margin: 0; padding: 6px 14px 10px; color: var(--pi-muted); font-size: 12px; line-height: 1.5; }

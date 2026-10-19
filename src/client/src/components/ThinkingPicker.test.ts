@@ -15,6 +15,40 @@ afterEach(() => {
 });
 
 describe("thinking-picker", () => {
+  it.each([false, true])("describes Max usage only while a supported Max level is selected or previewed (embedded=%s)", async (embedded) => {
+    const onPick = vi.fn<(value: string) => Promise<boolean>>().mockResolvedValue(true);
+    const picker = createPicker((element) => {
+      element.embedded = embedded;
+      element.options = [
+        { value: "low", label: "Low" },
+        { value: "max", label: "Max" },
+        { value: "custom", label: "Custom" },
+      ];
+      element.selectedValue = "low";
+      element.onPick = onPick;
+    });
+    document.body.append(picker);
+    await picker.updateComplete;
+    await picker.updateComplete;
+    expect(picker.shadowRoot?.querySelector("#strength-usage")).toBeNull();
+    range(picker).value = "1";
+    range(picker).dispatchEvent(new Event("input", { bubbles: true }));
+    await picker.updateComplete;
+    await picker.updateComplete;
+    expect(picker.shadowRoot?.querySelector("#strength-usage")?.textContent).toContain("Max effort may use more tokens.");
+    expect(range(picker).getAttribute("aria-describedby")).toContain("strength-usage");
+    expect(onPick).not.toHaveBeenCalled();
+    expect(picker.selectedValue).toBe("low");
+
+    range(picker).value = "2";
+    range(picker).dispatchEvent(new Event("input", { bubbles: true }));
+    await picker.updateComplete;
+    await picker.updateComplete;
+    expect(picker.shadowRoot?.querySelector("#strength-usage")).toBeNull();
+    expect(range(picker).getAttribute("aria-describedby")).not.toContain("strength-usage");
+    expect(levelButtons(picker).map((button) => button.getAttribute("aria-label"))).toEqual(["Low", "Max", "Custom"]);
+  });
+
   it("previews range input locally, commits once on change, and stays open after success", async () => {
     const pending = deferred<boolean>();
     const onPick = vi.fn<(value: string) => Promise<boolean>>().mockReturnValue(pending.promise);

@@ -112,6 +112,11 @@ export class UsageOverview extends LitElement {
               </div>
             `}
           </div>
+          <div class="legend">
+            <span>${t("ui.usageOverview.less")}</span>
+            <span class="legend-scale" aria-hidden="true">${[0, 1, 2, 3, 4].map((level) => html`<span class="legend-cell" data-level=${level}></span>`)}</span>
+            <span>${t("ui.usageOverview.more")}</span>
+          </div>
         ` : html`
           <div class="models">
             ${data.models.length === 0 ? html`<p>${t("ui.usageOverview.emptyModels")}</p>` : html`<ol>${data.models.map((model) => html`
@@ -126,7 +131,7 @@ export class UsageOverview extends LitElement {
   static override styles = css`
     :host { display: block; width: 480px; max-width: 100%; color: var(--pi-text, light-dark(#171717, #e5e5e5)); font: var(--pi-font-weight-regular, 360) 12px/16px var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
     * { box-sizing: border-box; }
-    .panel { --usage-surface: light-dark(#f0f0ef, var(--pi-surface, #282828)); --usage-cell: light-dark(#dadad9, #3e3e3e); --usage-label: light-dark(#605e59, #b3b0aa); padding: 8px 12px 14px; border-radius: 8px; background: var(--usage-surface); }
+    .panel { --usage-surface: light-dark(#fff, var(--pi-surface, #282828)); --usage-cell: light-dark(#e8e8e6, #3e3e3e); --usage-label: light-dark(#605e59, #b3b0aa); --usage-level-1: light-dark(hsl(217 70% 72%), hsl(217 70% 48%)); --usage-level-2: light-dark(hsl(217 70% 64%), hsl(217 70% 56%)); --usage-level-3: light-dark(hsl(217 70% 56%), hsl(217 70% 64%)); --usage-level-4: light-dark(hsl(217 70% 48%), hsl(217 70% 72%)); padding: 12px; border: 0; border-radius: 12px; background: var(--usage-surface); }
     header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 20px; }
     .switch { display: inline-flex; align-items: center; gap: 1px; }
     button { border: 0; font: inherit; color: inherit; cursor: pointer; }
@@ -144,10 +149,13 @@ export class UsageOverview extends LitElement {
     .heatmap-wrap { position: relative; }
     .heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, minmax(0, 1fr)); grid-template-columns: repeat(26, minmax(0, 1fr)); gap: 3px; }
     .day { display: block; width: 100%; min-width: 0; padding: 0; aspect-ratio: 1; border-radius: 2px; background: var(--usage-cell); }
-    .day[data-level="1"] { background: light-dark(#bcbcbb, #555554); }
-    .day[data-level="2"] { background: light-dark(#969695, #747473); }
-    .day[data-level="3"] { background: light-dark(#737372, #969695); }
-    .day[data-level="4"] { background: light-dark(#50504f, #b7b7b6); }
+    :is(.day, .legend-cell)[data-level="1"] { background: var(--usage-level-1); }
+    :is(.day, .legend-cell)[data-level="2"] { background: var(--usage-level-2); }
+    :is(.day, .legend-cell)[data-level="3"] { background: var(--usage-level-3); }
+    :is(.day, .legend-cell)[data-level="4"] { background: var(--usage-level-4); }
+    .legend { display: flex; align-items: center; gap: 6px; margin-top: 10px; color: var(--usage-label); font-size: 11px; }
+    .legend-scale { display: flex; gap: 3px; }
+    .legend-cell { width: 11px; height: 11px; border-radius: 2px; background: var(--usage-cell); }
     .day[data-in-range="false"] { opacity: .42; }
     .day:hover { outline: 1px solid var(--pi-muted, #999); outline-offset: 1px; }
     .tooltip { position: absolute; z-index: 2; width: min(220px, 100%); left: clamp(0px, calc(var(--column) * (100% + 3px) / 26), max(0px, 100% - 220px)); top: calc(var(--row) * (100% + 3px) / 7 - 6px); transform: translateY(-100%); padding: 10px 12px; border-radius: 8px; background: light-dark(#fcfcfc, #303030); box-shadow: 0 4px 20px #0003; pointer-events: none; }
