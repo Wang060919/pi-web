@@ -193,6 +193,9 @@ export class AppContextBar extends LitElement {
     .context-kind { display: none; }
     .context-value { min-width: 0; overflow: visible; text-overflow: clip; white-space: nowrap; }
     button { cursor: pointer; }
+    @media (max-width: 760px) {
+      .context-bar { padding: 0; }
+    }
     @media (max-width: 760px), (pointer: coarse) {
       .context-action-button { width: 44px; height: 44px; }
       .context-chip { min-height: 44px; max-width: 180px; }

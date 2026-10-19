@@ -378,6 +378,8 @@ export class ChatView extends LitElement {
   @state() private zoomedImage: { src: string; alt: string } | undefined = undefined;
   @state() private expandedMetaKey: string | undefined;
   @state() private collapsedNotificationTargetKeys: ReadonlySet<string> = new Set();
+  private expandedNotificationTargetKeys = new Set<string>();
+  @state() private compactNotificationDefault = false;
   @state() private retainedEmptyNotificationTrayTargetKey: string | undefined;
   private pendingNotificationFocus: PendingNotificationFocus | undefined;
   private imageZoomModalRegistration: RenderedModalRegistration | undefined;
@@ -410,7 +412,14 @@ export class ChatView extends LitElement {
   private imageSession: SessionRef | undefined;
   private touchY: number | undefined;
   private loadMoreRequested = false;
-  private readonly onViewportResize = () => { this.dismissQuoteSelection(); this.scrollFlows.onViewportResize(); };
+  private updateCompactNotificationDefault(): void {
+    this.compactNotificationDefault = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(max-width: 760px)").matches;
+  }
+  private readonly onViewportResize = () => {
+    this.updateCompactNotificationDefault();
+    this.dismissQuoteSelection();
+    this.scrollFlows.onViewportResize();
+  };
   private readonly handleScroll = () => {
     this.dismissQuoteSelection();
     if (this.behaviors.rememberPosition || this.behaviors.followTail || this.behaviors.automaticHistory) this.scrollFlows.onScroll();
@@ -477,6 +486,7 @@ export class ChatView extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.updateCompactNotificationDefault();
     this.ownerDocument.addEventListener("pointerdown", this.handleQuoteOutsidePointer, true);
     this.ownerDocument.addEventListener("keydown", this.handleQuoteEscape);
     window.addEventListener("resize", this.onViewportResize);
@@ -688,7 +698,9 @@ export class ChatView extends LitElement {
     const retainsFocusTarget = this.retainedEmptyNotificationTrayTargetKey === chatKey;
     const totalCount = notificationInboxTotalCount(inbox);
     if (totalCount === 0 && !hasPendingOverlay && !retainsFocusTarget) return null;
-    const collapsed = notificationTrayIsCollapsed(this.collapsedNotificationTargetKeys, inbox);
+    const collapsed = notificationTrayIsCollapsed(this.collapsedNotificationTargetKeys, inbox)
+      || (this.compactNotificationDefault && !this.expandedNotificationTargetKeys.has(chatKey)
+        && inbox.highestSeverity === "info" && !retainsFocusTarget);
     const toggleLabel = collapsed ? t("ChatView.expand_notifications.6f42f8f6") : t("ChatView.collapse_notifications.48fb5653");
     return localizedTemplate("ChatView.clear.d121edb1", html)`
       <section class=${`notification-tray${collapsed ? " collapsed" : ""}`} role="region" aria-labelledby="session-notifications-heading" @focusout=${(event: FocusEvent) => { this.releaseEmptyNotificationTray(event); }}>
@@ -757,6 +769,9 @@ export class ChatView extends LitElement {
   }
 
   private toggleNotificationTray(inbox: SelectedSessionNotificationView, collapsed: boolean): void {
+    const chatKey = notificationTargetKey(inbox);
+    if (collapsed) this.expandedNotificationTargetKeys.add(chatKey);
+    else this.expandedNotificationTargetKeys.delete(chatKey);
     this.collapsedNotificationTargetKeys = setNotificationTrayCollapsed(this.collapsedNotificationTargetKeys, inbox, !collapsed);
   }
 

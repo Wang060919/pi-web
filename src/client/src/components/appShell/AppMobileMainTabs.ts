@@ -177,7 +177,7 @@ export class AppMobileMainTabs extends LitElement {
     button:not(:disabled):not(.selected):hover { background: var(--pi-surface-hover); }
     button:focus-visible { outline: none; box-shadow: inset 0 -1px 0 var(--pi-text-secondary); }
     @media (max-width: 760px) {
-      .mobile-tabs { gap: 4px; padding: 6px 8px; }
+      .mobile-tabs { gap: 4px; padding: 0 8px; }
       .mobile-tabs-frame button { min-width: 44px; height: 44px; justify-content: center; gap: 4px; padding: 0 8px; }
       .mobile-tabs .navigation-tab { display: inline-flex; }
       .tab-fallback { display: inline-block; }
