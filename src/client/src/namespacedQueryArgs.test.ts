@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   contributionQueryFromRecord,
+  sameContributionQueryRecord,
   isContributionQueryParameter,
   patchContributionQueryRecord,
   readContributionQuery,
@@ -295,3 +296,36 @@ function installWindow(href: string): {
     navigate: (next) => { current = new URL(next, current); },
   };
 }
+
+
+describe("contribution query record equality", () => {
+  it("compares own key sets without depending on property insertion order", () => {
+    expect(sameContributionQueryRecord({}, {})).toBe(true);
+    expect(sameContributionQueryRecord({ file: "a", mode: "preview" }, { mode: "preview", file: "a" })).toBe(true);
+    expect(sameContributionQueryRecord({ file: "a" }, {})).toBe(false);
+    expect(sameContributionQueryRecord({ file: "a" }, { mode: "a" })).toBe(false);
+    expect(sameContributionQueryRecord({ file: "a" }, { file: "b" })).toBe(false);
+  });
+
+  it("preserves array order, multiplicity and the distinction from scalar values", () => {
+    const left = Object.freeze({ tag: Object.freeze(["one", "two"]) });
+    expect(sameContributionQueryRecord(left, { tag: ["one", "two"] })).toBe(true);
+    expect(sameContributionQueryRecord(left, { tag: ["two", "one"] })).toBe(false);
+    expect(sameContributionQueryRecord(left, { tag: ["one", "two", "two"] })).toBe(false);
+    expect(sameContributionQueryRecord({ tag: [] }, { tag: [] })).toBe(true);
+    expect(sameContributionQueryRecord({ tag: "one" }, { tag: ["one"] })).toBe(false);
+    expect(sameContributionQueryRecord({ tag: ["one"] }, { tag: "one" })).toBe(false);
+  });
+
+  it("does not equate absent properties with own undefined values at an untyped boundary", () => {
+    const left: Record<string, string> = {};
+    const right: Record<string, string> = {};
+    // Deliberately model runtime data beyond the typed query contract.
+    Object.defineProperty(left, "tag", { value: undefined, enumerable: true });
+    Object.defineProperty(right, "tag", { value: undefined, enumerable: true });
+    expect(sameContributionQueryRecord(left, right)).toBe(true);
+    expect(sameContributionQueryRecord(left, {})).toBe(false);
+    expect(sameContributionQueryRecord({}, right)).toBe(false);
+    expect(sameContributionQueryRecord(left, { other: "value" })).toBe(false);
+  });
+});
