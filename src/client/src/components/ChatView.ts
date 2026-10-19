@@ -427,6 +427,17 @@ export class ChatView extends LitElement {
     if (event.deltaY !== 0) this.scrollFlows.onInteraction();
     if (event.deltaY < 0) this.scrollFlows.onUpIntent();
   };
+  private readonly handleScrollKeyDown = (event: KeyboardEvent) => {
+    // Only the focused transcript owns these native scroll keys. Descendant
+    // controls (including shadow-root inputs) keep their keyboard behavior.
+    if (event.composedPath()[0] !== event.currentTarget || event.defaultPrevented || event.isComposing
+      || event.ctrlKey || event.metaKey || event.altKey || (event.shiftKey && event.key !== " ")) return;
+    const upward = event.key === "ArrowUp" || event.key === "PageUp" || event.key === "Home"
+      || (event.key === " " && event.shiftKey);
+    if (upward) this.scrollFlows.onUpIntent();
+    else if (event.key === "ArrowDown" || event.key === "PageDown" || event.key === "End" || event.key === " ") this.scrollFlows.onInteraction();
+    // Let the browser perform the scroll; this only cancels competing restores.
+  };
   private readonly handleTouchStart = (event: TouchEvent) => {
     this.touchY = event.touches[0]?.clientY;
     this.scrollFlows.onInteraction();
@@ -624,6 +635,7 @@ export class ChatView extends LitElement {
           @scroll=${this.handleScroll}
           @toggle=${this.behaviors.followTail ? this.handleDisclosureToggle : undefined}
           @wheel=${this.handlesScrollIntent ? this.handleWheel : undefined}
+          @keydown=${this.handlesScrollIntent ? this.handleScrollKeyDown : undefined}
           @touchstart=${this.handlesScrollIntent ? this.handleTouchStart : undefined}
           @touchmove=${this.handlesScrollIntent ? this.handleTouchMove : undefined}
           @touchend=${this.handlesScrollIntent ? this.handleTouchEnd : undefined}
