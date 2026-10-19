@@ -442,7 +442,7 @@ export class AskUserCard extends LitElement {
       width: 100%;
       margin: 0 0 14px;
       color: var(--pi-text);
-      font: 400 14px/20px var(--pi-font-family, system-ui, sans-serif);
+      font: var(--pi-font-weight-regular, 360) 14px/20px var(--pi-font-family, system-ui, sans-serif);
       container-type: inline-size;
     }
     .card {
@@ -498,7 +498,7 @@ export class AskUserCard extends LitElement {
       gap: var(--question-copy-gap);
       color: var(--pi-text);
       padding: 0;
-      font-weight: 500;
+      font-weight: var(--pi-font-weight-medium, 460);
       line-height: 1.35;
     }
     .question-number { justify-self: end; color: var(--pi-muted); }
@@ -545,7 +545,7 @@ export class AskUserCard extends LitElement {
       background: var(--pi-bg);
       color: var(--pi-text);
       padding: 8px;
-      font: var(--pi-control-font-size, 16px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif);
+      font: var(--pi-font-weight-regular, 360) var(--pi-control-font-size, 16px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif);
     }
     .form-footer {
       display: flex;
@@ -566,7 +566,7 @@ export class AskUserCard extends LitElement {
     }
     button:hover:not(:disabled) { background: var(--pi-surface-hover); }
     button:disabled { cursor: wait; opacity: .65; }
-    .primary-action { background: var(--pi-selection-bg); color: var(--pi-text); font-weight: 500; }
+    .primary-action { background: var(--pi-selection-bg); color: var(--pi-text); font-weight: var(--pi-font-weight-medium, 460); }
     .primary-action:hover:not(:disabled) { background: var(--pi-surface-hover); }
     .partial-confirmation { min-width: 0; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
     .partial-confirmation p { min-width: 0; margin: 0; color: var(--pi-warning); font-size: 12px; line-height: 1.4; }

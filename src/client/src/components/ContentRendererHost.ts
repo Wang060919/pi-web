@@ -191,8 +191,8 @@ export class ContentRendererHost extends LitElement {
     :host { display: block; flex-shrink: 0; margin: 0 0 10px; min-width: 0; color: var(--pi-text); }
     :host([external-controls]) { margin: 0; background: var(--pi-bg); }
     #content { border-radius: 0 0 7px 7px; }
-    select { max-width: 100%; color: var(--pi-text); background: var(--pi-bg); border: 1px solid var(--pi-border); border-radius: 6px; padding: 3px; font: 12px/16px var(--pi-font-family, system-ui, sans-serif); }
-    button { color: var(--pi-muted); background: transparent; border: 0; border-radius: 6px; padding: 3px 8px; font: 12px/16px var(--pi-font-family, system-ui, sans-serif); cursor: pointer; }
+    select { max-width: 100%; color: var(--pi-text); background: var(--pi-bg); border: 1px solid var(--pi-border); border-radius: 6px; padding: 3px; font: var(--pi-font-weight-regular, 360) 12px/16px var(--pi-font-family, system-ui, sans-serif); }
+    button { color: var(--pi-muted); background: transparent; border: 0; border-radius: 6px; padding: 3px 8px; font: var(--pi-font-weight-regular, 360) 12px/16px var(--pi-font-family, system-ui, sans-serif); cursor: pointer; }
     button:not([aria-pressed="true"]):hover { color: var(--pi-text); background: var(--pi-surface-hover); }
     button[aria-pressed="true"] { color: var(--pi-text); background: var(--pi-selection-bg); }
     :is(button, select, pre, .plain-code-block, .preview):focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
@@ -201,9 +201,9 @@ export class ContentRendererHost extends LitElement {
     #content > .plain-code-block { padding: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
     #content > pre.source-wrap { overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; }
     #content > .plain-code-block.source-scroll { overflow: auto; white-space: pre; overflow-wrap: normal; }
-    code { font: 12px/17.5px var(--pi-font-monospace, ui-monospace, monospace); }
+    code { font: var(--pi-font-weight-regular, 360) 12px/17.5px var(--pi-font-monospace, ui-monospace, monospace); }
     .preview { overflow: auto; padding: 12px; }
-    p { color: var(--pi-muted); margin: 0; padding: 10px 12px; font: 12px/16px var(--pi-font-family, system-ui, sans-serif); }
+    p { color: var(--pi-muted); margin: 0; padding: 10px 12px; font: var(--pi-font-weight-regular, 360) 12px/16px var(--pi-font-family, system-ui, sans-serif); }
     @media (pointer: coarse) { button, select { min-height: 44px; } }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `];

@@ -124,7 +124,7 @@ export class UsageOverview extends LitElement {
   }
 
   static override styles = css`
-    :host { display: block; width: 480px; max-width: 100%; color: var(--pi-text, light-dark(#171717, #e5e5e5)); font: 400 12px/16px var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
+    :host { display: block; width: 480px; max-width: 100%; color: var(--pi-text, light-dark(#171717, #e5e5e5)); font: var(--pi-font-weight-regular, 360) 12px/16px var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
     * { box-sizing: border-box; }
     .panel { --usage-surface: light-dark(#f0f0ef, var(--pi-surface, #282828)); --usage-cell: light-dark(#dadad9, #3e3e3e); --usage-label: light-dark(#605e59, #b3b0aa); padding: 8px 12px 14px; border-radius: 8px; background: var(--usage-surface); }
     header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 20px; }
@@ -151,7 +151,7 @@ export class UsageOverview extends LitElement {
     .day[data-in-range="false"] { opacity: .42; }
     .day:hover { outline: 1px solid var(--pi-muted, #999); outline-offset: 1px; }
     .tooltip { position: absolute; z-index: 2; width: min(220px, 100%); left: clamp(0px, calc(var(--column) * (100% + 3px) / 26), max(0px, 100% - 220px)); top: calc(var(--row) * (100% + 3px) / 7 - 6px); transform: translateY(-100%); padding: 10px 12px; border-radius: 8px; background: light-dark(#fcfcfc, #303030); box-shadow: 0 4px 20px #0003; pointer-events: none; }
-    .tooltip strong { display: block; margin-bottom: 6px; font-weight: 500; }
+    .tooltip strong { display: block; margin-bottom: 6px; font-weight: var(--pi-font-weight-medium, 460); }
     .tooltip dl > div { display: flex; justify-content: space-between; gap: 12px; }
     .models { min-height: 215px; }
     .models > p { margin: 0; padding: 70px 8px; text-align: center; color: var(--usage-label); }

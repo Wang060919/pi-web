@@ -215,10 +215,10 @@ export function renderInfoPanel(html: HtmlTemplateTag, context: ApplicationPanel
     <style>
       .toolbar.info-toolbar, .viewer.info-status { width: 100%; max-width: 900px; margin-inline: auto; box-sizing: border-box; }
       .toolbar.info-toolbar { flex: 0 0 auto; padding: 20px 24px 0; }
-      .viewer.info-status { flex: 1 1 auto; min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; padding: 16px 24px 24px; font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); overflow-y: auto; overflow-x: hidden; }
+      .viewer.info-status { flex: 1 1 auto; min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; padding: 16px 24px 24px; font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); overflow-y: auto; overflow-x: hidden; }
       .viewer.info-status section { flex: 0 0 auto; min-width: 0; display: grid; gap: 8px; align-content: start; }
       .viewer.info-status p { margin: 0; }
-      .toolbar strong, .viewer.info-status section > strong, .info-component strong { font-weight: 500; }
+      .toolbar strong, .viewer.info-status section > strong, .info-component strong { font-weight: var(--pi-font-weight-medium, 460); }
       .info-row { display: grid; grid-template-columns: minmax(90px, auto) minmax(0, 1fr); gap: 3px 10px; border-bottom: 0; padding: 6px 0; overflow-wrap: anywhere; }
       .info-row small { grid-column: 1 / -1; color: var(--pi-muted); font-size: 12px; line-height: 16px; }
       .info-component { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; border-bottom: 0; padding: 6px 0; }

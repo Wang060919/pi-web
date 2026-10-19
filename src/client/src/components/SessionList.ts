@@ -779,7 +779,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
 
   static override styles = [listStyles, css`
     section { padding: 0 8px 12px; }
-    h2 { min-height: 30px; gap: 6px; font-size: 12px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+    h2 { min-height: 30px; gap: 6px; font-size: 12px; font-weight: var(--pi-font-weight-regular, 360); letter-spacing: 0; text-transform: none; }
     section > h2 { margin: 0 4px; padding: 0 0 6px; }
     .section-toggle { flex: 0 1 auto; width: auto; min-height: 28px; padding: 0 4px; border-radius: 6px; }
     .section-toggle:not(:disabled):not(.selected):hover { background: transparent; color: var(--pi-text); }
@@ -792,7 +792,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
     h2 > .start-session-button { order: 5; }
     :host([collapsed]) section > h2 { padding: 6px 0 34px; border: 0; background: transparent; }
     :host([collapsed]) .section-title { display: block; overflow: visible; }
-    :host([collapsed]) .section-toggle .section-selected { position: absolute; inset-inline: 10px; bottom: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--pi-text-secondary); font-size: 12px; font-weight: 400; line-height: 18px; }
+    :host([collapsed]) .section-toggle .section-selected { position: absolute; inset-inline: 10px; bottom: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--pi-text-secondary); font-size: 12px; font-weight: var(--pi-font-weight-regular, 360); line-height: 18px; }
     .subheading { justify-content: flex-start; margin: 16px 4px 4px; padding-top: 0; border-top: 0; }
     .list-body > .subheading:first-child { margin-top: 8px; }
     .subheading .section-toggle { order: 0; min-height: 24px; }
@@ -804,7 +804,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
     h2 > .section-count { flex: 0 0 auto; color: var(--pi-muted); }
     h2 > .section-unread-count { flex: 0 0 auto; display: inline; color: var(--pi-accent); font-size: inherit; text-transform: none; }
     .bulk-select-entry { box-sizing: border-box; flex: 0 0 auto; display: inline-grid; place-items: center; width: 30px; height: 30px; padding: 0; font-size: 13px; line-height: 1; text-transform: none; }
-    .start-session-button { box-sizing: border-box; flex: 0 0 auto; display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); font-size: 19px; font-weight: 400; line-height: 1; }
+    .start-session-button { box-sizing: border-box; flex: 0 0 auto; display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); font-size: 19px; font-weight: var(--pi-font-weight-regular, 360); line-height: 1; }
     .start-session-button:not(:disabled):hover { background: var(--pi-surface-hover); }
     .start-session-button:disabled { opacity: .4; cursor: default; }
     .cleanup-entry { flex: 0 0 auto; padding: 5px 7px; color: var(--pi-muted); font-size: 11px; text-transform: none; }
@@ -823,7 +823,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
     .bulk-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; margin-left: auto; }
     .action-name, .section-selected { text-align: start; unicode-bidi: plaintext; }
     .action-name { display: block; max-height: none; line-height: normal; white-space: nowrap; text-overflow: ellipsis; }
-    .action-row.unread .action-name { color: var(--pi-text-bright); font-weight: 600; }
+    .action-row.unread .action-name { color: var(--pi-text-bright); font-weight: var(--pi-font-weight-semibold, 540); }
     .plain-heading { min-width: 0; }
     .session-secondary { display: flex; align-items: baseline; gap: 5px; min-width: 0; margin-top: 2px; color: var(--pi-muted); font-size: 11px; line-height: 16px; }
     .session-meta, .session-label-separator { flex: 0 0 auto; }

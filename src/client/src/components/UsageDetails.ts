@@ -112,21 +112,21 @@ export class UsageDetails extends LitElement {
   }
 
   static override styles = css`
-    :host { position: fixed; inset: 0; z-index: 10; color: var(--pi-text); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    :host { position: fixed; inset: 0; z-index: 10; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     modal-surface { --modal-surface-width: min(520px, calc(100vw - 24px)); --modal-surface-max-height: calc(100dvh - 24px); --modal-surface-backdrop-padding: 12px; --modal-surface-radius: 16px; }
     header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; border-bottom: 0; }
-    header strong { font-size: 14px; font-weight: 500; }
-    button { display: grid; place-items: center; flex: 0 0 auto; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--pi-muted); font: 22px/1 var(--pi-font-family, system-ui, sans-serif); cursor: pointer; }
+    header strong { font-size: 14px; font-weight: var(--pi-font-weight-medium, 460); }
+    button { display: grid; place-items: center; flex: 0 0 auto; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--pi-muted); font: var(--pi-font-weight-regular, 360) 22px/1 var(--pi-font-family, system-ui, sans-serif); cursor: pointer; }
     button:hover { background: var(--pi-selection-bg); color: var(--pi-text); }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
     .usage-content { min-width: 0; min-height: 0; overflow-y: auto; padding: 4px 18px 16px; }
     section + section { margin-top: 16px; padding-top: 4px; }
-    h2 { margin: 12px 0 6px; color: var(--pi-text-secondary); font-size: 12px; font-weight: 500; }
-    h3 { margin: 12px 0 4px; color: var(--pi-muted); font: 400 12px/18px var(--pi-font-family, system-ui, sans-serif); }
+    h2 { margin: 12px 0 6px; color: var(--pi-text-secondary); font-size: 12px; font-weight: var(--pi-font-weight-medium, 460); }
+    h3 { margin: 12px 0 4px; color: var(--pi-muted); font: var(--pi-font-weight-regular, 360) 12px/18px var(--pi-font-family, system-ui, sans-serif); }
     .note { margin: 5px 0; color: var(--pi-muted); font-size: 12px; overflow-wrap: anywhere; }
     .source-list { margin: 0; padding: 0; list-style: none; }
     .source-list li { min-width: 0; padding: 5px 0; }
-    .path { display: block; min-width: 0; color: var(--pi-text-secondary); font: 400 12px/18px var(--pi-font-monospace, ui-monospace, monospace); overflow-wrap: anywhere; white-space: pre-wrap; }
+    .path { display: block; min-width: 0; color: var(--pi-text-secondary); font: var(--pi-font-weight-regular, 360) 12px/18px var(--pi-font-monospace, ui-monospace, monospace); overflow-wrap: anywhere; white-space: pre-wrap; }
     .entry-label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
     .entry-state, .manual-only { color: var(--pi-muted); font-size: 12px; }
     .skills { margin-top: 12px; }

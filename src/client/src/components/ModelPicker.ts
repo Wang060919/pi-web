@@ -637,10 +637,10 @@ export class ModelPicker extends LitElement {
   };
 
   static override styles = [css`
-    :host { position: fixed; inset: 0; z-index: 10; color: var(--pi-text); font: 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    :host { position: fixed; inset: 0; z-index: 10; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     modal-surface { --modal-surface-width: min(720px, calc(100vw - 40px)); --modal-surface-max-height: min(640px, calc(100% - 40px)); }
     header { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 0; }
-    strong { font-weight: 500; }
+    strong { font-weight: var(--pi-font-weight-medium, 460); }
     header:not(.popover-header) strong { font-size: 14px; line-height: 20px; }
     .scope-toggle { display: flex; gap: 4px; margin: 10px 12px 0; padding: 3px; border: 0; border-radius: 8px; background: var(--pi-surface); }
     .scope-toggle button { flex: 1; padding: 6px 10px; border-radius: 6px; color: var(--pi-muted); }
@@ -654,7 +654,7 @@ export class ModelPicker extends LitElement {
     .scope-toggle button:not([aria-pressed="true"]):not(:disabled):hover, header > button:not(:disabled):hover { background: var(--pi-surface-hover); }
     header button { font-size: 20px; color: var(--pi-muted); }
     .search-row { display: flex; align-items: center; gap: 8px; margin: 10px 12px; }
-    input.search { flex: 1; min-width: 0; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); font: var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif); padding: 8px 10px; outline: none; }
+    input.search { flex: 1; min-width: 0; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); font: var(--pi-font-weight-regular, 360) var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif); padding: 8px 10px; outline: none; }
     input.search:focus { border-color: var(--pi-accent); }
     .toggle-all { flex: none; padding: 8px 10px; border: 0; border-radius: 6px; background: var(--pi-surface); white-space: nowrap; }
     .toggle-all:hover:not(:disabled) { background: var(--pi-selection-bg); }
@@ -673,7 +673,7 @@ export class ModelPicker extends LitElement {
     .popover-surface { --pi-overlay: transparent; --modal-surface-width: min(320px, calc(100vw - 24px)); --modal-surface-max-height: calc(100dvh - 24px); --modal-surface-backdrop-padding: 12px; --modal-surface-radius: 10px; font-family: var(--pi-font-family, system-ui, sans-serif); }
     :host([anchored]) .popover-surface { --modal-surface-place-items: end start; --modal-surface-backdrop-padding: 12px 12px var(--model-picker-bottom) var(--model-picker-left); --modal-surface-max-height: var(--model-picker-height); }
     .popover-header { gap: 12px; padding: 12px 14px 2px; border: 0; }
-    .popover-header strong { font-size: 13px; font-weight: 500; }
+    .popover-header strong { font-size: 13px; font-weight: var(--pi-font-weight-medium, 460); }
     .popover-close { display: grid; place-items: center; flex: none; width: 28px; height: 28px; padding: 0; border-radius: 6px; }
     .popover-surface button:disabled { cursor: not-allowed; opacity: .5; }
     .popover-surface button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
@@ -688,14 +688,14 @@ export class ModelPicker extends LitElement {
     .popover-row.selected, .popover-row:hover { background: var(--pi-selection-bg); }
     .popover-row .model-choice { display: flex; flex: 1 1 0; min-width: 0; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 9px; font: inherit; text-align: left; }
     .model-copy { display: block; flex: 1 1 0; min-width: 0; }
-    .model-copy strong { display: block; overflow: hidden; color: var(--pi-text); font-size: 13px; font-weight: 500; line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
+    .model-copy strong { display: block; overflow: hidden; color: var(--pi-text); font-size: 13px; font-weight: var(--pi-font-weight-medium, 460); line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
     .model-copy small { margin-top: 2px; overflow: hidden; font-size: 11px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
     .current-check { flex: none; width: 18px; color: var(--pi-accent); font-size: 15px; text-align: center; }
     .popover-options button.default-pin { width: 32px; height: 32px; margin: 0 6px 0 0; }
     .popover-options .default-pin svg { width: 16px; height: 16px; }
     .popover-message { margin: 0; padding: 6px 14px 10px; color: var(--pi-muted); font-size: 12px; line-height: 1.5; }
     .popover-message.error { color: var(--pi-danger); }
-    .manage-models { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 12px 14px; border-top: 1px solid var(--pi-border-muted); color: var(--pi-muted); font: 12px var(--pi-font-family, system-ui, sans-serif); text-align: left; }
+    .manage-models { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 12px 14px; border-top: 1px solid var(--pi-border-muted); color: var(--pi-muted); font: var(--pi-font-weight-regular, 360) 12px var(--pi-font-family, system-ui, sans-serif); text-align: left; }
     .manage-models:not(:disabled):hover, .popover-close:not(:disabled):hover { background: var(--pi-selection-bg); }
     .manage-models > span { font-size: 18px; line-height: 1; }
     @media (max-width: 640px) {

@@ -109,7 +109,7 @@ export class SettingsSkillsPanel extends LitElement {
     .skill { display: grid; gap: 4px; width: 100%; text-align: left; overflow-wrap: anywhere; margin-bottom: 4px; }
     .skill[aria-pressed="true"] { background: var(--pi-selection-bg); }
     .detail { min-width: 0; } .detail > * + * { margin-top: 10px; }
-    .path { overflow-wrap: anywhere; font: 12px/18px var(--pi-font-monospace); color: var(--pi-muted); }
+    .path { overflow-wrap: anywhere; font: var(--pi-font-weight-regular, 360) 12px/18px var(--pi-font-monospace); color: var(--pi-muted); }
     pre { padding: 12px; background: var(--pi-bg); border-radius: 8px; }
     @media (max-width: 640px) { .browser { grid-template-columns: minmax(0, 1fr); } nav { max-height: 180px; } }
   `];

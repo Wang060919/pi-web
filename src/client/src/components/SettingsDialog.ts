@@ -653,11 +653,11 @@ export class SettingsDialog extends LitElement {
   }
 
   static override styles = css`
-    :host { position: fixed; inset: 0; z-index: 30; color: var(--pi-text); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    :host { position: fixed; inset: 0; z-index: 30; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     modal-surface { --modal-surface-backdrop-padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); --modal-surface-width: min(980px, 100%); --modal-surface-max-height: min(760px, 100%); --modal-surface-min-height: min(620px, 100%); --modal-surface-radius: 14px; }
     .settings-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 0; }
-    .eyebrow { display: block; color: var(--pi-muted); font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0; }
-    h1 { margin: 0; font-size: 18px; line-height: 24px; font-weight: 500; }
+    .eyebrow { display: block; color: var(--pi-muted); font-size: 12px; line-height: 16px; font-weight: var(--pi-font-weight-medium, 460); letter-spacing: 0; }
+    h1 { margin: 0; font-size: 18px; line-height: 24px; font-weight: var(--pi-font-weight-medium, 460); }
     button { border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 7px 9px; font: inherit; cursor: pointer; }
     .close-button { width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: transparent; color: var(--pi-muted); padding: 0; font-size: 24px; }
     .close-button:hover, .close-button:focus-visible { color: var(--pi-text); background: var(--pi-surface-hover); }
@@ -679,7 +679,7 @@ export class SettingsDialog extends LitElement {
     }
     button:not(:disabled):hover { background: var(--pi-surface-hover); }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
-    strong { font-weight: 500; }
+    strong { font-weight: var(--pi-font-weight-medium, 460); }
     small { font-size: 12px; line-height: 16px; }
     @media (max-width: 680px), (pointer: coarse) {
       button { min-height: 44px; }

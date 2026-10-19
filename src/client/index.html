@@ -8,12 +8,18 @@
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
     <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />
     <link rel="manifest" crossorigin="use-credentials" href="%BASE_URL%manifest.webmanifest" />
+    <link rel="stylesheet" href="%BASE_URL%fonts/fonts.css" />
     <style>
       :root {
         color-scheme: dark;
         --pi-control-font-size: 14px;
-        --pi-font-family: "anthropic-sans", "AnthropicSans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Adwaita Sans", Roboto, Helvetica, Arial, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", system-ui, sans-serif;
-        --pi-font-monospace: "anthropic-mono", "SF Mono", "JetBrains Mono", "Noto Sans Mono", "Noto Sans Mono CJK SC", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        --pi-font-family: "Anthropic Sans", "anthropic-sans", "AnthropicSans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Adwaita Sans", Roboto, Helvetica, Arial, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", system-ui, sans-serif;
+        --pi-font-monospace: "Anthropic Mono", "anthropic-mono", "SF Mono", "JetBrains Mono", "Noto Sans Mono", "Noto Sans Mono CJK SC", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        --pi-font-serif: "Anthropic Serif", Georgia, "Times New Roman", var(--pi-font-family);
+        --pi-font-weight-regular: 360;
+        --pi-font-weight-medium: 460;
+        --pi-font-weight-semibold: 540;
+        --pi-font-weight-bold: 560;
         --pi-control-font-family: var(--pi-font-family);
         --pi-control-monospace-font-family: var(--pi-font-monospace);
         --pi-bg: #1c1c1c;
@@ -53,7 +59,7 @@
         --pi-terminal-selection: #ffffff26;
       }
       html, body { margin: 0; height: 100%; overflow: hidden; background: var(--pi-bg); color: var(--pi-text); }
-      body { min-height: 100dvh; font-family: var(--pi-font-family); font-optical-sizing: auto; -webkit-font-smoothing: antialiased; }
+      body { min-height: 100dvh; font-family: var(--pi-font-family); font-weight: var(--pi-font-weight-regular); font-optical-sizing: auto; -webkit-font-smoothing: antialiased; }
       @media (max-width: 760px), (pointer: coarse) {
         :root { --pi-control-font-size: 16px; }
       }

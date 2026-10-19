@@ -115,13 +115,13 @@ export class CommandPicker extends LitElement {
   }
 
   static override styles = [css`
-    :host { position: fixed; inset: 0; z-index: 10; color: var(--pi-text); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    :host { position: fixed; inset: 0; z-index: 10; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     modal-surface { --modal-surface-width: min(720px, calc(100vw - 40px)); --modal-surface-max-height: min(640px, calc(100% - 40px)); }
     header { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 0; }
     .options { min-height: 0; overflow: auto; outline: none; padding: 4px 6px 6px; }
     button { border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); font: inherit; cursor: pointer; }
     header button { min-width: 30px; min-height: 30px; line-height: 20px; font-size: 20px; color: var(--pi-muted); }
-    input { margin: 10px 12px; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); font: var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif); padding: 8px 10px; outline: none; }
+    input { margin: 10px 12px; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); font: var(--pi-font-weight-regular, 360) var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif); padding: 8px 10px; outline: none; }
     input:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 1px; }
     .options button { display: block; width: 100%; padding: 10px 12px; border-bottom: 0; text-align: left; }
     .options button.selected, .options button:hover { background: var(--pi-selection-bg); }
@@ -130,7 +130,7 @@ export class CommandPicker extends LitElement {
     button:not(:disabled):not(.selected):hover { background: var(--pi-surface-hover); }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
     header strong { font-size: 14px; line-height: 20px; }
-    strong { font-weight: 500; }
+    strong { font-weight: var(--pi-font-weight-medium, 460); }
     small { font-size: 12px; line-height: 16px; }
     @media (max-width: 680px), (pointer: coarse) {
       button { min-height: 44px; }

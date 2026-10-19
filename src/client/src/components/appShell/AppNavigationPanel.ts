@@ -406,12 +406,12 @@ export class AppNavigationPanel extends LitElement {
   }
 
   static override styles = [css`
-    :host { --navigation-panel-bg: light-dark(color-mix(in srgb, var(--pi-bg) 98%, var(--pi-text)), color-mix(in srgb, var(--pi-bg) 86%, #000)); display: flex; flex-direction: column; min-height: 0; overflow: hidden; background: var(--navigation-panel-bg); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    :host { --navigation-panel-bg: light-dark(color-mix(in srgb, var(--pi-bg) 98%, var(--pi-text)), color-mix(in srgb, var(--pi-bg) 86%, #000)); display: flex; flex-direction: column; min-height: 0; overflow: hidden; background: var(--navigation-panel-bg); font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     :host([compact]) { flex: 1 1 auto; }
     header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; padding: 12px; border-bottom: 0; }
     .brand { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; color: var(--pi-text); }
     .brand-mark { display: inline-flex; align-items: center; justify-content: center; padding: 0; border-radius: 4px; }
-    header strong { font-size: 13px; line-height: 18px; font-weight: 500; letter-spacing: .01em; white-space: nowrap; }
+    header strong { font-size: 13px; line-height: 18px; font-weight: var(--pi-font-weight-medium, 460); letter-spacing: .01em; white-space: nowrap; }
     machine-switcher { flex: 1 1 auto; min-width: 0; }
     :host([compact]) header { display: none; }
     .header-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; }

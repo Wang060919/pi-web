@@ -131,15 +131,15 @@ export class SettingsSessiondPanel extends LitElement {
   }
 
   static override styles = css`
-    :host { display: block; font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    :host { display: block; font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     small { font-size: 12px; line-height: 16px; }
-    strong { font-weight: 500; }
-    h3 { margin: 0; font-size: 14px; line-height: 20px; font-weight: 500; }
+    strong { font-weight: var(--pi-font-weight-medium, 460); }
+    h3 { margin: 0; font-size: 14px; line-height: 20px; font-weight: var(--pi-font-weight-medium, 460); }
     .loading-card, .config-path-card, .effective-card { border: 0; border-radius: 10px; background: var(--pi-surface); padding: 12px; }
     .loading-card { color: var(--pi-muted); }
     .config-path-card { display: grid; gap: 5px; }
-    .config-path-card span, .field-heading, dt { color: var(--pi-muted); font-size: 12px; font-weight: 500; }
-    code { border: 0; border-radius: 5px; background: var(--pi-bg); padding: 1px 4px; color: var(--pi-text); font: 12px/17.5px var(--pi-font-monospace, ui-monospace, monospace); overflow-wrap: anywhere; }
+    .config-path-card span, .field-heading, dt { color: var(--pi-muted); font-size: 12px; font-weight: var(--pi-font-weight-medium, 460); }
+    code { border: 0; border-radius: 5px; background: var(--pi-bg); padding: 1px 4px; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 12px/17.5px var(--pi-font-monospace, ui-monospace, monospace); overflow-wrap: anywhere; }
     .field { display: grid; gap: 7px; }
     .field small { color: var(--pi-muted); line-height: 16px; }
     .field-heading { display: flex; align-items: center; gap: 8px; }
@@ -147,7 +147,7 @@ export class SettingsSessiondPanel extends LitElement {
     .toggle input { width: 16px; height: 16px; accent-color: var(--pi-accent); }
     .toggle input:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
     .toggle input:disabled { cursor: not-allowed; }
-    .override-badge { border: 0; border-radius: 999px; color: var(--pi-warning); background: var(--pi-warning-surface); padding: 2px 7px; font-size: 12px; font-weight: 500; }
+    .override-badge { border: 0; border-radius: 999px; color: var(--pi-warning); background: var(--pi-warning-surface); padding: 2px 7px; font-size: 12px; font-weight: var(--pi-font-weight-medium, 460); }
     .effective-card { display: grid; gap: 10px; }
     .effective-card dl { display: grid; gap: 8px; margin: 0; }
     .effective-card dl > div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; align-items: baseline; }

@@ -92,14 +92,14 @@ export class SettingsPanelFrame extends LitElement {
   }
 
   static override styles = css`
-    :host { display: block; font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    :host { display: block; font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     small { font-size: 12px; line-height: 16px; }
-    strong { font-weight: 500; }
+    strong { font-weight: var(--pi-font-weight-medium, 460); }
     .panel { display: block; }
     .section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
     .heading-copy { display: grid; gap: 6px; min-width: 0; }
     .heading-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
-    h2 { margin: 0; font-size: 16px; line-height: 22px; font-weight: 500; }
+    h2 { margin: 0; font-size: 16px; line-height: 22px; font-weight: var(--pi-font-weight-medium, 460); }
     .description { color: var(--pi-muted); font-size: 14px; line-height: 20px; }
     .description ::slotted(*) { margin: 0; }
     button { box-sizing: border-box; min-height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 6px 10px; font: inherit; cursor: pointer; }
@@ -115,7 +115,7 @@ export class SettingsPanelFrame extends LitElement {
     .notice.info { color: var(--pi-muted); }
     .notice-title { display: block; margin-bottom: 4px; color: inherit; }
     .notice-content { min-width: 0; }
-    code { border: 0; border-radius: 5px; background: var(--pi-bg); padding: 1px 4px; color: var(--pi-text); font: 12px/17.5px var(--pi-font-monospace, ui-monospace, monospace); overflow-wrap: anywhere; }
+    code { border: 0; border-radius: 5px; background: var(--pi-bg); padding: 1px 4px; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 12px/17.5px var(--pi-font-monospace, ui-monospace, monospace); overflow-wrap: anywhere; }
     .content { display: grid; gap: 14px; min-width: 0; }
     .content ::slotted(*) { min-width: 0; }
 

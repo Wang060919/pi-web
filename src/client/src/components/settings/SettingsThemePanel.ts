@@ -66,20 +66,20 @@ export class SettingsThemePanel extends LitElement {
   }
 
   static override styles = css`
-    :host { display: block; font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    :host { display: block; font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     small { font-size: 12px; line-height: 16px; }
-    strong { font-weight: 500; }
+    strong { font-weight: var(--pi-font-weight-medium, 460); }
     .theme-card { display: grid; gap: 14px; padding: 16px; border: 0; border-radius: 10px; background: var(--pi-surface); }
     header { display: grid; gap: 6px; }
     h3, p { margin: 0; }
-    h3 { font-size: 14px; line-height: 20px; font-weight: 500; }
+    h3 { font-size: 14px; line-height: 20px; font-weight: var(--pi-font-weight-medium, 460); }
     p { color: var(--pi-muted); font-size: 14px; line-height: 20px; }
     small { color: var(--pi-muted); font-size: 12px; line-height: 16px; }
     .current-theme { display: grid; gap: 5px; padding: 12px; border: 0; border-radius: 8px; background: var(--pi-bg); }
     .current-theme span { color: var(--pi-text-secondary); font-size: 12px; overflow-wrap: anywhere; }
     .field { display: grid; gap: 7px; }
-    .field > span { color: var(--pi-muted); font-size: 12px; font-weight: 500; }
-    select { box-sizing: border-box; width: 100%; border: 1px solid var(--pi-border); border-radius: 8px; padding: 9px 10px; background: var(--pi-bg); color: var(--pi-text); font: var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif); }
+    .field > span { color: var(--pi-muted); font-size: 12px; font-weight: var(--pi-font-weight-medium, 460); }
+    select { box-sizing: border-box; width: 100%; border: 1px solid var(--pi-border); border-radius: 8px; padding: 9px 10px; background: var(--pi-bg); color: var(--pi-text); font: var(--pi-font-weight-regular, 360) var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif); }
     .auto-field { display: flex; align-items: flex-start; gap: 9px; }
     .auto-field input { margin-top: 3px; accent-color: var(--pi-accent); }
     .auto-field span { display: grid; gap: 3px; }
@@ -88,7 +88,7 @@ export class SettingsThemePanel extends LitElement {
     button:not(:disabled):hover { background: var(--pi-surface-hover); }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
     select:focus-visible, input:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
-    .primary { background: var(--pi-selection-bg); color: var(--pi-text-bright); font-weight: 500; }
+    .primary { background: var(--pi-selection-bg); color: var(--pi-text-bright); font-weight: var(--pi-font-weight-medium, 460); }
     button:disabled, select:disabled, input:disabled { opacity: .55; cursor: not-allowed; }
     .hint { font-size: 12px; }
 

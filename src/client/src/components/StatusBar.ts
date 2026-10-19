@@ -95,7 +95,7 @@ export class StatusBar extends LitElement {
     .usage-toggle:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
     .context-ring { flex: 0 0 auto; width: 20px; height: 20px; color: var(--pi-accent); fill: none; stroke-width: 2.5; }
     .context-ring-track { stroke: var(--pi-border); }
-    .context-ring-unknown { fill: var(--pi-muted); font: 10px var(--pi-font-family, system-ui, sans-serif); stroke: none; }
+    .context-ring-unknown { fill: var(--pi-muted); font: var(--pi-font-weight-regular, 360) 10px var(--pi-font-family, system-ui, sans-serif); stroke: none; }
     .context-ring-value { transform: rotate(-90deg); transform-origin: center; stroke: currentColor; stroke-linecap: round; }
     .context-ring.warning { color: var(--pi-warning); }
     .context-ring.danger { color: var(--pi-danger); }

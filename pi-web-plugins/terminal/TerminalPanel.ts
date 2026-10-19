@@ -1096,7 +1096,7 @@ export class TerminalPanel extends LitElement {
   }
 
   static override styles = [unsafeCSS(xtermStyles), css`
-    :host { flex: 1 1 auto; min-height: 0; display: flex; color: var(--pi-text); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    :host { flex: 1 1 auto; min-height: 0; display: flex; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     .terminal-shell { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--pi-terminal-bg); }
     .terminal-tabs { flex: 0 0 auto; display: flex; gap: 4px; align-items: center; padding: 6px 8px; border-bottom: 0; background: var(--pi-bg); overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; }
     .terminal-tabs > button { box-sizing: border-box; flex: 0 0 auto; height: 30px; line-height: 16px; }
@@ -1109,7 +1109,7 @@ export class TerminalPanel extends LitElement {
       .terminal-soft-keys { display: block; }
     }
     button { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 180px; border: 0; border-radius: 6px; background: transparent; color: var(--pi-text-secondary); padding: 5px 8px; font: inherit; cursor: pointer; }
-    button.selected { background: var(--pi-selection-bg); color: var(--pi-text); font-weight: 500; }
+    button.selected { background: var(--pi-selection-bg); color: var(--pi-text); font-weight: var(--pi-font-weight-medium, 460); }
     button:not(:disabled):not(.selected):hover { background: var(--pi-surface-hover); color: var(--pi-text); }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
     button.new { flex: 0 0 auto; color: var(--pi-muted); }
@@ -1125,19 +1125,19 @@ export class TerminalPanel extends LitElement {
     .command-run-notice.succeeded { border-color: var(--pi-success-border); }
     .command-run-notice.failed { border-color: var(--pi-danger); }
     .command-run-notice p { margin: 3px 0; color: var(--pi-muted); }
-    .command-run-notice code { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--pi-text-secondary); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    .command-run-notice kbd { border: 1px solid var(--pi-border); border-radius: 4px; background: var(--pi-bg); padding: 0 4px; font: 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .command-run-notice code { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--pi-text-secondary); font: var(--pi-font-weight-regular, 360) 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .command-run-notice kbd { border: 1px solid var(--pi-border); border-radius: 4px; background: var(--pi-bg); padding: 0 4px; font: var(--pi-font-weight-regular, 360) 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .command-run-notice button { justify-self: end; max-width: none; }
     .terminal-stage { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; background: var(--pi-terminal-bg); }
     .terminal-host { position: absolute; inset: 0; padding: 12px; box-sizing: border-box; overflow: hidden; }
     .terminal-host.copying { visibility: hidden; pointer-events: none; }
     .terminal-copy-view { position: absolute; inset: 0; display: flex; flex-direction: column; min-height: 0; background: var(--pi-terminal-bg); color: var(--pi-terminal-text); }
-    .terminal-copy-toolbar { box-sizing: border-box; flex: 0 0 auto; display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 47px; padding: 6px; border-bottom: 0; background: var(--pi-bg); color: var(--pi-muted); font: 12px/16px var(--pi-font-family, system-ui, sans-serif); }
+    .terminal-copy-toolbar { box-sizing: border-box; flex: 0 0 auto; display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 47px; padding: 6px; border-bottom: 0; background: var(--pi-bg); color: var(--pi-muted); font: var(--pi-font-weight-regular, 360) 12px/16px var(--pi-font-family, system-ui, sans-serif); }
     .terminal-copy-toolbar > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .terminal-copy-toolbar small { margin-left: auto; white-space: nowrap; color: var(--pi-dim); }
     .terminal-copy-toolbar button { flex: 0 0 auto; width: auto; min-height: 34px; padding: 6px 9px; font: inherit; }
     .terminal-copy-layers { flex: 1 1 auto; min-height: 0; display: grid; overflow: hidden; background: var(--pi-terminal-bg); }
-    .terminal-copy-content, .terminal-copy-selector { grid-area: 1 / 1; box-sizing: border-box; min-width: 0; min-height: 0; width: 100%; height: 100%; margin: 0; padding: 12px; border: 0; border-radius: 0; font: ${TERMINAL_FONT_SIZE}px/1.5 ${unsafeCSS(TERMINAL_FONT_FAMILY)}; letter-spacing: normal; font-variant-ligatures: none; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; }
+    .terminal-copy-content, .terminal-copy-selector { grid-area: 1 / 1; box-sizing: border-box; min-width: 0; min-height: 0; width: 100%; height: 100%; margin: 0; padding: 12px; border: 0; border-radius: 0; font: var(--pi-font-weight-regular, 360) ${TERMINAL_FONT_SIZE}px/1.5 ${unsafeCSS(TERMINAL_FONT_FAMILY)}; letter-spacing: normal; font-variant-ligatures: none; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; }
     .terminal-copy-content { overflow: auto; pointer-events: none; background: var(--pi-terminal-bg); color: var(--pi-terminal-text); -webkit-user-select: none; user-select: none; }
     .terminal-copy-selector { z-index: 1; overflow: auto; resize: none; outline: none; appearance: none; background: transparent; color: transparent; caret-color: var(--pi-accent); -webkit-text-fill-color: transparent; cursor: text; -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; touch-action: auto; }
     .terminal-copy-selector::selection { background: var(--pi-terminal-selection); color: transparent; -webkit-text-fill-color: transparent; }

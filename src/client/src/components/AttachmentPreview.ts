@@ -78,10 +78,10 @@ export class AttachmentPreview extends LitElement {
   }
 
   static override styles = css`
-    :host { position: fixed; inset: 0; z-index: 10; color: var(--pi-text); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    :host { position: fixed; inset: 0; z-index: 10; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     modal-surface { --modal-surface-width: min(900px, calc(100vw - 32px)); --modal-surface-max-height: min(820px, calc(100dvh - 32px)); --modal-surface-backdrop-padding: 16px; --modal-surface-radius: 16px; }
     header { display: flex; flex: none; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 0; }
-    header strong { min-width: 0; max-height: 4.5em; overflow: auto; overflow-wrap: anywhere; font-size: 14px; font-weight: 500; line-height: 20px; }
+    header strong { min-width: 0; max-height: 4.5em; overflow: auto; overflow-wrap: anywhere; font-size: 14px; font-weight: var(--pi-font-weight-medium, 460); line-height: 20px; }
     button { border: 0; border-radius: 8px; background: transparent; color: var(--pi-text); font: inherit; cursor: pointer; }
     button:focus-visible, summary:focus-visible, pre:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
     .preview-close { display: grid; flex: none; place-items: center; width: 30px; height: 30px; padding: 0; color: var(--pi-muted); font-size: 23px; }
@@ -89,7 +89,7 @@ export class AttachmentPreview extends LitElement {
     .preview-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-height: 0; padding: 16px; overflow: auto; }
     .image-preview { display: grid; place-items: center; min-width: 0; border-radius: 8px; background: var(--pi-surface); }
     .image-preview img { display: block; max-width: 100%; max-height: min(65dvh, 640px); object-fit: contain; }
-    .text-preview { box-sizing: border-box; max-height: min(60dvh, 560px); margin: 0; padding: 14px; overflow: auto; border: 0; border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); font: 12px/17.5px var(--pi-font-monospace, ui-monospace, monospace); white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2; }
+    .text-preview { box-sizing: border-box; max-height: min(60dvh, 560px); margin: 0; padding: 14px; overflow: auto; border: 0; border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 12px/17.5px var(--pi-font-monospace, ui-monospace, monospace); white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2; }
     .preview-notice { margin: 0; color: var(--pi-muted); font-size: 12px; line-height: 1.6; }
     .file-details { min-width: 0; color: var(--pi-muted); font-size: 12px; }
     summary { padding: 4px 0; cursor: pointer; }

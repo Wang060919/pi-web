@@ -277,7 +277,7 @@ export class ExtensionDialogCard extends LitElement {
       width: 100%;
       margin: 0 0 14px;
       color: var(--pi-text);
-      font: 400 14px/20px var(--pi-font-family, system-ui, sans-serif);
+      font: var(--pi-font-weight-regular, 360) 14px/20px var(--pi-font-family, system-ui, sans-serif);
       container-type: inline-size;
     }
     .card {
@@ -305,7 +305,7 @@ export class ExtensionDialogCard extends LitElement {
       min-width: 0;
       margin-bottom: 0;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: var(--pi-font-weight-medium, 460);
       line-height: 1.35;
       overflow-wrap: anywhere;
     }
@@ -337,7 +337,7 @@ export class ExtensionDialogCard extends LitElement {
       background: var(--pi-bg);
       color: var(--pi-text);
       padding: 8px;
-      font: var(--pi-control-font-size, 16px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif);
+      font: var(--pi-font-weight-regular, 360) var(--pi-control-font-size, 16px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif);
     }
     .dialog-footer {
       display: flex;
@@ -361,7 +361,7 @@ export class ExtensionDialogCard extends LitElement {
     button:hover:not(:disabled) { background: var(--pi-surface-hover); }
     button:disabled { cursor: wait; opacity: .65; }
     button:focus-visible, .dialog-input:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
-    .primary-action { background: var(--pi-selection-bg); color: var(--pi-text); font-weight: 500; }
+    .primary-action { background: var(--pi-selection-bg); color: var(--pi-text); font-weight: var(--pi-font-weight-medium, 460); }
     .primary-action:hover:not(:disabled) { background: var(--pi-surface-hover); }
     .closed-summary {
       margin: 0;

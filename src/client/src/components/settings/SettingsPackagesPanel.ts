@@ -217,13 +217,13 @@ export class SettingsPackagesPanel extends LitElement {
   }
 
   static override styles = css`
-    :host { display: block; font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    :host { display: block; font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     small { font-size: 12px; line-height: 16px; }
-    strong { font-weight: 500; }
+    strong { font-weight: var(--pi-font-weight-medium, 460); }
     .package-toolbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
     .package-toolbar > div, .package-main { display: grid; gap: 6px; min-width: 0; }
     h3, p { margin: 0; }
-    h3 { font-size: 14px; line-height: 20px; font-weight: 500; }
+    h3 { font-size: 14px; line-height: 20px; font-weight: var(--pi-font-weight-medium, 460); }
     p { color: var(--pi-muted); font-size: 14px; line-height: 20px; }
     small { color: var(--pi-muted); font-size: 12px; line-height: 16px; }
     button, input { font: inherit; }
@@ -231,9 +231,9 @@ export class SettingsPackagesPanel extends LitElement {
     button:not(:disabled):hover { background: var(--pi-surface-hover); }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
     button:disabled, input:disabled { opacity: .55; cursor: not-allowed; }
-    input { box-sizing: border-box; width: 100%; min-width: 0; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); padding: 8px 9px; font: var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif); }
+    input { box-sizing: border-box; width: 100%; min-width: 0; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); padding: 8px 9px; font: var(--pi-font-weight-regular, 360) var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif); }
     input:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
-    label { font-weight: 500; }
+    label { font-weight: var(--pi-font-weight-medium, 460); }
     .secondary { flex: 0 0 auto; }
     .danger { color: var(--pi-danger); }
     .loading-card, .install-card, .package-card { border: 0; border-radius: 10px; background: var(--pi-surface); padding: 12px; }
@@ -251,7 +251,7 @@ export class SettingsPackagesPanel extends LitElement {
     .package-card.filtered { opacity: .82; }
     .package-main strong, .package-main small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .package-actions { display: flex; align-items: center; gap: 8px; }
-    code { border: 0; border-radius: 5px; background: var(--pi-bg); padding: 1px 4px; color: var(--pi-text); font: 12px/17.5px var(--pi-font-monospace, ui-monospace, monospace); overflow-wrap: anywhere; }
+    code { border: 0; border-radius: 5px; background: var(--pi-bg); padding: 1px 4px; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 12px/17.5px var(--pi-font-monospace, ui-monospace, monospace); overflow-wrap: anywhere; }
 
     @media (max-width: 760px) {
       .package-toolbar { display: grid; gap: 12px; }

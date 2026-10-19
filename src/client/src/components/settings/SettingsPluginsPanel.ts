@@ -198,14 +198,14 @@ export class SettingsPluginsPanel extends LitElement {
   }
 
   static override styles = css`
-    :host { display: block; font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    :host { display: block; font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     small { font-size: 12px; line-height: 16px; }
-    strong { font-weight: 500; }
+    strong { font-weight: var(--pi-font-weight-medium, 460); }
     input { font: inherit; }
     input:disabled { opacity: .55; cursor: not-allowed; }
     .loading-card, .plugin-note, .plugin-card, .recovery { border: 0; border-radius: 10px; background: var(--pi-surface); padding: 12px; }
     .loading-card, .plugin-note { color: var(--pi-muted); }
-    code { border: 0; border-radius: 5px; background: var(--pi-bg); padding: 1px 4px; color: var(--pi-text); font: 12px/17.5px var(--pi-font-monospace, ui-monospace, monospace); overflow-wrap: anywhere; }
+    code { border: 0; border-radius: 5px; background: var(--pi-bg); padding: 1px 4px; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 12px/17.5px var(--pi-font-monospace, ui-monospace, monospace); overflow-wrap: anywhere; }
     .plugin-list { display: grid; gap: 10px; }
     .plugin-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; }
     .plugin-card.disabled { opacity: .8; }

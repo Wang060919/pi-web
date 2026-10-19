@@ -52,19 +52,19 @@ export class SettingsLanguagePanel extends LitElement {
   }
 
   static override styles = css`
-    :host { display: block; font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    :host { display: block; font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     small { font-size: 12px; line-height: 16px; }
-    strong { font-weight: 500; }
+    strong { font-weight: var(--pi-font-weight-medium, 460); }
     .language-card { display: grid; gap: 14px; padding: 16px; border: 0; border-radius: 10px; background: var(--pi-surface); }
     header, label { display: grid; gap: 6px; }
     h3, p { margin: 0; }
-    h3 { font-size: 14px; line-height: 20px; font-weight: 500; }
+    h3 { font-size: 14px; line-height: 20px; font-weight: var(--pi-font-weight-medium, 460); }
     p { color: var(--pi-muted); font-size: 14px; line-height: 20px; }
     small, label > span { color: var(--pi-muted); font-size: 12px; line-height: 16px; }
-    label > span { font-size: 12px; font-weight: 500; }
-    select { box-sizing: border-box; width: 100%; border: 1px solid var(--pi-border); border-radius: 8px; padding: 9px 10px; background: var(--pi-bg); color: var(--pi-text); font: var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif); }
+    label > span { font-size: 12px; font-weight: var(--pi-font-weight-medium, 460); }
+    select { box-sizing: border-box; width: 100%; border: 1px solid var(--pi-border); border-radius: 8px; padding: 9px 10px; background: var(--pi-bg); color: var(--pi-text); font: var(--pi-font-weight-regular, 360) var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif); }
     .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
-    button { box-sizing: border-box; min-height: 30px; border: 0; border-radius: 6px; background: var(--pi-selection-bg); color: var(--pi-text); padding: 6px 10px; font: inherit; font-weight: 500; cursor: pointer; }
+    button { box-sizing: border-box; min-height: 30px; border: 0; border-radius: 6px; background: var(--pi-selection-bg); color: var(--pi-text); padding: 6px 10px; font: inherit; font-weight: var(--pi-font-weight-medium, 460); cursor: pointer; }
     button:not(:disabled):hover { background: var(--pi-surface-hover); }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
     select:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }

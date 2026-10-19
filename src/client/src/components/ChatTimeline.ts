@@ -231,7 +231,7 @@ export class ChatTimeline extends LitElement {
   }
 
   static override styles = css`
-    :host { position: absolute; inset: 0; z-index: 22; display: block; min-width: 0; pointer-events: none; color: var(--pi-text); font: 12px var(--pi-font-family, system-ui, sans-serif); }
+    :host { position: absolute; inset: 0; z-index: 22; display: block; min-width: 0; pointer-events: none; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 12px var(--pi-font-family, system-ui, sans-serif); }
     nav { position: absolute; top: 50%; right: 1px; display: flex; flex-direction: column; justify-content: space-between; width: 30px; height: min(320px, 60%, calc(var(--tick-count) * 10px)); transform: translateY(-50%); pointer-events: auto; }
     button { display: grid; flex: 1 1 0; min-height: 0; place-items: center; width: 30px; padding: 0; border: 0; background: transparent; color: var(--pi-muted); cursor: pointer; }
     button span { display: block; width: 7px; height: 1px; border-radius: 1px; background: currentColor; opacity: .5; transition: width .12s ease, opacity .12s ease; }
@@ -240,7 +240,7 @@ export class ChatTimeline extends LitElement {
     button:focus-visible { border-radius: 4px; outline: 1px solid var(--pi-accent); outline-offset: -2px; }
     .preview { position: absolute; right: 38px; box-sizing: border-box; width: 320px; max-width: calc(100% - 56px); max-height: calc(100% - 16px); overflow: hidden; padding: 12px 14px; border: 1px solid var(--pi-border-muted); border-radius: 10px; background: color-mix(in srgb, var(--pi-surface) 94%, #b2a99b); box-shadow: 0 5px 20px color-mix(in srgb, var(--pi-shadow-soft) 55%, transparent); }
     strong, p { display: -webkit-box; overflow: hidden; overflow-wrap: anywhere; -webkit-box-orient: vertical; }
-    strong { -webkit-line-clamp: 2; font-size: 13px; font-weight: 500; line-height: 1.5; }
+    strong { -webkit-line-clamp: 2; font-size: 13px; font-weight: var(--pi-font-weight-medium, 460); line-height: 1.5; }
     p { margin: 8px 0 0; color: var(--pi-muted); font-size: 12px; line-height: 1.5; white-space: pre-line; -webkit-line-clamp: 4; }
     @media (prefers-reduced-motion: reduce) { button span { transition: none; } }
   `;

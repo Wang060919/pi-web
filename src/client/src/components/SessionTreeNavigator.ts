@@ -522,7 +522,7 @@ export class SessionTreeNavigator extends LitElement {
   }
 
   static override styles = css`
-    :host { position: fixed; inset: 0; z-index: 40; color: var(--pi-text); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    :host { position: fixed; inset: 0; z-index: 40; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     * { box-sizing: border-box; }
     /* Full-viewport shell: the surface's centered-card defaults are overridden
        so the dialog keeps covering the whole viewport. */
@@ -531,9 +531,9 @@ export class SessionTreeNavigator extends LitElement {
     footer { min-height: 64px; justify-content: end; padding: 12px max(18px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); border-top: 0; border-bottom: 0; }
     header > div { min-width: 0; }
     h1, h2, p { margin: 0; }
-    h1 { font-size: 18px; line-height: 24px; font-weight: 500; }
-    h2 { margin-top: 2px; font-size: 16px; line-height: 22px; font-weight: 500; }
-    .eyebrow { display: block; color: var(--pi-muted); font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0; }
+    h1 { font-size: 18px; line-height: 24px; font-weight: var(--pi-font-weight-medium, 460); }
+    h2 { margin-top: 2px; font-size: 16px; line-height: 22px; font-weight: var(--pi-font-weight-medium, 460); }
+    .eyebrow { display: block; color: var(--pi-muted); font-size: 12px; line-height: 16px; font-weight: var(--pi-font-weight-medium, 460); letter-spacing: 0; }
     .close-button { width: 36px; height: 36px; margin-inline-start: auto; display: grid; place-items: center; border: 0; background: transparent; color: var(--pi-muted); padding: 0; font-size: 25px; }
     .close-button:not(:disabled):hover, .close-button:not(:disabled):focus-visible { color: var(--pi-text); background: var(--pi-surface-hover); }
     .body { flex: 1 1 auto; min-height: 0; overflow: auto; }
@@ -561,7 +561,7 @@ export class SessionTreeNavigator extends LitElement {
     .tree-row > .metadata > .kind { grid-column: 2; grid-row: 1; }
     .tree-row > .entry { grid-column: 3; grid-row: 1; }
     .tree-row > .metadata > .badges { grid-column: 4; grid-row: 1; }
-    .kind { --kind-background: var(--pi-surface); display: inline-flex; align-items: center; width: fit-content; border: 0; border-radius: 999px; padding: 2px 7px; color: var(--pi-text); background: var(--kind-background); font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; }
+    .kind { --kind-background: var(--pi-surface); display: inline-flex; align-items: center; width: fit-content; border: 0; border-radius: 999px; padding: 2px 7px; color: var(--pi-text); background: var(--kind-background); font-size: 12px; line-height: 16px; font-weight: var(--pi-font-weight-medium, 460); white-space: nowrap; }
     .kind-tone-user { --kind-background: var(--pi-selection-bg); }
     .kind-tone-assistant { --kind-background: var(--pi-surface); }
     .kind-tone-tool { --kind-background: var(--pi-warning-surface); }
@@ -574,7 +574,7 @@ export class SessionTreeNavigator extends LitElement {
     .label { max-width: 180px; overflow: hidden; text-overflow: ellipsis; border-radius: 4px; padding: 1px 5px; background: var(--pi-bg-overlay); color: var(--pi-muted); font-size: 12px; line-height: 16px; white-space: nowrap; }
     time { color: var(--pi-muted); font-size: 12px; line-height: 16px; white-space: nowrap; }
     .badges { display: flex; align-items: center; justify-content: end; gap: 5px; }
-    .badge { border-radius: 999px; padding: 2px 7px; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; }
+    .badge { border-radius: 999px; padding: 2px 7px; font-size: 12px; line-height: 16px; font-weight: var(--pi-font-weight-medium, 460); white-space: nowrap; }
     .badge.path { background: color-mix(in srgb, var(--pi-accent) 14%, transparent); color: var(--pi-text); }
     .badge.leaf { border: 1px solid var(--pi-accent); color: var(--pi-text); }
     .confirmation-step { padding: 24px max(18px, env(safe-area-inset-right)) 24px max(18px, env(safe-area-inset-left)); }
@@ -583,16 +583,16 @@ export class SessionTreeNavigator extends LitElement {
     .selected-entry { border: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 8px 10px; background: var(--pi-surface); }
     .selected-entry p { grid-column: 2; color: var(--pi-muted); font-size: 12px; }
     fieldset { min-width: 0; margin: 0; padding: 0; border: 0; display: grid; gap: 9px; }
-    legend { margin-bottom: 8px; font-weight: 500; }
+    legend { margin-bottom: 8px; font-weight: var(--pi-font-weight-medium, 460); }
     .choice-option { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 10px; border: 0; border-radius: 10px; padding: 11px 12px; background: var(--pi-surface); cursor: pointer; }
     .choice-option.selected { background: var(--pi-selection-bg); }
     .choice-option input { margin-top: 3px; accent-color: var(--pi-accent); }
     .choice-option span { display: grid; gap: 3px; }
     .choice-option small { color: var(--pi-muted); }
-    .custom-focus { display: grid; gap: 6px; margin: 2px 0 0 30px; font-weight: 500; }
-    textarea { width: 100%; resize: vertical; min-height: 94px; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); padding: 9px 10px; font: var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif); }
+    .custom-focus { display: grid; gap: 6px; margin: 2px 0 0 30px; font-weight: var(--pi-font-weight-medium, 460); }
+    textarea { width: 100%; resize: vertical; min-height: 94px; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); padding: 9px 10px; font: var(--pi-font-weight-regular, 360) var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-font-family, system-ui, sans-serif); }
     textarea:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 1px; }
-    .character-count { justify-self: end; color: var(--pi-muted); font-size: 12px; line-height: 16px; font-weight: 400; }
+    .character-count { justify-self: end; color: var(--pi-muted); font-size: 12px; line-height: 16px; font-weight: var(--pi-font-weight-regular, 360); }
     .validation-error { margin-inline-start: 30px; color: var(--pi-danger); font-size: 12px; }
     .side-effects-note { border-color: var(--pi-warning-border); background: var(--pi-warning-surface); }
     .dialog-error { border-color: var(--pi-danger); background: color-mix(in srgb, var(--pi-danger) 10%, var(--pi-bg)); color: var(--pi-danger); }
@@ -602,7 +602,7 @@ export class SessionTreeNavigator extends LitElement {
     button:not(:disabled):hover { background: var(--pi-surface-hover); }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 1px; }
     button:disabled { opacity: .52; cursor: not-allowed; }
-    button.primary { background: var(--pi-selection-bg); color: var(--pi-text); font-weight: 500; }
+    button.primary { background: var(--pi-selection-bg); color: var(--pi-text); font-weight: var(--pi-font-weight-medium, 460); }
     button.primary:not(:disabled):hover { background: var(--pi-surface-hover); }
     button.danger { color: var(--pi-danger); }
     .footer-spacer { flex: 1; }
@@ -621,7 +621,7 @@ export class SessionTreeNavigator extends LitElement {
       .custom-focus, .validation-error { margin-inline-start: 0; }
       footer { flex-wrap: wrap; }
     }
-    strong { font-weight: 500; }
+    strong { font-weight: var(--pi-font-weight-medium, 460); }
     small { font-size: 12px; line-height: 16px; }
     @media (max-width: 760px), (pointer: coarse) {
       button { min-height: 44px; }

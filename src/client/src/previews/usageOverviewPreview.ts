@@ -80,16 +80,16 @@ export class UsageOverviewPreview extends LitElement {
   }
 
   static override styles = css`
-    :host { display: block; min-height: 100dvh; color: var(--pi-text); font: 400 13px/18px var(--pi-font-family); }
+    :host { display: block; min-height: 100dvh; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family); }
     main { box-sizing: border-box; padding: 28px 38px 132px; }
-    h1 { display: flex; align-items: center; gap: 8px; margin: 0 0 44px -10px; font-size: 20px; line-height: 28px; font-weight: 400; letter-spacing: -.02em; }
+    h1 { display: flex; align-items: center; gap: 8px; margin: 0 0 44px -10px; font-size: 20px; line-height: 28px; font-weight: var(--pi-font-weight-regular, 360); letter-spacing: -.02em; }
     .pi-mark { color: var(--pi-text); }
     usage-overview { max-width: 100%; }
     aside { position: fixed; bottom: 18px; left: 28px; max-width: calc(100vw - 56px); box-sizing: border-box; padding: 10px 12px; border: 0; border-radius: 10px; background: var(--pi-surface); color: var(--pi-muted); }
     .settings-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
     .preview-label { font-size: 11px; }
     .controls { display: flex; padding: 2px; gap: 2px; border-radius: 6px; background: color-mix(in srgb, var(--pi-text) 4%, transparent); }
-    button { border: 0; padding: 4px 8px; border-radius: 4px; background: transparent; color: var(--pi-muted); font: 400 12px/18px var(--pi-control-font-family); cursor: pointer; }
+    button { border: 0; padding: 4px 8px; border-radius: 4px; background: transparent; color: var(--pi-muted); font: var(--pi-font-weight-regular, 360) 12px/18px var(--pi-control-font-family); cursor: pointer; }
     button[aria-pressed=true] { background: var(--pi-selection-bg); color: var(--pi-text); }
     button:hover { color: var(--pi-text); }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }

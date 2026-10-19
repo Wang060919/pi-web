@@ -100,7 +100,7 @@ class DevelopmentDemoLauncher extends LitElement {
   }
 
   static override styles = css`
-    :host { position: fixed; left: 16px; bottom: 16px; z-index: 80; color: var(--pi-text); font: 400 13px/1.5 var(--pi-font-family, system-ui, sans-serif); }
+    :host { position: fixed; left: 16px; bottom: 16px; z-index: 80; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 13px/1.5 var(--pi-font-family, system-ui, sans-serif); }
     button, a { -webkit-tap-highlight-color: transparent; }
     button { cursor: pointer; font: inherit; }
     button:focus-visible, a:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 3px; }
@@ -109,7 +109,7 @@ class DevelopmentDemoLauncher extends LitElement {
     dialog { box-sizing: border-box; width: min(460px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 22px; overflow: auto; border: 1px solid var(--pi-border); border-radius: 14px; background: var(--pi-surface); color: var(--pi-text); font: inherit; box-shadow: 0 16px 64px #0004; }
     dialog::backdrop { background: #0006; }
     header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-    h2 { margin: 0; font-size: 17px; line-height: 1.5; font-weight: 600; }
+    h2 { margin: 0; font-size: 17px; line-height: 1.5; font-weight: var(--pi-font-weight-semibold, 540); }
     .close { width: 28px; height: 28px; flex: none; border: 0; border-radius: 6px; background: transparent; color: var(--pi-muted); font-size: 22px; line-height: 1; }
     .close:hover { background: var(--pi-selection-bg); color: var(--pi-text); }
     p { margin: 16px 0 0; }
@@ -123,7 +123,7 @@ class DevelopmentDemoLauncher extends LitElement {
     .status { color: var(--pi-muted); font-size: 12px; }
     .status:empty { display: none; }
     .error { color: var(--pi-danger, #c94444); overflow-wrap: anywhere; }
-    h3 { margin: 20px 0 8px; font-size: 12px; font-weight: 500; color: var(--pi-muted); }
+    h3 { margin: 20px 0 8px; font-size: 12px; font-weight: var(--pi-font-weight-medium, 460); color: var(--pi-muted); }
     ul { list-style: none; margin: 0; padding: 0; border: 1px solid var(--pi-border); border-radius: 8px; overflow: hidden; }
     li + li { border-top: 1px solid var(--pi-border); }
     li a { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 10px 12px; color: var(--pi-text); text-decoration: none; overflow-wrap: anywhere; }

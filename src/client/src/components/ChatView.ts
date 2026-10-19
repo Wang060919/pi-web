@@ -1350,10 +1350,10 @@ export class ChatView extends LitElement {
   }
 
   static override styles = [chatStyles, css`
-    .turn-written-files { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; min-width: 0; margin-top: 10px; color: var(--pi-muted); font: 400 12px/18px var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
+    .turn-written-files { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; min-width: 0; margin-top: 10px; color: var(--pi-muted); font: var(--pi-font-weight-regular, 360) 12px/18px var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
     .turn-written-files button { max-width: 100%; border: 1px solid var(--pi-border-muted); border-radius: 6px; padding: 3px 7px; background: var(--pi-surface); color: var(--pi-text-secondary); font: inherit; text-align: start; overflow-wrap: anywhere; cursor: pointer; }
     .turn-written-files button:not(:disabled):hover { background: var(--pi-surface-hover); color: var(--pi-text); }
-    .selection-quote-bar { position: absolute; z-index: 30; display: flex; align-items: center; flex-wrap: wrap; width: max-content; max-width: calc(100% - 16px); box-sizing: border-box; padding: 3px; border: 1px solid var(--pi-border-muted); border-radius: 8px; box-shadow: 0 3px 12px var(--pi-shadow); background: var(--pi-surface); font: 400 13px/20px var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
+    .selection-quote-bar { position: absolute; z-index: 30; display: flex; align-items: center; flex-wrap: wrap; width: max-content; max-width: calc(100% - 16px); box-sizing: border-box; padding: 3px; border: 1px solid var(--pi-border-muted); border-radius: 8px; box-shadow: 0 3px 12px var(--pi-shadow); background: var(--pi-surface); font: var(--pi-font-weight-regular, 360) 13px/20px var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
     .selection-quote-bar button { flex: 1 0 auto; border: 0; border-radius: 4px; padding: 2px 6px; background: transparent; color: var(--pi-text); font: inherit; cursor: pointer; white-space: nowrap; }
     .selection-quote-bar button + button { border-inline-start: 1px solid var(--pi-border-muted); border-start-start-radius: 0; border-end-start-radius: 0; }
     .selection-quote-bar button:not(:disabled):hover { background: var(--pi-surface-hover); }

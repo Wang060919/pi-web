@@ -98,7 +98,7 @@ export class WelcomeUsageOverview extends LitElement {
   }
 
   static override styles = css`
-    :host { display: block; width: 480px; max-width: 100%; color: var(--pi-text); font: 400 12px/18px var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
+    :host { display: block; width: 480px; max-width: 100%; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 12px/18px var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
     * { box-sizing: border-box; }
     header { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 22px; margin-bottom: 10px; color: var(--pi-muted); }
     header > span { min-width: 0; overflow-wrap: anywhere; }

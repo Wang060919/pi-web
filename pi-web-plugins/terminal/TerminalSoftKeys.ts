@@ -84,7 +84,7 @@ export class TerminalSoftKeys extends LitElement {
     :host { flex: 0 0 auto; display: block; }
     .terminal-soft-keys { display: flex; gap: 6px; align-items: center; padding: 6px; border-bottom: 0; background: var(--pi-bg); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; touch-action: pan-x; }
     .terminal-soft-keys::-webkit-scrollbar { display: none; }
-    button { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; max-width: none; min-height: 34px; border: 0; border-radius: 6px; background: var(--pi-surface); color: var(--pi-text); padding: 6px 9px; font: 12px/16px var(--pi-font-monospace, ui-monospace, monospace); cursor: pointer; touch-action: pan-x; -webkit-touch-callout: none; user-select: none; }
+    button { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; max-width: none; min-height: 34px; border: 0; border-radius: 6px; background: var(--pi-surface); color: var(--pi-text); padding: 6px 9px; font: var(--pi-font-weight-regular, 360) 12px/16px var(--pi-font-monospace, ui-monospace, monospace); cursor: pointer; touch-action: pan-x; -webkit-touch-callout: none; user-select: none; }
     button:not(:disabled):hover { background: var(--pi-selection-bg); }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
     button:disabled { opacity: .5; cursor: not-allowed; }

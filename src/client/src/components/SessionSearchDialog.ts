@@ -234,7 +234,7 @@ export class SessionSearchDialog extends LitElement {
     .preview-navigation button { padding: 5px 8px; }
     .preview-locate { background: var(--pi-selection-bg); }
     .message-preview { flex: 1 1 auto; min-height: 0; padding: 0 16px 16px; overflow-y: auto; }
-    .message-preview h2 { font-size: 14px; font-weight: 500; }
+    .message-preview h2 { font-size: 14px; font-weight: var(--pi-font-weight-medium, 460); }
     .preview-source, .preview-role { color: var(--pi-muted); font-size: 12px; overflow-wrap: anywhere; }
     .message-preview pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
     @media (max-width: 480px) { .search-controls label { flex-wrap: wrap; gap: 4px; } select { max-width: 180px; } }

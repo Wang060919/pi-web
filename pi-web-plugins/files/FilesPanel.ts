@@ -535,10 +535,10 @@ export class WorkspaceFilesPanel extends LitElement {
   }
 
   static override styles = css`
-    :host { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; color: var(--pi-text); background: var(--pi-bg); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); container-type: inline-size; }
+    :host { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; color: var(--pi-text); background: var(--pi-bg); font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); container-type: inline-size; }
     .files-panel { position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
     .toolbar { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-bottom: 0; }
-    .toolbar strong { font-weight: 500; }
+    .toolbar strong { font-weight: var(--pi-font-weight-medium, 460); }
     .toolbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
     button { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 5px 7px; font: inherit; cursor: pointer; }
     button:not(:disabled):hover { background: var(--pi-surface-hover); }
@@ -588,13 +588,13 @@ export class WorkspaceFilesPanel extends LitElement {
     dialog.upload-dialog[open] { display: flex; flex-direction: column; }
     dialog.upload-dialog::backdrop { background: var(--pi-overlay); }
     .upload-dialog header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 0; }
-    .upload-dialog h2 { margin: 2px 0 0; font-size: 16px; line-height: 22px; font-weight: 500; }
+    .upload-dialog h2 { margin: 2px 0 0; font-size: 16px; line-height: 22px; font-weight: var(--pi-font-weight-medium, 460); }
     .eyebrow { color: var(--pi-muted); font-size: 12px; line-height: 16px; }
     .close-button { font-size: 20px; line-height: 1; padding: 4px 9px; }
     form { box-sizing: border-box; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: auto; overscroll-behavior: contain; padding: 16px; }
     form > label { flex: 0 0 auto; display: grid; gap: 6px; }
-    form > label > span, .review-files > strong { font-weight: 500; }
-    form > label > input:not([type]) { box-sizing: border-box; width: 100%; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); padding: 8px 9px; font: var(--pi-control-font-size, 16px)/1.42857 var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
+    form > label > span, .review-files > strong { font-weight: var(--pi-font-weight-medium, 460); }
+    form > label > input:not([type]) { box-sizing: border-box; width: 100%; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); padding: 8px 9px; font: var(--pi-font-weight-regular, 360) var(--pi-control-font-size, 16px)/1.42857 var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
     .dialog-options { flex: 0 0 auto; display: grid; gap: 8px; }
     .dialog-options label { display: flex; align-items: center; gap: 8px; }
     .review-files { flex: 1 1 180px; display: grid; gap: 6px; min-height: 0; max-height: 180px; overflow: auto; border: 0; border-radius: 8px; background: var(--pi-surface); padding: 8px; }

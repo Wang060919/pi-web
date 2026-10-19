@@ -156,7 +156,7 @@ export class AppMobileMainTabs extends LitElement {
   };
 
   static override styles = css`
-    :host { flex: 0 0 auto; min-width: 0; font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+    :host { flex: 0 0 auto; min-width: 0; font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     .mobile-tabs-frame { position: relative; display: flex; flex: 0 0 auto; min-width: 0; border-bottom: 0; background: var(--pi-bg); }
     .mobile-tabs-frame::before, .mobile-tabs-frame::after { content: ""; position: absolute; top: 0; bottom: 0; z-index: 2; width: 20px; opacity: 0; pointer-events: none; transition: opacity .15s ease; }
     .mobile-tabs-frame::before { left: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--pi-shadow-strong) 55%, transparent) 0%, transparent 100%); }

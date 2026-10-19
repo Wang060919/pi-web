@@ -7,7 +7,7 @@ export const promptAttachmentStyles = css`
   .attachment-thumbnail { display: grid; flex: none; place-items: center; width: 52px; height: 52px; overflow: hidden; border-radius: 7px; background: var(--pi-surface); }
   .attachment-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
   .attachment-card-copy { display: block; flex: 1 1 0; min-width: 0; }
-  .attachment-card-name { display: -webkit-box; max-height: 2.7em; overflow: hidden; color: var(--pi-text); font-size: 12px; font-weight: 500; line-height: 1.35; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .attachment-card-name { display: -webkit-box; max-height: 2.7em; overflow: hidden; color: var(--pi-text); font-size: 12px; font-weight: var(--pi-font-weight-medium, 460); line-height: 1.35; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .attachment-card-info { display: block; margin-top: 4px; overflow: hidden; color: var(--pi-muted); font-size: 10px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
   .attachment-card .attachment-remove { top: 4px; right: 4px; width: 22px; height: 22px; padding: 0; border-color: transparent; background: transparent; color: var(--pi-muted); font-size: 17px; line-height: 20px; }
   .attachment-card .attachment-remove:not(:disabled):hover { background: var(--pi-surface); color: var(--pi-danger); }

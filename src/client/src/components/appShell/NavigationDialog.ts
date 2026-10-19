@@ -180,12 +180,12 @@ export class NavigationDialog extends LitElement {
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     header, footer { flex: 0 0 auto; }
     .destination, footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    h2 { margin: 0; padding: 12px 12px 4px; font-size: 14px; line-height: 20px; font-weight: 500; }
-    h3 { margin: 0; padding: 10px 12px 4px; color: var(--pi-muted); font-size: 12px; line-height: 16px; font-weight: 400; }
+    h2 { margin: 0; padding: 12px 12px 4px; font-size: 14px; line-height: 20px; font-weight: var(--pi-font-weight-medium, 460); }
+    h3 { margin: 0; padding: 10px 12px 4px; color: var(--pi-muted); font-size: 12px; line-height: 16px; font-weight: var(--pi-font-weight-regular, 360); }
     p { margin: 0; padding: 0 12px 12px; color: var(--pi-muted); font-size: 12px; flex: 0 0 auto; }
     nav { overscroll-behavior: contain; }
     .destination { border-bottom: 0; gap: 0; }
-    .destination-button { flex: 1; min-width: 0; overflow-wrap: anywhere; text-align: left; padding: 10px 12px; font: inherit; font-weight: 500; }
+    .destination-button { flex: 1; min-width: 0; overflow-wrap: anywhere; text-align: left; padding: 10px 12px; font: inherit; font-weight: var(--pi-font-weight-medium, 460); }
     .destination-button.selected, .destination-button:hover { background: var(--pi-selection-bg); }
     .pin-button { display: inline-flex; align-items: center; justify-content: center; padding: 10px 12px; }
     .pin-button[aria-pressed="true"] svg { color: var(--pi-text-secondary); }
