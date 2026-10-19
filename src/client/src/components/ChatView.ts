@@ -22,7 +22,7 @@ import { selectedContentIn, type QuotedChatSelection } from "../quotedSelection"
 import { selectionQuotePosition, type QuoteAnchorRect, type QuotePopoverPosition } from "../selectionQuotePosition";
 import { ChatRenderKeys } from "../chatRenderKeys";
 import { chatLineIdentity, chatLineScrollIdentity, chatMessageAnchorKey, chatEventAnchorKey } from "../chatMessageIdentity";
-export { chatMessageAnchorKey, chatGroupAnchorKey, chatEventAnchorKey } from "../chatMessageIdentity";
+export { chatMessageAnchorKey } from "../chatMessageIdentity";
 import { DEFAULT_CHAT_BEHAVIORS, type ChatBehaviors } from "../chatBehaviors";
 import type { AskUserSubmission, PendingExtensionDialog, QueuedSessionMessage, SessionActivity, SessionRef, SessionStatus, SessionWarningSeverity } from "../api";
 import type { ClosedExtensionDialog } from "../appState";
