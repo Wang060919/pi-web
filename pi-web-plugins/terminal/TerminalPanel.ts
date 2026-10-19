@@ -1118,6 +1118,10 @@ export class TerminalPanel extends LitElement {
     button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     button small { display: inline-grid; place-items: center; width: 20px; height: 20px; color: var(--pi-muted); font-size: 14px; line-height: 1; }
     button small:hover { color: var(--pi-danger); }
+    @media (max-width: 760px), (pointer: coarse) {
+      .terminal-tabs > button:has(small) { padding-block: 0; padding-right: 0; }
+      button small { flex: none; width: 44px; height: 44px; }
+    }
     button.danger { color: var(--pi-danger); }
     button:disabled { opacity: .5; cursor: not-allowed; }
     .command-run-notice { flex: 0 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--pi-border-muted); background: var(--pi-surface); color: var(--pi-text); }
@@ -1136,6 +1140,7 @@ export class TerminalPanel extends LitElement {
     .terminal-copy-toolbar > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .terminal-copy-toolbar small { margin-left: auto; white-space: nowrap; color: var(--pi-dim); }
     .terminal-copy-toolbar button { flex: 0 0 auto; width: auto; min-height: 34px; padding: 6px 9px; font: inherit; }
+    @media (max-width: 760px), (pointer: coarse) { .terminal-copy-toolbar button { min-width: 44px; min-height: 44px; } }
     .terminal-copy-layers { flex: 1 1 auto; min-height: 0; display: grid; overflow: hidden; background: var(--pi-terminal-bg); }
     .terminal-copy-content, .terminal-copy-selector { grid-area: 1 / 1; box-sizing: border-box; min-width: 0; min-height: 0; width: 100%; height: 100%; margin: 0; padding: 12px; border: 0; border-radius: 0; font: var(--pi-font-weight-regular, 360) ${TERMINAL_FONT_SIZE}px/1.5 ${unsafeCSS(TERMINAL_FONT_FAMILY)}; letter-spacing: normal; font-variant-ligatures: none; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; }
     .terminal-copy-content { overflow: auto; pointer-events: none; background: var(--pi-terminal-bg); color: var(--pi-terminal-text); -webkit-user-select: none; user-select: none; }

@@ -279,8 +279,8 @@ describe("Files panel component boundary", () => {
     expect(unrelatedKey.defaultPrevented).toBe(false);
   });
 
-  it("drags from the measured tree height and clamps both ends while ignoring unrelated pointers", async () => {
-    const { panel, separator, setPointerCapture } = await mountFilesResizer(400);
+  it.each([1, 24])("drags with a %dpx separator and clamps both ends while ignoring unrelated pointers", async (separatorHeight) => {
+    const { panel, separator, setPointerCapture } = await mountFilesResizer(400, separatorHeight);
     separator.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 7, button: 2, clientY: 400 }));
     separator.dispatchEvent(new PointerEvent("pointermove", { pointerId: 7, clientY: 800 }));
     await panel.updateComplete;
@@ -371,14 +371,15 @@ async function mountPanel(context: WorkspacePanelContext, runtime = new FilesRun
   return panel;
 }
 
-async function mountFilesResizer(treeHeight: number) {
+async function mountFilesResizer(treeHeight: number, separatorHeight = 1) {
   const panel = await mountPanel(createContext());
   const split = requiredElement(panel.shadowRoot?.querySelector<HTMLElement>(".split"), "file split");
   const tree = requiredElement(panel.shadowRoot?.querySelector<HTMLElement>(".tree"), "file tree");
   const separator = requiredElement(panel.shadowRoot?.querySelector<HTMLElement>("[role='separator']"), "file separator");
   // Browser geometry and capture are explicit inputs; happy-dom does not lay
   // out the grid or implement a real pointer-capture lifecycle.
-  vi.spyOn(split, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 600, 1001));
+  vi.spyOn(split, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 600, 1000 + separatorHeight));
+  vi.spyOn(separator, "getBoundingClientRect").mockReturnValue(new DOMRect(0, treeHeight, 600, separatorHeight));
   vi.spyOn(tree, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 600, treeHeight));
   const capturedPointers = new Set<number>();
   const setPointerCapture = vi.fn((pointerId: number) => { capturedPointers.add(pointerId); });

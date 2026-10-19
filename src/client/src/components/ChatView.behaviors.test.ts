@@ -63,6 +63,27 @@ function scrollingViewport(view: ChatView, initialTop = 2445) {
 }
 
 describe("composable normal chat", () => {
+  it("keeps the welcome page at the top without tail following, then resumes normal chat scrolling", async () => {
+    const view = await mount();
+    const { metrics, write } = controlledChatViewport(view);
+    view.messages = []; view.messageTotal = 0; view.showWelcome = true;
+    await view.updateComplete;
+    flushFrames();
+    expect(metrics.top).toBe(0);
+    write.mockClear();
+    metrics.height = 3000;
+    window.dispatchEvent(new Event("resize"));
+    flushFrames();
+    expect(write).not.toHaveBeenCalled();
+    // Ordinary welcome updates preserve the user's own scroll position.
+    metrics.top = 200;
+    view.requestUpdate(); await view.updateComplete; flushFrames();
+    expect(metrics.top).toBe(200);
+    view.showWelcome = false; view.messages = messages; view.messageTotal = messages.length;
+    await view.updateComplete; flushFrames();
+    expect(write).toHaveBeenLastCalledWith(3000);
+  });
+
   it("keeps default conveniences and explicit small navigation controls, without a meter", async () => {
     const view = await mount();
     expect(view.behaviors.rememberPosition).toBe(true);

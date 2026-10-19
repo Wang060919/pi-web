@@ -138,7 +138,7 @@ export class UsageDetails extends LitElement {
     dt { min-width: 0; color: var(--pi-muted); font-size: 12px; overflow-wrap: anywhere; }
     dd { min-width: 0; margin: 0; color: var(--pi-text); font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
     .cost-row { margin-top: 4px; border-top: 1px solid var(--pi-border-muted); }
-    @media (pointer: coarse) { button { width: 44px; height: 44px; } }
+    @media (max-width: 760px), (pointer: coarse) { button { width: 44px; height: 44px; } }
     @media (max-width: 640px) {
       modal-surface { --modal-surface-place-items: end stretch; --modal-surface-backdrop-padding: 0; --modal-surface-width: 100%; --modal-surface-max-height: calc(100dvh - 12px); --modal-surface-radius: 16px 16px 0 0; }
       .usage-content { padding-bottom: max(20px, env(safe-area-inset-bottom)); }

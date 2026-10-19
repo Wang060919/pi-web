@@ -1,3 +1,4 @@
+import { VisualViewportSizing } from "../appShell/visualViewportSizing";
 import { getLocale, localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { queuedMessageRecallConfirmation, type QueuedMessageActionTarget } from "../queuedMessageActions";
 import { LitElement, html, type TemplateResult } from "lit";
@@ -370,6 +371,7 @@ export class PiWebApp extends LitElement {
   private readonly machineRealtimeSockets = new Map<string, RealtimeSocket>();
   private readonly machineNavigation = new SessionStorageMachineNavigationMemory();
   private readonly appShell = new AppShellController(this);
+  private readonly viewportSizing = new VisualViewportSizing(this);
   private readonly browserResume = new BrowserResumeController({
     onResumeSignal: () => { this.handleBrowserResumeSignal(); },
     refreshAfterResume: () => this.refreshAfterBrowserResume(),
@@ -626,6 +628,7 @@ export class PiWebApp extends LitElement {
     this.unreadConnected = true;
     window.addEventListener("popstate", this.onPopState);
     this.browserResume.connect();
+    this.viewportSizing.connect();
     window.addEventListener("keydown", this.onKeyDown, GLOBAL_SHORTCUT_LISTENER_OPTIONS);
     window.addEventListener("focusin", this.resetKeyboardSequence);
     window.addEventListener("blur", this.resetKeyboardSequence);
@@ -648,6 +651,7 @@ export class PiWebApp extends LitElement {
     this.sessionUnread.retainMachines(new Set<string>());
     window.removeEventListener("popstate", this.onPopState);
     this.browserResume.disconnect();
+    this.viewportSizing.disconnect();
     window.removeEventListener("keydown", this.onKeyDown, GLOBAL_SHORTCUT_LISTENER_OPTIONS);
     window.removeEventListener("focusin", this.resetKeyboardSequence);
     window.removeEventListener("blur", this.resetKeyboardSequence);

@@ -115,5 +115,10 @@ export class WelcomeUsageOverview extends LitElement {
     .error { align-items: flex-start; flex-direction: column; justify-content: center; }
     .error button { color: var(--pi-text); background: var(--pi-selection-bg); }
     .partial { margin-bottom: 8px; color: var(--pi-muted); }
+    @media (max-width: 760px), (pointer: coarse) {
+      button { min-width: 44px; min-height: 44px; }
+      summary { box-sizing: border-box; min-height: 44px; padding-block: 12px; }
+      header { gap: 8px; margin-bottom: 6px; }
+    }
   `;
 }

@@ -101,7 +101,7 @@ export interface CompletionItem {
 
 export const appStyles = css`
   /* Mobile browsers already subtract browser controls from 100dvh; reserve bottom safe area only in standalone PWA modes. */
-  :host { --pi-app-safe-area-bottom: 0px; position: fixed; top: 0; right: 0; left: 0; display: block; height: 100dvh; box-sizing: border-box; overflow: hidden; padding: env(safe-area-inset-top) env(safe-area-inset-right) var(--pi-app-safe-area-bottom) env(safe-area-inset-left); color: var(--pi-text); background: var(--pi-bg); font: 400 13px/18px var(--pi-font-family, system-ui, sans-serif); }
+  :host { --pi-app-safe-area-bottom: 0px; position: fixed; top: var(--pi-viewport-top, 0px); right: 0; left: 0; display: block; height: var(--pi-viewport-height, 100dvh); box-sizing: border-box; overflow: hidden; padding: env(safe-area-inset-top) env(safe-area-inset-right) var(--pi-app-safe-area-bottom) env(safe-area-inset-left); color: var(--pi-text); background: var(--pi-bg); font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
   :host([pwa-display-mode]) { --pi-app-safe-area-bottom: env(safe-area-inset-bottom); }
   @media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
     :host { --pi-app-safe-area-bottom: env(safe-area-inset-bottom); }
@@ -112,7 +112,7 @@ export const appStyles = css`
   header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px; border-bottom: 0; }
   .header-actions { display: flex; align-items: center; gap: 8px; }
   main { --pi-chat-content-inset: clamp(16px, 8%, 80px); grid-column: 3; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-  @media (max-width: 600px) { main { --pi-chat-content-inset: 16px; } }
+  @media (max-width: 760px) { main { --pi-chat-content-inset: 16px; } }
   .context-bar { position: relative; flex: 0 0 auto; min-width: 0; display: none; align-items: center; gap: 0; padding: 6px 0; border-bottom: 0; background: var(--pi-bg); }
   .context-bar::before, .context-bar::after { content: ""; position: absolute; top: 0; bottom: 0; z-index: 2; width: 20px; opacity: 0; pointer-events: none; transition: opacity .15s ease; }
   .context-bar::before { left: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--pi-shadow-strong) 55%, transparent) 0%, transparent 100%); }
@@ -197,7 +197,8 @@ export const appStyles = css`
   .welcome { display: flex; flex: 1 1 auto; flex-direction: column; align-items: flex-start; gap: 16px; box-sizing: border-box; width: 100%; min-height: 0; margin: 0; padding: 24px var(--pi-chat-content-inset) 32px; overflow-y: auto; }
   .welcome-heading { display: flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 0; }
   .welcome .pi-mark { color: var(--pi-text); }
-  .welcome h1 { margin: 0; color: var(--pi-text); font-size: 20px; line-height: 28px; font-weight: var(--pi-font-weight-regular, 360); letter-spacing: -.02em; }
+  .welcome-heading .pi-mark { flex-shrink: 0; }
+  .welcome h1 { min-width: 0; overflow-wrap: anywhere; margin: 0; color: var(--pi-text); font-size: 20px; line-height: 28px; font-weight: var(--pi-font-weight-regular, 360); letter-spacing: -.02em; }
   .welcome-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; width: 480px; max-width: 100%; }
   .welcome p { margin: 0; font-size: 14px; line-height: 22px; }
   .welcome-actions p { flex: 1 1 200px; }
@@ -387,17 +388,21 @@ export const chatStyles = css`
   .notification-row-dismiss { position: absolute; top: 5px; right: 0; display: inline-grid; place-items: center; width: 32px; height: 32px; padding: 0; }
   .visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0 0 0 0) !important; clip-path: inset(50%) !important; white-space: nowrap !important; border: 0 !important; }
   .notification-live span { display: block; }
-  @media (pointer: coarse) {
-    .notification-control, .notification-row-dismiss { min-height: 34px; }
-    .notification-toggle, .notification-row-dismiss { width: 34px; height: 34px; }
-    .notification-row { padding-right: 40px; }
+  @media (max-width: 760px), (pointer: coarse) {
+    .notification-control, .notification-row-dismiss { min-height: 44px; }
+    .notification-toggle, .notification-row-dismiss { width: 44px; height: 44px; }
+    .notification-row { padding-right: 50px; }
   }
   @media (max-width: 520px) {
     .notification-header { gap: 4px; padding-inline: 8px; }
     .notification-list { padding-inline: 8px; }
   }
   .chat { --pi-chat-sticky-top: -26px; flex: 1 1 auto; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 26px 16px 16px; box-sizing: border-box; }
-  .chat.welcome-chat { padding: 0; }
+  .chat.welcome-chat { padding: 0; overflow-anchor: none; }
+  @media (max-width: 760px), (pointer: coarse) {
+    .chat.welcome-chat { scrollbar-width: none; }
+    .chat.welcome-chat::-webkit-scrollbar { display: none; }
+  }
   .chat:focus-visible { outline: 1px solid var(--pi-border); outline-offset: -1px; }
   .chat.timeline-scroll { padding-right: 46px; scrollbar-width: none; }
   .chat.timeline-scroll::-webkit-scrollbar { display: none; width: 0; }
@@ -500,7 +505,7 @@ export const chatStyles = css`
   .msg.skill > .msg-header { border-bottom-color: color-mix(in srgb, var(--pi-purple-border) 35%, transparent); background: var(--pi-purple-surface); }
   .group-msg > .msg-header { position: sticky; top: -26px; z-index: 4; min-height: 16px; margin: 0 0 4px; padding: 0; border: 0; background: var(--pi-bg); }
   .group-msg .msg-action { width: 24px; height: 24px; }
-  @media (pointer: coarse) { .group-msg .msg-action { width: 28px; height: 28px; } }
+  @media (max-width: 760px), (pointer: coarse) { .group-msg .msg-action { width: 44px; height: 44px; } .chat-jumps button, .image-zoom-close { width: 44px; height: 44px; } }
   .group-msg > .msg-header.compact-event-header { position: static; min-height: 16px; margin: 0 0 4px; padding: 0; border: 0; background: transparent; box-shadow: none; }
   .msg-header-trailing { min-width: 0; flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; }
   .msg-actions { flex: 0 0 auto; display: inline-flex; gap: 6px; opacity: 0; transition: opacity .12s ease; }
@@ -687,13 +692,19 @@ export const promptEditorStyles = css`
   button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
   button:disabled, textarea:disabled, .markdown-editor-disabled .cm-editor { opacity: .5; cursor: not-allowed; }
   @media (max-width: 640px) {
-    :host { padding: 8px 10px 4px; }
+    :host { padding: 8px var(--pi-chat-content-inset, 16px) 4px; }
     .context-chip { min-height: 20px; }
     .compact-status > button, .editor-attach { min-height: 34px; }
     footer { gap: 6px; }
     .actions { gap: 6px; }
     .compact-status { gap: 4px; }
     button { padding: 6px 8px; }
+  }
+  @media (max-width: 760px), (pointer: coarse) {
+    .context-chip, .compact-status > button, .editor-attach, .composer-action.icon-button { min-height: 44px; }
+    .editor-attach, .composer-action.send-button:not(.queue-button) { width: 44px; min-width: 44px; }
+    .composer-controls { max-width: calc(100% - 48px); }
+    textarea, .markdown-editor .cm-editor, .markdown-editor .cm-scroller { max-height: min(220px, calc(var(--pi-viewport-height, 100dvh) * .3)); }
   }
   @media (max-width: 430px) {
     button { padding: 5px 7px; }

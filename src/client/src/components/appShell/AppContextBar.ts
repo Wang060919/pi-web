@@ -118,7 +118,7 @@ export class AppContextBar extends LitElement {
     return localizedTemplate("AppContextBar.template.f9feeffd", html)`
       <button type="button" class="context-action-button" title="Show Actions" aria-label="Show Actions" @click=${(event: MouseEvent) => { event.stopPropagation(); this.onShowActions?.(); }}>
         <svg class="context-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M13 2 4 14h7l-1 8 10-13h-7V2Z"></path>
+          <path d="M4 4h5v5H4zM15 4h5v5h-5zM4 15h5v5H4zM15 15h5v5h-5z"></path>
         </svg>
       </button>
     `;
@@ -183,7 +183,7 @@ export class AppContextBar extends LitElement {
     .context-action-button { box-sizing: border-box; width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 0; line-height: 1; }
     .context-action-button.selected, .context-action-button:hover { background: var(--pi-selection-bg); }
     .context-action-button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
-    .context-action-icon { width: 18px; height: 18px; fill: currentColor; pointer-events: none; }
+    .context-action-icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; pointer-events: none; }
     .context-chip { flex: 0 0 auto; min-width: 0; display: inline-flex; align-items: center; gap: 5px; border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 4px 8px; font: inherit; text-align: left; }
     .context-chip-icon { flex: 0 0 auto; width: 14px; height: 14px; }
     .context-detail { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--pi-muted); font-size: 11px; }
@@ -193,6 +193,12 @@ export class AppContextBar extends LitElement {
     .context-kind { display: none; }
     .context-value { min-width: 0; overflow: visible; text-overflow: clip; white-space: nowrap; }
     button { cursor: pointer; }
+    @media (max-width: 760px), (pointer: coarse) {
+      .context-action-button { width: 44px; height: 44px; }
+      .context-chip { min-height: 44px; max-width: 180px; }
+      .context-value { overflow: hidden; text-overflow: ellipsis; }
+      .context-items { scrollbar-width: none; }
+    }
   `;
 }
 

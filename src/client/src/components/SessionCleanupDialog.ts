@@ -247,7 +247,7 @@ export class SessionCleanupDialog extends LitElement {
     .close-button:hover, .close-button:focus-visible { color: var(--pi-text); background: var(--pi-surface-hover); }
 
     @media (max-width: 680px) {
-      modal-surface { --modal-surface-backdrop-padding: 0; --modal-surface-place-items: stretch; --modal-surface-width: 100%; --modal-surface-max-height: none; --modal-surface-border: 0; --modal-surface-radius: 0; }
+      modal-surface { --modal-surface-backdrop-padding: 0; --modal-surface-place-items: stretch; --modal-surface-width: 100%; --modal-surface-max-height: 100%; --modal-surface-border: 0; --modal-surface-radius: 0; }
       .toggle-row { grid-template-columns: auto minmax(0, 1fr); }
       .toggle-row input.days { grid-column: 2; }
       .toggle-row span:last-child { grid-column: 2; }

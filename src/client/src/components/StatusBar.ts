@@ -104,6 +104,9 @@ export class StatusBar extends LitElement {
     :host([compact]) .context-text { display: none; }
     :host([compact]) .usage-toggle { padding: 6px; }
     :host([compact]) .context-ring { width: 15px; height: 15px; }
+    @media (max-width: 760px), (pointer: coarse) {
+      .usage-toggle, .warning-toggle { min-width: 44px; min-height: 44px; justify-content: center; }
+    }
 
   `];
 }

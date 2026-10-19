@@ -200,7 +200,7 @@ export class WorkspaceFilesPanel extends LitElement {
     const split = this.renderRoot.querySelector<HTMLElement>(".split");
     const tree = this.renderRoot.querySelector<HTMLElement>(".tree");
     if (!(handle instanceof HTMLElement) || split === null || tree === null) return;
-    const height = split.getBoundingClientRect().height - 1;
+    const height = split.getBoundingClientRect().height - handle.getBoundingClientRect().height;
     if (height <= 0) return;
     event.preventDefault();
     event.stopPropagation();
@@ -604,6 +604,9 @@ export class WorkspaceFilesPanel extends LitElement {
     footer { flex: 0 0 auto; display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
     @media (max-width: 640px), (pointer: coarse) {
       button { min-height: 44px; }
+      .split { grid-template-rows: minmax(0, var(--files-tree-size, 34fr)) 24px minmax(0, var(--files-viewer-size, 66fr)); }
+      .split-resizer { background: linear-gradient(var(--pi-border), var(--pi-border)) center / 100% 1px no-repeat; }
+      .split-resizer::before { inset: 5px calc(50% - 20px); border-radius: 6px; background: var(--pi-border); }
     }
   `;
 }

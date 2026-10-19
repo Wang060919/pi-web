@@ -84,7 +84,7 @@ export class UsageOverview extends LitElement {
         ${this.view === "overview" ? html`
           <dl class="metrics">${metrics.map(([label, value]) => html`<div><dt>${label}</dt><dd>${value}</dd></div>`)}</dl>
           <div class="heatmap-wrap" @pointerleave=${() => { this.hoveredDate = undefined; }}>
-            <div class="heatmap" role="group" aria-label=${t("ui.usageOverview.heatmap")}>
+            <div class="heatmap-scroll"><div class="heatmap" role="group" aria-label=${t("ui.usageOverview.heatmap")}>
               ${data.days.map((day, index) => html`
                 <button type="button" class="day" data-date=${day.date} data-level=${day.totalTokens === 0 ? 0 : Math.max(1, Math.ceil(day.totalTokens / maximum * 4))} data-in-range=${String(day.inRange)}
                   tabindex=${day.date === tabDate ? 0 : -1}
@@ -97,6 +97,7 @@ export class UsageOverview extends LitElement {
                   @keydown=${(event: KeyboardEvent) => { this.navigateDay(event, index, data.days); }}
                 ></button>
               `)}
+            </div>
             </div>
             ${activeDay === undefined ? nothing : html`
               <div class="tooltip" id="usage-day-tooltip" role="tooltip" style=${`--column:${String(Math.floor(activeIndex / 7))}; --row:${String(activeIndex % 7)}`}>
@@ -170,6 +171,15 @@ export class UsageOverview extends LitElement {
     .model-label > span:last-child { flex-shrink: 0; color: var(--usage-label); font-variant-numeric: tabular-nums; }
     .model-track { height: 4px; margin-top: 5px; border-radius: 2px; background: var(--usage-cell); overflow: hidden; }
     .model-track > span { display: block; height: 100%; background: light-dark(#969695, #969695); border-radius: inherit; }
+    @media (max-width: 760px), (pointer: coarse) {
+      header { flex-wrap: wrap; gap: 4px 8px; margin-bottom: 10px; }
+      .switch button { min-width: 44px; min-height: 44px; padding-inline: 6px; }
+      .metrics dt { white-space: normal; overflow-wrap: anywhere; }
+      .metrics > div { min-height: 56px; }
+      .heatmap-scroll { overflow-x: auto; overscroll-behavior-x: contain; direction: rtl; scrollbar-width: thin; }
+      .heatmap { direction: ltr; min-width: 699px; }
+      .tooltip { position: static; box-sizing: border-box; width: 100%; margin-top: 8px; transform: none; }
+    }
     @media (max-width: 360px) { .panel { padding-inline: 9px; } header { gap: 4px; } .switch button { padding-inline: 4px; } }
   `;
 }

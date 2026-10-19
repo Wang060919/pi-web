@@ -383,7 +383,7 @@ export class ChatView extends LitElement {
   private imageZoomModalRegistration: RenderedModalRegistration | undefined;
   private readonly disclosures = new ChatDisclosureController();
   private readonly scrollFlows = new ChatScrollFlows({
-    getScroller: () => this.chat ?? undefined,
+    getScroller: () => this.showWelcome ? undefined : this.chat ?? undefined,
     onFollowingChange: (following) => { this.followingLive = following; },
     getAnchors: () => this.scrollAnchorElements(),
     getSessionId: () => this.sessionId,
@@ -525,7 +525,7 @@ export class ChatView extends LitElement {
   protected override update(changed: Map<string, unknown>): void {
     const previousStart = changed.get("messageStart");
     this.scrollFlows.beforeRender({
-      sessionChanged: changed.has("sessionId") || changed.has("machineId"),
+      sessionChanged: changed.has("sessionId") || changed.has("machineId") || changed.has("showWelcome"),
       previousSessionId: changed.get("sessionId"),
       prepend: typeof previousStart === "number" && this.messageStart < previousStart,
     });
@@ -535,9 +535,11 @@ export class ChatView extends LitElement {
   protected override updated(changed: Map<string, unknown>): void {
     if (changed.has("loadingMore") && !this.loadingMore) this.loadMoreRequested = false;
     if (changed.has("hasMore") && !this.hasMore) this.loadMoreRequested = false;
+    // The welcome dashboard has no message tail; opening it starts at its heading.
+    if (changed.has("showWelcome") && this.showWelcome && this.chat !== undefined) this.chat.scrollTop = 0;
     const openQuestionId = this.openQuestion()?.askId;
     this.scrollFlows.afterRender({
-      sessionChanged: changed.has("sessionId") || changed.has("machineId"),
+      sessionChanged: changed.has("sessionId") || changed.has("machineId") || changed.has("showWelcome"),
       contentChanged: this.scrollContentChanged(changed),
       historyChanged: changed.has("messages") || changed.has("messageStart") || changed.has("hasMore") || changed.has("loadingMore") || changed.has("historyReady"),
       openedForm: changed.has("pendingDialogs") && this.isNewOpenDialog(changed.get("pendingDialogs")) ? "dialog"

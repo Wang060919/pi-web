@@ -88,6 +88,9 @@ export class TerminalSoftKeys extends LitElement {
     button:not(:disabled):hover { background: var(--pi-selection-bg); }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
     button:disabled { opacity: .5; cursor: not-allowed; }
+    @media (max-width: 760px), (pointer: coarse) {
+      button { justify-content: center; min-width: 44px; min-height: 44px; }
+    }
   `;
 }
 

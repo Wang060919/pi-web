@@ -361,8 +361,12 @@ export class ThinkingPicker extends LitElement {
     @media (max-width: 640px) {
       modal-surface, :host([anchored]) modal-surface { --pi-overlay: inherit; --modal-surface-place-items: end stretch; --modal-surface-backdrop-padding: 0; --modal-surface-width: 100%; --modal-surface-max-height: min(520px, calc(100dvh - 12px)); --modal-surface-radius: 16px 16px 0 0; }
       .content, :host(:not([embedded])) .content { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+      :host(:not([embedded])) input[type=range] { height: 44px; }
+      :host(:not([embedded])) .level-labels, :host(:not([embedded])) .level { height: 44px; }
+      :host(:not([embedded])) .level::before { top: 21px; }
+      :host(:not([embedded])) .level[data-default="true"]::before { top: 18px; }
     }
-    @media (pointer: coarse) { .close { width: 44px; height: 44px; } .set-default { min-height: 44px; } }
+    @media (max-width: 760px), (pointer: coarse) { .close { width: 44px; height: 44px; } .set-default { min-height: 44px; } }
     @media (prefers-reduced-motion: reduce) { .set-default { transition: none; } }
   `;
 }

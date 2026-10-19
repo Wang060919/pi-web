@@ -670,7 +670,7 @@ export class SettingsDialog extends LitElement {
     .settings-content { min-width: 0; min-height: 0; overflow: auto; padding: 18px; }
 
     @media (max-width: 760px) {
-      modal-surface { --modal-surface-backdrop-padding: 0; --modal-surface-place-items: stretch; --modal-surface-width: 100%; --modal-surface-max-height: none; --modal-surface-min-height: 0; --modal-surface-border: 0; --modal-surface-radius: 0; }
+      modal-surface { --modal-surface-backdrop-padding: 0; --modal-surface-place-items: stretch; --modal-surface-width: 100%; --modal-surface-max-height: 100%; --modal-surface-min-height: 0; --modal-surface-border: 0; --modal-surface-radius: 0; }
       .settings-header { padding: max(12px, env(safe-area-inset-top)) 12px 12px; }
       .settings-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
       .settings-nav { display: flex; gap: 8px; padding: 8px; border-right: 0; border-bottom: 0; overflow-x: auto; overflow-y: hidden; }

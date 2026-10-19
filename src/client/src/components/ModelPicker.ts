@@ -666,7 +666,7 @@ export class ModelPicker extends LitElement {
     .catalog-row.selected, .catalog-row:hover { background: var(--pi-selection-bg); }
     .catalog-row input[type="checkbox"] { margin: 0 0 0 12px; accent-color: var(--pi-accent); }
     .catalog-row .membership { flex: 1; min-width: 0; display: block; padding: 10px 12px; text-align: left; }
-    @media (pointer: coarse) { button { min-width: 44px; min-height: 44px; } }
+    @media (max-width: 760px), (pointer: coarse) { button { min-width: 44px; min-height: 44px; } input.search { box-sizing: border-box; min-height: 44px; } }
     small { display: block; margin-top: 4px; color: var(--pi-muted); }
     .empty { padding: 24px; color: var(--pi-muted); text-align: center; }
   `, defaultPinStyles, css`

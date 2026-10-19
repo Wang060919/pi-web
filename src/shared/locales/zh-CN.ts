@@ -4859,11 +4859,11 @@ export const templates = {
     "order": []
   },
   "AppContextBar.template.f9feeffd": {
-    "sourceHash": 382929393,
+    "sourceHash": 436006718,
     "valueCount": 1,
     "strings": [
       "\n      <button type=\"button\" class=\"context-action-button\" title=\"搜索页面和命令\" aria-label=\"搜索页面和命令\" @click=",
-      ">\n        <svg class=\"context-action-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\">\n          <path d=\"M13 2 4 14h7l-1 8 10-13h-7V2Z\"></path>\n        </svg>\n      </button>\n    "
+      ">\n        <svg class=\"context-action-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\">\n          <path d=\"M4 4h5v5H4zM15 4h5v5h-5zM4 15h5v5H4zM15 15h5v5h-5z\"></path>\n        </svg>\n      </button>\n    "
     ],
     "order": [
       0

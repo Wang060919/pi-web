@@ -18,6 +18,7 @@ export const paletteStyles = css`
   small { font-size: 12px; line-height: 16px; }
   @media (max-width: 680px), (pointer: coarse) {
     button { min-height: 44px; }
+    input { box-sizing: border-box; min-height: 44px; }
     header button { min-width: 44px; }
   }
 `;
