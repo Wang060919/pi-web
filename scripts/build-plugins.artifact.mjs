@@ -190,7 +190,7 @@ describe("plugin delivery artifacts", () => {
       }
     }
     expect([...visited].map((file) => relative(browserRoot, file))).toEqual(expect.arrayContaining([
-      "pi-web-plugin.js", "i18n.js", "i18nCore.js", "locales/en.js", "locales/zh-CN.js",
+      "pi-web-plugin.js", "i18n.js", "i18nCore.js", join("locales", "en.js"), join("locales", "zh-CN.js"),
     ]));
     expect(await readFile(join(browserRoot, "locales/zh-CN.js"), "utf8")).toContain("创建工作树");
     expect((await import(pathToFileURL(browserModule).href)).default.name).toBe("Workflows");
