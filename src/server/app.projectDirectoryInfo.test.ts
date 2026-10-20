@@ -18,11 +18,16 @@ describe("read-only project directory status", () => {
     expect(response.json<ProjectDirectoryInfo>()).toMatchObject({ path, exists: false, isDirectory: false });
     await expect(access(path)).rejects.toMatchObject({ code: "ENOENT" });
   });
-  it("distinguishes files from directories and surfaces invalid-parent reads", async () => {
+  it("distinguishes files from directories", async () => {
     const path = join(appTestContext.tempDir, "file.txt"); await writeFile(path, "test");
     const response = await appTestContext.app.inject({ method: "GET", url: `/api/project-directory-info?q=${encodeURIComponent(path)}` });
     expect(response.json<ProjectDirectoryInfo>()).toMatchObject({ exists: true, isDirectory: false });
-    const invalid = await appTestContext.app.inject({ method: "GET", url: `/api/project-directory-info?q=${encodeURIComponent(join(path, "child"))}` });
+  });
+  it("surfaces invalid path reads instead of reporting them as missing directories", async () => {
+    // A file used as a parent yields ENOTDIR on POSIX but ENOENT on Windows.
+    // NUL is rejected on both platforms and exercises the shared error contract.
+    const path = join(appTestContext.tempDir, "invalid\0path");
+    const invalid = await appTestContext.app.inject({ method: "GET", url: `/api/project-directory-info?q=${encodeURIComponent(path)}` });
     expect(invalid.statusCode).toBe(400);
   });
 });
