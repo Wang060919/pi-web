@@ -17,6 +17,7 @@ const plugin: PiWebPlugin = {
           id: "diagram",
           languages: ["mermaid"],
           fileExtensions: ["mmd", "mermaid"],
+          renderMode: "automatic",
           render: (input: ContentRendererInput) => html`<pi-web-mermaid-preview .input=${input} .loadEngine=${loadMermaidEngine}></pi-web-mermaid-preview>`,
         }],
       },
