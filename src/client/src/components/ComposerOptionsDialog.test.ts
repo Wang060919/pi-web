@@ -42,7 +42,7 @@ describe("composer options sheet", () => {
 
   it("routes every action and allows backdrop cancellation", async () => {
     const { dialog, opener, surface } = await mount();
-    for (const action of ["top", "end", "machine", "workspace", "thinking"]) {
+    for (const action of ["top", "end", "timeline", "machine", "workspace", "thinking"]) {
       dialog.renderRoot.querySelector<HTMLButtonElement>(`[data-action="${action}"]`)?.click();
       expect(dialog.onSelect).toHaveBeenLastCalledWith(action);
     }

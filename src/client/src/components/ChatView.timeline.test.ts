@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatScrollFlows } from "../ChatScrollFlows";
 import { MANUAL_CHAT_BEHAVIORS } from "../chatBehaviors.testSupport";
 import { ChatView } from "./ChatView";
+import { ChatTimelineDialog } from "./ChatTimelineDialog";
+import { ModalSurface } from "./ModalSurface";
 import { ChatTimeline } from "./ChatTimeline";
 
 let frames: Map<number, FrameRequestCallback>;
@@ -71,7 +73,7 @@ describe("ChatView conversation timeline", () => {
     if (tick === null) throw new Error("Conversation tick missing");
     tick.click();
     expect(jump).toHaveBeenCalledExactlyOnceWith(viewport.querySelector('article.user[data-index="40"]'));
-    expect(view.renderRoot.querySelectorAll(".chat-jumps button")).toHaveLength(2);
+    expect(view.renderRoot.querySelectorAll(".chat-jumps button:not(.mobile-timeline-entry)")).toHaveLength(2);
   });
 
   it("keeps both jump controls keyboard-focusable and wired alongside the timeline", async () => {
@@ -94,6 +96,38 @@ describe("ChatView conversation timeline", () => {
     view.showWelcome = true;
     await view.updateComplete;
     expect(view.renderRoot.querySelector(".chat-jumps")).toBeNull();
+  });
+
+  it("opens all loaded turns from fallback, closes before navigation and rejects stale sessions", async () => {
+    const { view, viewport } = await mount();
+    const jump = vi.spyOn(ChatScrollFlows.prototype, "jumpToAnchor").mockImplementation(() => undefined);
+    view.renderRoot.querySelector<HTMLButtonElement>(".mobile-timeline-entry")?.click();
+    await view.updateComplete;
+    expect(view.hasAttribute("timeline-open")).toBe(true);
+    const dialog = view.renderRoot.querySelector("chat-timeline-dialog");
+    if (!(dialog instanceof ChatTimelineDialog)) throw new Error("Missing timeline dialog");
+    await dialog.updateComplete;
+    const surface = dialog.renderRoot.querySelector("modal-surface");
+    if (!(surface instanceof ModalSurface)) throw new Error("Missing timeline surface");
+    await surface.updateComplete;
+    expect(dialog.entries.map((entry) => entry.index)).toEqual([40, 42]);
+    dialog.renderRoot.querySelector<HTMLButtonElement>(".entry")?.click();
+    await view.updateComplete;
+    await Promise.resolve();
+    expect(view.renderRoot.querySelector("chat-timeline-dialog")).toBeNull();
+    expect(view.hasAttribute("timeline-open")).toBe(false);
+    expect(view.shadowRoot?.activeElement).toBe(viewport);
+    expect(jump).toHaveBeenCalledOnce();
+    view.openTimeline();
+    await view.updateComplete;
+    view.sessionId = "another-session";
+    // Identical keys/indices in another session must not validate an old callback.
+    await view.updateComplete;
+    expect(view.renderRoot.querySelector("chat-timeline-dialog")).toBeNull();
+    const stale = dialog.entries[0];
+    if (stale !== undefined) dialog.onSelect?.(stale);
+    await view.updateComplete;
+    expect(jump).toHaveBeenCalledOnce();
   });
 
   it("keeps scroll updates inside the navigation component and drops stale entries on session change", async () => {

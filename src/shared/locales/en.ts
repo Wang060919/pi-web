@@ -284,6 +284,7 @@ export const messages = {
   "ui.chatTimeline.transcript": "Conversation",
   "ui.chatTimeline.controls": "Scroll controls",
   "ui.chatTimeline.navigation": "Conversation navigation",
+  "ui.chatTimeline.loaded": "Loaded messages",
   "ui.chatTimeline.preview": "Message preview",
   "ui.chatTimeline.jump": "Jump to message",
   "ui.chatTimeline.emptyReply": "No reply text yet",

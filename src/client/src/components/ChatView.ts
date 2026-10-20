@@ -16,6 +16,7 @@ import { chatGroupProgress, type ChatGroupProgress } from "../chatGroupProgress"
 import { openTranscriptQuestion, transcriptQuestionOutcomes } from "../chatQuestions";
 import { chatTimelineEntries, type ChatTimelineEntry } from "../chatTimeline";
 import { ChatTimeline } from "./ChatTimeline";
+import "./ChatTimelineDialog";
 import { ChatScrollFlows } from "../ChatScrollFlows";
 import { turnWrittenFiles } from "../toolPresentation";
 import { selectedContentIn, type QuotedChatSelection } from "../quotedSelection";
@@ -345,6 +346,7 @@ export class ChatView extends LitElement {
   @property({ attribute: false }) onLoadMore?: () => void;
   @property({ attribute: false }) behaviors: ChatBehaviors = DEFAULT_CHAT_BEHAVIORS;
   @query(".chat") private chat?: HTMLDivElement;
+  @property({ type: Boolean, attribute: "timeline-open", reflect: true }) private timelineOpen = false;
   @query("chat-timeline") private timeline?: ChatTimeline;
   @query("dialog.image-zoom") private imageZoomDialog?: HTMLDialogElement;
   @state() private followingLive = false;
@@ -390,6 +392,7 @@ export class ChatView extends LitElement {
   }
   private readonly onViewportResize = () => {
     this.updateCompactNotificationDefault();
+    if (!this.compactNotificationDefault) this.timelineOpen = false;
     this.dismissQuoteSelection();
     this.scrollFlows.onViewportResize();
   };
@@ -436,6 +439,16 @@ export class ChatView extends LitElement {
     if (boundary === "top") this.scrollFlows.jumpToTop();
     else this.scrollFlows.jumpToEnd();
   }
+  openTimeline(): void { this.timelineOpen = true; }
+  private readonly closeTimeline = (): void => { this.timelineOpen = false; };
+  private readonly selectTimelineEntry = async (entry: ChatTimelineEntry, identity: string): Promise<void> => {
+    if (identity !== machineSessionKey(this.machineId, this.sessionId)) return;
+    this.timelineOpen = false;
+    await this.updateComplete;
+    if (identity !== machineSessionKey(this.machineId, this.sessionId)) return;
+    this.chat?.focus({ preventScroll: true });
+    this.handleTimelineNavigate(entry);
+  };
   private readonly handleJumpTop = () => { this.scrollFlows.jumpToTop(); };
   private readonly handleJumpEnd = () => { this.scrollFlows.jumpToEnd(); };
   private readonly handleTimelineNavigate = (entry: ChatTimelineEntry): void => {
@@ -497,7 +510,8 @@ export class ChatView extends LitElement {
   }
 
   protected override willUpdate(changed: Map<string, unknown>): void {
-    if (changed.has("sessionId") || changed.has("machineId")) {
+    if (changed.has("sessionId") || changed.has("machineId") || changed.has("showWelcome")) {
+      this.timelineOpen = false;
       this.dismissQuoteSelection();
     }
     if (changed.has("messages")) {
@@ -655,9 +669,11 @@ export class ChatView extends LitElement {
           <button type="button" class=${following ? "following" : ""}
             title=${!this.behaviors.followTail ? t("ChatView.jump_to_end.c37e7d58") : following ? t("ChatView.following_live_jump_to_end.9520bc45") : t("ChatView.jump_to_end_and_follow_live.db38db8e")}
             aria-label=${t("ui.chatTimeline.end")} aria-describedby="chat-follow-state" @click=${this.handleJumpEnd}>${renderUiIcon("arrowDown")}</button>
+          <button class="mobile-timeline-entry" type="button" aria-haspopup="dialog" @click=${() => { this.openTimeline(); }}>${t("ui.chatTimeline.navigation")}</button>
           <span id="chat-follow-state" class="visually-hidden">${!this.behaviors.followTail ? t("ChatView.automatic_following_disabled.0de38a22") : following ? t("ChatView.following_live.b062bdb4") : t("ChatView.live_following_paused.ecda395d")}</span>
         </nav>`}
       </div>
+      ${this.timelineOpen ? html`<chat-timeline-dialog .entries=${this.timelineEntriesCache} .currentKey=${this.timeline?.currentEntryKey} .onClose=${this.closeTimeline} .onSelect=${(entry: ChatTimelineEntry) => { void this.selectTimelineEntry(entry, transcriptIdentity); }}></chat-timeline-dialog>` : nothing}
       ${this.renderImageZoom()}
     `;
   }

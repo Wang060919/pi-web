@@ -5,6 +5,7 @@ import { api, type Machine, type SessionInfo, type Workspace } from "../api";
 import { initialAppState, type AppState } from "../appState";
 import { AppShellController } from "../appShell/appShellController";
 import { ChatScrollFlows } from "../ChatScrollFlows";
+import { ChatTimelineDialog } from "./ChatTimelineDialog";
 import { CommandPicker } from "./CommandPicker";
 import { ComposerOptionsDialog } from "./ComposerOptionsDialog";
 import { ModalSurface } from "./ModalSurface";
@@ -225,6 +226,27 @@ describe("mobile More sheet in the real app", () => {
     }
   });
 
+  it("opens timeline after More unmounts and restores More on timeline cancel", async () => {
+    const host = await mountedApp(true);
+    host.editor.replaceText("Timeline draft");
+    const { trigger, dialog } = await open(host);
+    dialog.renderRoot.querySelector<HTMLButtonElement>('[data-action="timeline"]')?.click();
+    await host.app.updateComplete;
+    await Promise.resolve();
+    await host.view.updateComplete;
+    expect(host.app.renderRoot.querySelector("composer-options-dialog")).toBeNull();
+    const timeline = host.view.renderRoot.querySelector("chat-timeline-dialog");
+    if (!(timeline instanceof ChatTimelineDialog)) throw new Error("Missing timeline dialog");
+    await timeline.updateComplete;
+    const surface = timeline.renderRoot.querySelector("modal-surface");
+    if (!(surface instanceof ModalSurface)) throw new Error("Missing timeline surface");
+    await surface.updateComplete;
+    timeline.renderRoot.querySelector<HTMLButtonElement>(".close")?.click();
+    await host.view.updateComplete;
+    expect(host.editor.shadowRoot?.activeElement).toBe(trigger);
+    expect(host.editor.view?.state.doc.toString()).toBe("Timeline draft");
+  });
+
   it("hands focus to the existing workspace picker and restores the More opener on cancel", async () => {
     const host = await mountedApp(true);
     const { trigger, dialog } = await open(host);
@@ -262,6 +284,6 @@ describe("mobile More sheet in the real app", () => {
     } });
     expect(next.editor.hasAttribute("inert")).toBe(true);
     expect(next.view.mobileNavigationExternal).toBe(false);
-    expect(next.view.renderRoot.querySelectorAll(".chat-jumps button")).toHaveLength(2);
+    expect(next.view.renderRoot.querySelectorAll(".chat-jumps button")).toHaveLength(3);
   });
 });

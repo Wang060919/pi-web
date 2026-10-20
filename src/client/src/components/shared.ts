@@ -182,6 +182,7 @@ export const appStyles = css`
   }
   status-bar { flex: 0 0 auto; }
   chat-view { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+  chat-view[timeline-open] { overflow: visible; }
   .composer-area { position: relative; z-index: 5; flex: 0 0 auto; display: grid; min-width: 0; background: var(--pi-bg); }
   /* Share a grid cell instead of adding banner height; allow long notices to grow the area rather than clip their controls. */
   .composer-area > prompt-editor, .composer-activity-notice { grid-area: 1 / 1; min-width: 0; }
@@ -408,6 +409,8 @@ export const chatStyles = css`
   .chat.timeline-scroll::-webkit-scrollbar { display: none; width: 0; }
   .chat-jumps { position: absolute; right: 8px; bottom: 6px; z-index: 21; display: flex; gap: 3px; }
   .chat-jumps button { display: inline-grid; place-items: center; width: 28px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: var(--pi-bg-overlay); color: var(--pi-muted); font: var(--pi-font-weight-regular, 360) 16px/1 var(--pi-font-family, system-ui, sans-serif); cursor: pointer; }
+  .chat-jumps .mobile-timeline-entry { display: none; }
+  :host([timeline-open]) { z-index: 40; overflow: visible; }
   .chat-jumps button.following { color: var(--pi-accent); border-color: var(--pi-accent); background: var(--pi-selection-bg); }
   .chat-jumps button:hover, .chat-jumps button:focus-visible { color: var(--pi-text-bright); border-color: var(--pi-accent); }
   .chat-jumps button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; }
@@ -506,30 +509,13 @@ export const chatStyles = css`
   .group-msg > .msg-header { position: sticky; top: -26px; z-index: 4; min-height: 16px; margin: 0 0 4px; padding: 0; border: 0; background: var(--pi-bg); }
   .group-msg .msg-action { width: 24px; height: 24px; }
   @media (max-width: 760px) {
-    .chat-wrap:has(> .chat-jumps) { container: mobile-chat / size; }
-    .chat { padding-left: 8px; padding-right: 8px; }
-    /* Reserve the existing navigation gutter so jump targets never cover
-       transcript/code controls, including while reading in the middle. */
-    .chat-wrap:has(> .chat-jumps) > .chat { padding-right: 52px; }
-    .chat-jumps { right: 4px; flex-direction: column; }
-    .chat-wrap:has(> .chat-jumps) > chat-timeline { bottom: 102px; }
-    /* A keyboard or expanded composer can leave less room than the vertical
-       pair needs. Widen only its gutter instead of clipping either target. */
-    @container mobile-chat (max-height: 102px) {
-      .chat-wrap:has(> .chat-jumps) > .chat { padding-right: 99px; }
-      .chat-jumps { flex-direction: row; bottom: 4px; }
-      .chat-wrap:has(> .chat-jumps) > chat-timeline { bottom: 54px; }
-    }
-    /* The app's More sheet owns mobile jumps when its composer is available.
-       Keep the standalone/inert-composer fallback above. */
+    .chat, .chat.timeline-scroll { padding-inline: 8px; }
+    .chat.welcome-chat { padding: 0; }
+    .chat-wrap > chat-timeline { display: none; }
+    /* Fallback navigation occupies its own row, never the message surface. */
+    .chat-jumps { position: static; flex: 0 0 auto; justify-content: flex-end; padding: 2px 8px; }
+    .chat-jumps .mobile-timeline-entry { display: inline-flex; width: auto; padding-inline: 12px; align-items: center; }
     :host([mobile-navigation-external]) .chat-jumps { display: none; }
-    :host([mobile-navigation-external]) .chat-wrap > .chat { padding-right: 8px; }
-    :host([mobile-navigation-external]) .chat-wrap > .chat.timeline-scroll { padding-right: 38px; }
-    :host([mobile-navigation-external]) .chat-wrap > chat-timeline { bottom: 0; }
-    @container mobile-chat (max-height: 180px) {
-      .chat-wrap > chat-timeline { display: none; }
-      :host([mobile-navigation-external]) .chat-wrap > .chat.timeline-scroll { padding-right: 8px; }
-    }
     .msg:not(.tool-execution-shell):not(.ask-user-record-shell):not(.event-group) { padding-inline: 8px; }
   }
   @media (max-width: 760px), (pointer: coarse) { .group-msg .msg-action { width: 44px; height: 44px; } .chat-jumps button, .image-zoom-close { width: 44px; height: 44px; } }

@@ -3760,6 +3760,7 @@ export class PiWebApp extends LitElement {
     await this.updateComplete;
     if (identity === undefined || identity !== selectedChatIdentity(this.state) || !this.mobileComposerAvailable(this.state)) return;
     if (action === "top" || action === "end") this.chatView?.jumpToBoundary(action);
+    else if (action === "timeline") this.chatView?.openTimeline();
     else if (action === "machine") this.handleSelectComposerMachine();
     else if (action === "workspace") this.handleSelectComposerWorkspace();
     else this.handleSelectThinking();

@@ -4,7 +4,7 @@ import { t } from "../../../shared/i18n";
 import { renderUiIcon } from "./uiIcons";
 import "./ModalSurface";
 
-export type ComposerOptionAction = "top" | "end" | "machine" | "workspace" | "thinking";
+export type ComposerOptionAction = "top" | "end" | "timeline" | "machine" | "workspace" | "thinking";
 
 /** Rendered beside the composer so its size containment cannot clip the sheet. */
 @customElement("composer-options-dialog")
@@ -26,6 +26,7 @@ export class ComposerOptionsDialog extends LitElement {
             <button type="button" data-action="top" @click=${() => this.onSelect?.("top")}>${renderUiIcon("arrowUp")}<span>${t("ui.chatTimeline.top")}</span></button>
             <button type="button" data-action="end" @click=${() => this.onSelect?.("end")}>${renderUiIcon("arrowDown")}<span>${t("ui.chatTimeline.end")}</span></button>
           </nav>` : null}
+          ${this.navigationEnabled ? html`<button type="button" data-action="timeline" aria-haspopup="dialog" @click=${() => this.onSelect?.("timeline")}>${t("ui.chatTimeline.navigation")}</button>` : null}
           ${this.hasWorkspace ? html`
             <button type="button" data-action="machine" aria-haspopup="dialog" @click=${() => this.onSelect?.("machine")}><span>${t("ui.composer.machinePicker")}</span><small>${this.machineLabel}</small></button>
             <button type="button" data-action="workspace" aria-haspopup="dialog" @click=${() => this.onSelect?.("workspace")}><span>${t("ui.navigation.workspacePicker")}</span><small>${this.workspaceLabel}</small></button>
