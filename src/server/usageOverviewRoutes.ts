@@ -11,7 +11,7 @@ export function registerUsageOverviewRoutes(app: FastifyInstance, usage: Pick<Us
 /** The daemon owns session-directory overrides and the archive index. */
 export function registerUsageOverviewProxyRoutes(app: FastifyInstance, daemon: SessionDaemonRequestClient, prefix = "/api"): void {
   registerUsageOverviewReadRoute(app, async (cwd, timeZone) => {
-    const response = await daemon.request("GET", `/usage-overview?${new URLSearchParams({ cwd, timeZone }).toString()}`);
+    const response = await daemon.request("GET", `/usage-overview?${new URLSearchParams(cwd === undefined ? { scope: "machine", timeZone } : { cwd, timeZone }).toString()}`);
     // Older daemons have no metering endpoint. Report unavailability rather
     // than falling back to the web process's unrelated session environment.
     if (response.statusCode !== 200) throw new Error(`Session daemon usage request returned HTTP ${String(response.statusCode)}`);
@@ -20,18 +20,21 @@ export function registerUsageOverviewProxyRoutes(app: FastifyInstance, daemon: S
   }, prefix);
 }
 
-function registerUsageOverviewReadRoute(app: FastifyInstance, read: (cwd: string, timeZone: string) => Promise<unknown>, prefix: string): void {
-  app.get<{ Querystring: { cwd?: unknown; timeZone?: unknown } }>(`${prefix}/usage-overview`, async (request, reply) => {
-    let cwd: string;
+function registerUsageOverviewReadRoute(app: FastifyInstance, read: (cwd: string | undefined, timeZone: string) => Promise<unknown>, prefix: string): void {
+  app.get<{ Querystring: { cwd?: unknown; timeZone?: unknown; scope?: unknown } }>(`${prefix}/usage-overview`, async (request, reply) => {
+    let cwd: string | undefined;
     let timeZone: string;
     try {
-      cwd = normalizeRequestCwd(request.query.cwd);
-      if (cwd.length > 32 * 1024) throw new Error("cwd is too long");
+      const scope = request.query.scope ?? "workspace";
+      if (scope !== "machine" && scope !== "workspace") throw new Error("Invalid scope");
+      if (scope === "machine" && request.query.cwd !== undefined) throw new Error("Machine scope cannot include cwd");
+      cwd = scope === "machine" ? undefined : normalizeRequestCwd(request.query.cwd);
+      if (cwd !== undefined && cwd.length > 32 * 1024) throw new Error("cwd is too long");
       const requestedZone = request.query.timeZone ?? "UTC";
       if (typeof requestedZone !== "string" || requestedZone.length > 128) throw new Error("Invalid timeZone");
       timeZone = new Intl.DateTimeFormat("en", { timeZone: requestedZone }).resolvedOptions().timeZone;
     } catch {
-      return reply.code(400).send({ error: "An absolute cwd and a valid timeZone are required" });
+      return reply.code(400).send({ error: "A valid scope, absolute workspace cwd, and timeZone are required" });
     }
     reply.header("Cache-Control", "no-store");
     try {

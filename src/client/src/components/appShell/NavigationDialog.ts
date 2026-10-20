@@ -20,6 +20,9 @@ export class NavigationDialog extends LitElement {
   @property({ attribute: false }) onSelect?: (id: AppMobileMainTab["id"]) => void;
   @property({ attribute: false }) onPreferencesChange?: (preferences: NavigationPreferences) => void;
   @property({ attribute: false }) onClose?: () => void;
+  @property({ attribute: false }) onShowActions?: () => void;
+  @property({ attribute: false }) onOpenSettings?: () => void;
+  @property({ attribute: false }) onSearchHistory?: () => void;
 
   @state() private query = "";
   @state() private selectedIndex = 0;
@@ -97,6 +100,11 @@ export class NavigationDialog extends LitElement {
         <span id="navigation-selection" class="sr-only" role="status" aria-live="polite" aria-atomic="true">${tabs.length === 0 ? t("NavigationDialog.no_destinations_found.d366459a") : localizedText("NavigationDialog.of.0e166819")`${tabs[this.selectedIndex]?.label ?? ""}, ${String(this.selectedIndex + 1)} of ${String(tabs.length)}`}</span>
         <h2>${t("NavigationDialog.navigation.81259b67")}</h2>
         <p>${t("navigation.description")}</p>
+        <div class="quick-actions">
+          ${this.onOpenSettings === undefined ? nothing : html`<button type="button" @click=${this.onOpenSettings}>${t("settingsLayout.title")}</button>`}
+          ${this.onSearchHistory === undefined ? nothing : html`<button type="button" @click=${this.onSearchHistory}>${t("ui.sessionSearch.title")}</button>`}
+          ${this.onShowActions === undefined ? nothing : html`<button type="button" @click=${this.onShowActions}>${t("navigation.commands")}</button>`}
+        </div>
         <nav class="options" aria-label=${t("navigation.destinations")}>
           ${tabs.length === 0 ? localizedTemplate("NavigationDialog.no_destinations_found.afa3249e", html)`<div class="empty">No destinations found.</div>` : nothing}
           ${repeat(tabs, (tab) => tab.id, (tab, index) => html`
@@ -184,6 +192,9 @@ export class NavigationDialog extends LitElement {
     h3 { margin: 0; padding: 10px 12px 4px; color: var(--pi-muted); font-size: 12px; line-height: 16px; font-weight: var(--pi-font-weight-regular, 360); }
     p { margin: 0; padding: 0 12px 12px; color: var(--pi-muted); font-size: 12px; flex: 0 0 auto; }
     nav { overscroll-behavior: contain; }
+    .quick-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 12px; }
+    .quick-actions:empty { display: none; }
+    .quick-actions button { padding: 8px 10px; min-height: 44px; background: var(--pi-surface); border-radius: 8px; font: inherit; }
     .destination { border-bottom: 0; gap: 0; }
     .destination-button { flex: 1; min-width: 0; overflow-wrap: anywhere; text-align: left; padding: 10px 12px; font: inherit; font-weight: var(--pi-font-weight-medium, 460); }
     .destination-button.selected, .destination-button:hover { background: var(--pi-selection-bg); }

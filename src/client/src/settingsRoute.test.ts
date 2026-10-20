@@ -44,6 +44,7 @@ describe("settings route helpers", () => {
 
   it("parses supported settings deep links and aliases", () => {
     expect(parseSettingsSection("general")).toBe("general");
+    expect(parseSettingsSection("connection")).toBe("connection");
     expect(parseSettingsSection("sessiond")).toBe("sessiond");
     expect(parseSettingsSection("sessions")).toBe("sessiond");
     expect(parseSettingsSection("packages")).toBe("packages");

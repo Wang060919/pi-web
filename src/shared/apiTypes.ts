@@ -1216,6 +1216,13 @@ export interface SlashCommand {
   source: "extension" | "prompt" | "skill" | "builtin";
 }
 
+export interface ProjectDirectoryInfo {
+  path: string;
+  parentPath: string;
+  exists: boolean;
+  isDirectory: boolean;
+}
+
 export interface FileSuggestion {
   path: string;
   kind: "tracked" | "untracked" | "other";

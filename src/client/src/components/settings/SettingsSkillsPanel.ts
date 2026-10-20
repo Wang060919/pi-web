@@ -1,3 +1,4 @@
+import { settingsDesignStyles } from "./settingsDesignStyles";
 import { css, html, LitElement, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { t } from "../../../../shared/i18n";
@@ -112,6 +113,6 @@ export class SettingsSkillsPanel extends LitElement {
     .path { overflow-wrap: anywhere; font: var(--pi-font-weight-regular, 360) 12px/18px var(--pi-font-monospace); color: var(--pi-muted); }
     pre { padding: 12px; background: var(--pi-bg); border-radius: 8px; }
     @media (max-width: 640px) { .browser { grid-template-columns: minmax(0, 1fr); } nav { max-height: 180px; } }
-  `];
+  `, settingsDesignStyles];
 }
 function message(error: unknown): string { return error instanceof Error ? error.message : String(error); }

@@ -265,3 +265,15 @@ it("materializes a plugin-only fallback while preserving hidden main-view pins",
   await dialog.updateComplete;
   expect(dialog.preferences).toEqual({ pinnedIds: ["navigation", "chat"], mobileCollapsed: false, useDefaultPins: false });
 });
+
+it("exposes settings, message search and commands from the shared menu", async () => {
+  const dialog = new NavigationDialog();
+  dialog.onOpenSettings = vi.fn(); dialog.onSearchHistory = vi.fn(); dialog.onShowActions = vi.fn();
+  document.body.append(dialog); await dialog.updateComplete;
+  const actions = [...dialog.shadowRoot?.querySelectorAll<HTMLButtonElement>('.quick-actions button') ?? []];
+  expect(actions.map((button) => button.textContent)).toEqual(["Settings", "Search conversation history", "Commands"]);
+  actions.forEach((button) => { button.click(); });
+  expect(dialog.onOpenSettings).toHaveBeenCalledOnce();
+  expect(dialog.onSearchHistory).toHaveBeenCalledOnce();
+  expect(dialog.onShowActions).toHaveBeenCalledOnce();
+});

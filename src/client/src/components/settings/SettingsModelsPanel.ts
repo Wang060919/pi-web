@@ -1,9 +1,10 @@
+import { settingsDesignStyles } from "./settingsDesignStyles";
 import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { t } from "../../../../shared/i18n";
 import { MODEL_SECRET_UNCHANGED, type ModelConfigurationResponse, type ModelConnectionResult, type ModelDiscoveryResult } from "../../../../shared/modelConfiguration";
 import { modelConfigurationApi } from "../../api/modelConfiguration";
-import { modelEditorDraft, providerEditorDraft, providerFromEditorDraft, type ModelEditorDraft, type ProviderEditorDraft } from "./settingsModelsDraft";
+import { ModelDraftFieldError, modelEditorDraft, providerEditorDraft, providerFromEditorDraft, type ModelEditorDraft, type ProviderEditorDraft } from "./settingsModelsDraft";
 import { sharedSettingsEditorStyles } from "./sharedSettingsEditorStyles";
 
 const API_PROTOCOLS = ["openai-completions", "openai-responses", "anthropic-messages", "google-generative-ai", "mistral-conversations", "openai-codex-responses", "pi-messages"];
@@ -21,26 +22,47 @@ export class SettingsModelsPanel extends LitElement {
   @state() private message = "";
   @state() private discovery: { providerIndex: number; result: ModelDiscoveryResult; selected: Set<string>; query: string } | undefined;
   @state() private testResult: { providerIndex: number; modelIndex: number; result: ModelConnectionResult } | undefined;
+  get hasUnsavedChanges(): boolean {
+    return this.configuration !== undefined && JSON.stringify(this.drafts) !== JSON.stringify(this.configuration.providers.map(providerEditorDraft));
+  }
+
+  @state() private fieldError: { providerIndex: number; error: ModelDraftFieldError } | undefined;
+
   private controller: AbortController | undefined;
   private generation = 0;
 
   protected override willUpdate(changed: PropertyValues<this>): void {
     if (changed.has("machineId")) void this.reload();
   }
+  protected override updated(changed: PropertyValues): void {
+    if (!changed.has("fieldError")) return;
+    for (const input of this.renderRoot.querySelectorAll('[aria-invalid="true"]')) { input.removeAttribute("aria-invalid"); input.removeAttribute("aria-describedby"); }
+    const invalid = this.fieldError;
+    if (invalid === undefined) return;
+    const provider = this.renderRoot.querySelector(`[data-provider-index="${String(invalid.providerIndex)}"]`);
+    const scope = invalid.error.modelIndex === undefined ? provider : provider?.querySelector(`[data-model-index="${String(invalid.error.modelIndex)}"]`);
+    const input = scope?.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-field="${invalid.error.field}"]`);
+    if (input === null || input === undefined) return;
+    for (let parent = input.parentElement; parent !== null; parent = parent.parentElement) { if (parent instanceof HTMLDetailsElement) parent.open = true; }
+    input.setAttribute("aria-invalid", "true"); input.setAttribute("aria-describedby", "model-field-error");
+    input.focus({ preventScroll: true }); input.scrollIntoView({ block: "center" });
+  }
+
   override connectedCallback(): void { super.connectedCallback(); if (this.hasUpdated) void this.reload(); }
   override disconnectedCallback(): void { this.controller?.abort(); this.generation++; super.disconnectedCallback(); }
 
   override render(): TemplateResult {
     return html`
       <header><div><h2>${t("modelsSettings.heading")}</h2><p>${t("modelsSettings.description")} ${this.targetLabel}</p></div>
-        <button type="button" data-action="reload" ?disabled=${this.busy} @click=${() => { void this.reload(); }}>${t("modelsSettings.reload")}</button></header>
-      ${this.error === "" ? nothing : html`<p class="error" role="alert">${this.error}</p>`}
-      ${this.message === "" ? nothing : html`<p role="status">${this.message}</p>`}
+        <button type="button" data-action="reload" ?disabled=${this.busy} @click=${() => { if (!this.hasUnsavedChanges || window.confirm(t("settingsDraft.reload"))) void this.reload(); }}>${t("modelsSettings.reload")}</button></header>
+      <p class="setup-guide">${t("modelsSettings.setupGuide")}</p>
+      ${this.error === "" || this.configuration !== undefined ? nothing : html`<p class="error" role="alert">${this.error}</p>`}
+
       ${this.busy ? html`<p role="status">${this.configuration === undefined ? t("modelsSettings.loading") : t("modelsSettings.busy")}</p>` : nothing}
       ${this.configuration === undefined ? nothing : html`<fieldset ?disabled=${this.busy}>
         ${this.drafts.length === 0 ? html`<p>${t("modelsSettings.noProviders")}</p>` : nothing}
         ${this.drafts.map((provider, index) => this.renderProvider(provider, index))}
-        <footer><button type="button" data-action="add-provider" @click=${() => { this.drafts = [...this.drafts, providerEditorDraft({ id: "", api: "openai-completions", models: [] })]; this.clearResults(); }}>${t("modelsSettings.addProvider")}</button>
+        <footer><div class="save-feedback">${this.error === "" ? this.message === "" ? this.hasUnsavedChanges ? html`<span>${t("settingsDraft.unsaved")}</span>` : nothing : html`<span role="status">${this.message}</span>` : html`<span class="error" role="alert">${this.error}</span>`}</div><button type="button" data-action="add-provider" @click=${() => { this.drafts = [...this.drafts, providerEditorDraft({ id: "", api: "openai-completions", models: [] })]; this.clearResults(); }}>${t("modelsSettings.addProvider")}</button>
           <button type="button" class="primary" data-action="save" @click=${() => { void this.save(); }}>${t("modelsSettings.save")}</button></footer>
       </fieldset>`}
       <datalist id="model-api-protocols">${API_PROTOCOLS.map((protocol) => html`<option value=${protocol}></option>`)}</datalist>
@@ -58,8 +80,10 @@ export class SettingsModelsPanel extends LitElement {
         <label>${t("modelsSettings.apiKey")}<input data-field="provider-key" type="password" autocomplete="new-password" placeholder="\u0024{API_KEY}" .value=${provider.apiKey} @input=${(event: Event) => { this.patchProvider(index, { apiKey: inputValue(event) }); }}>
           ${provider.apiKey === MODEL_SECRET_UNCHANGED ? html`<small>${t("modelsSettings.keepSecret")}</small>` : nothing}
           ${provider.apiKey === "" ? nothing : html`<button type="button" data-action="clear-key" @click=${() => { this.patchProvider(index, { apiKey: "" }); }}>${t("modelsSettings.clearKey")}</button>`}</label>
-        <label class="wide">${t("modelsSettings.headers")}<textarea data-field="provider-headers" rows="3" spellcheck="false" .value=${provider.headers} @input=${(event: Event) => { this.patchProvider(index, { headers: inputValue(event) }); }}></textarea><small>${t("modelsSettings.keepSecret")}</small></label>
       </div>
+      <details class="advanced connection-advanced"><summary>${t("modelsSettings.connectionAdvanced")}</summary><div class="fields">
+        <label class="wide">${t("modelsSettings.headers")}<textarea data-field="provider-headers" rows="3" spellcheck="false" .value=${provider.headers} @input=${(event: Event) => { this.patchProvider(index, { headers: inputValue(event) }); }}></textarea><small>${t("modelsSettings.keepSecret")}</small>${this.renderFieldError(index, "provider-headers")}</label>
+      </div></details>
       <div class="actions"><button type="button" data-action="add-model" @click=${() => { this.patchProvider(index, { models: [...provider.models, modelEditorDraft({ id: "", contextWindow: 128000, maxTokens: 16384 })] }); }}>${t("modelsSettings.addModel")}</button>
         <button type="button" data-action="discover" @click=${() => { void this.discover(index); }}>${t("modelsSettings.discover")}</button></div>
       ${this.discovery?.providerIndex === index ? this.renderDiscovery() : nothing}
@@ -68,22 +92,22 @@ export class SettingsModelsPanel extends LitElement {
   }
 
   private renderModel(model: ModelEditorDraft, providerIndex: number, modelIndex: number): TemplateResult {
-    return html`<details class="model" open><summary>${model.id || t("modelsSettings.addModel")}${model.override ? html` · ${t("modelsSettings.override")}` : nothing}</summary>
+    return html`<details class="model" data-model-index=${modelIndex} open><summary>${model.id || t("modelsSettings.addModel")}${model.override ? html` · ${t("modelsSettings.override")}` : nothing}</summary>
       <div class="fields">
         <label>${t("modelsSettings.modelId")}<input data-field="model-id" .value=${model.id} @input=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { id: inputValue(event) }); }}></label>
         <label>${t("modelsSettings.name")}<input data-field="model-name" .value=${model.name} @input=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { name: inputValue(event) }); }}></label>
-        <label>${t("modelsSettings.contextWindow")}<input data-field="model-context" inputmode="numeric" .value=${model.contextWindow} @input=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { contextWindow: inputValue(event) }); }}></label>
-        <label>${t("modelsSettings.maxTokens")}<input data-field="model-output" inputmode="numeric" .value=${model.maxTokens} @input=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { maxTokens: inputValue(event) }); }}></label>
         <label class="check"><input type="checkbox" data-field="model-reasoning" .checked=${model.reasoning} @change=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { reasoning: checked(event), reasoningSet: true }); }}>${t("modelsSettings.reasoning")}</label>
         <label class="check"><input type="checkbox" data-field="model-image" .checked=${model.imageInput} @change=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { imageInput: checked(event), inputSet: true }); }}>${t("modelsSettings.imageInput")}</label>
-        <label class="check wide"><input type="checkbox" data-field="model-override" .checked=${model.override} @change=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { override: checked(event) }); }}>${t("modelsSettings.override")}</label>
       </div>
       <details class="advanced"><summary>${t("modelsSettings.advanced")}</summary><div class="fields">
+        <label>${t("modelsSettings.contextWindow")}<input data-field="model-context" inputmode="numeric" .value=${model.contextWindow} @input=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { contextWindow: inputValue(event) }); }}></label>
+        <label>${t("modelsSettings.maxTokens")}<input data-field="model-output" inputmode="numeric" .value=${model.maxTokens} @input=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { maxTokens: inputValue(event) }); }}></label>
+        <label class="check wide"><input type="checkbox" data-field="model-override" .checked=${model.override} @change=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { override: checked(event) }); }}>${t("modelsSettings.override")}</label>
         <label>${t("modelsSettings.api")}<input list="model-api-protocols" .value=${model.api} @input=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { api: inputValue(event) }); }}></label>
         <label>${t("modelsSettings.baseUrl")}<input .value=${model.baseUrl} @input=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { baseUrl: inputValue(event) }); }}></label>
-        <label class="wide">${t("modelsSettings.headers")}<textarea rows="3" spellcheck="false" .value=${model.headers} @input=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { headers: inputValue(event) }); }}></textarea></label>
-        <label>${t("modelsSettings.cost")}<textarea rows="4" spellcheck="false" .value=${model.cost} placeholder='{"input":0,"output":0,"cacheRead":0,"cacheWrite":0}' @input=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { cost: inputValue(event) }); }}></textarea></label>
-        <label>${t("modelsSettings.thinkingMap")}<textarea rows="4" spellcheck="false" .value=${model.thinkingLevelMap} placeholder='{"high":"high","max":null}' @input=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { thinkingLevelMap: inputValue(event) }); }}></textarea></label>
+        <label class="wide">${t("modelsSettings.headers")}<textarea data-field="model-headers" rows="3" spellcheck="false" .value=${model.headers} @input=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { headers: inputValue(event) }); }}></textarea>${this.renderFieldError(providerIndex, "model-headers", modelIndex)}</label>
+        <label>${t("modelsSettings.cost")}<textarea data-field="model-cost" rows="4" spellcheck="false" .value=${model.cost} placeholder='{"input":0,"output":0,"cacheRead":0,"cacheWrite":0}' @input=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { cost: inputValue(event) }); }}></textarea>${this.renderFieldError(providerIndex, "model-cost", modelIndex)}</label>
+        <label>${t("modelsSettings.thinkingMap")}<textarea data-field="model-thinking" rows="4" spellcheck="false" .value=${model.thinkingLevelMap} placeholder='{"high":"high","max":null}' @input=${(event: Event) => { this.patchModel(providerIndex, modelIndex, { thinkingLevelMap: inputValue(event) }); }}></textarea>${this.renderFieldError(providerIndex, "model-thinking", modelIndex)}</label>
       </div></details>
       <p><small>${t("modelsSettings.testHelp")}</small></p>
       <div class="actions"><button type="button" data-action="test" @click=${() => { void this.test(providerIndex, modelIndex); }}>${t("modelsSettings.test")}</button>
@@ -111,7 +135,20 @@ export class SettingsModelsPanel extends LitElement {
     </div>`;
   }
 
-  private clearResults(): void { this.message = ""; this.testResult = undefined; this.discovery = undefined; }
+  private renderFieldError(providerIndex: number, field: string, modelIndex?: number): TemplateResult | typeof nothing {
+    const invalid = this.fieldError;
+    return invalid?.providerIndex === providerIndex && invalid.error.field === field && invalid.error.modelIndex === modelIndex
+      ? html`<small id="model-field-error" class="error">${invalid.error.message}</small>` : nothing;
+  }
+
+  private providerFromDraft(index: number) {
+    const draft = this.drafts[index];
+    if (draft === undefined) throw new Error(t("modelsSettings.error"));
+    try { return providerFromEditorDraft(draft); }
+    catch (error) { if (error instanceof ModelDraftFieldError) this.fieldError = { providerIndex: index, error }; throw error; }
+  }
+
+  private clearResults(): void { this.error = ""; this.fieldError = undefined; this.message = ""; this.testResult = undefined; this.discovery = undefined; }
   private patchProvider(index: number, patch: Partial<ProviderEditorDraft>): void { this.drafts = this.drafts.map((row, at) => at === index ? { ...row, ...patch } : row); this.clearResults(); }
   private patchModel(index: number, modelIndex: number, patch: Partial<ModelEditorDraft>): void { const provider = this.drafts[index]; if (provider !== undefined) this.patchProvider(index, { models: provider.models.map((row, at) => at === modelIndex ? { ...row, ...patch } : row) }); }
 
@@ -132,7 +169,7 @@ export class SettingsModelsPanel extends LitElement {
     if (this.configuration === undefined) return;
     const operation = this.begin();
     try {
-      const configuration = await this.api.write({ revision: this.configuration.revision, providers: this.drafts.map(providerFromEditorDraft) }, operation.machineId, operation.signal);
+      const configuration = await this.api.write({ revision: this.configuration.revision, providers: this.drafts.map((_, index) => this.providerFromDraft(index)) }, operation.machineId, operation.signal);
       if (operation.generation !== this.generation) return;
       this.configuration = configuration; this.drafts = configuration.providers.map(providerEditorDraft); this.clearResults();
       this.message = configuration.refreshWarning === true ? t("modelsSettings.refreshWarning") : t("modelsSettings.saved");
@@ -144,7 +181,7 @@ export class SettingsModelsPanel extends LitElement {
     const provider = this.drafts[index]; if (provider === undefined) return;
     const operation = this.begin();
     try {
-      const result = await this.api.discover(providerFromEditorDraft(provider), operation.machineId, operation.signal);
+      const result = await this.api.discover(this.providerFromDraft(index), operation.machineId, operation.signal);
       if (operation.generation === this.generation) this.discovery = { providerIndex: index, result, selected: new Set(), query: "" };
     } catch (error) { if (!operation.signal.aborted) this.error = errorMessage(error); }
     finally { if (operation.generation === this.generation) this.busy = false; }
@@ -153,7 +190,7 @@ export class SettingsModelsPanel extends LitElement {
     const provider = this.drafts[index]; const model = provider?.models[modelIndex]; if (provider === undefined || model === undefined) return;
     const operation = this.begin(); this.testResult = undefined;
     try {
-      const result = await this.api.test(providerFromEditorDraft(provider), model.id, operation.machineId, operation.signal);
+      const result = await this.api.test(this.providerFromDraft(index), model.id, operation.machineId, operation.signal);
       if (operation.generation === this.generation) this.testResult = { providerIndex: index, modelIndex, result };
     } catch (error) { if (!operation.signal.aborted) this.error = errorMessage(error); }
     finally { if (operation.generation === this.generation) this.busy = false; }
@@ -173,7 +210,8 @@ export class SettingsModelsPanel extends LitElement {
     header > div { display: grid; gap: 6px; min-width: 0; flex: 1; }
     header p { font-size: 14px; line-height: 20px; }
     fieldset { padding: 0; border: 0; min-width: 0; margin: 0; display: grid; gap: 14px; }
-    .provider, .model, .discovery { border: 0; border-radius: 10px; padding: 12px; min-width: 0; background: var(--pi-surface); }
+    .provider, .model, .discovery { border: 1px solid var(--pi-border-muted); border-radius: 12px; padding: 16px; min-width: 0; background: var(--pi-bg); }
+    .setup-guide { margin: 0; padding: 12px 14px; border-radius: 10px; background: var(--pi-surface); color: var(--pi-muted); }
     .provider { display: grid; gap: 14px; }
     .row-heading h3 { overflow-wrap: anywhere; }
     .model, .discovery { background: var(--pi-bg); }
@@ -188,13 +226,15 @@ export class SettingsModelsPanel extends LitElement {
     .advanced > .fields { margin-top: 12px; }
     .model > p, .model > .actions { margin-top: 12px; }
     .actions { justify-content: flex-start; }
-    footer { padding-top: 2px; }
+    footer { position: sticky; bottom: -18px; z-index: 1; padding: 12px 0; background: var(--pi-bg); border-top: 1px solid var(--pi-border-muted); }
+    .save-feedback { flex: 1 1 100%; min-width: 0; overflow-wrap: anywhere; color: var(--pi-muted); }
+    @media (max-width: 760px) { footer { bottom: -14px; } }
     .discovery { display: grid; gap: 12px; }
     .discovered-list { max-height: 260px; overflow: auto; }
     .discovered-list label { padding: 6px 0; overflow-wrap: anywhere; }
     .discovered-list code { overflow-wrap: anywhere; }
     @media (max-width: 600px) { .fields { grid-template-columns: minmax(0, 1fr); } }
-  `];
+  `, settingsDesignStyles];
 }
 
 function inputValue(event: Event): string { return event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement ? event.target.value : ""; }

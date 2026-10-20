@@ -81,6 +81,8 @@ describe("session action menu dismissal", () => {
     });
     list.onCleanup = cleanup;
     await openMenu(list);
+    element(list, ".filter-toggle").click();
+    await list.updateComplete;
     element(list, ".cleanup-entry").click();
     await list.updateComplete;
 

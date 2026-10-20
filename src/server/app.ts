@@ -17,7 +17,7 @@ import type { WorkspaceCatalog } from "./workspaces/workspaceCatalog.js";
 import { SessionDaemonWorkspaceCatalog } from "./workspaces/sessionDaemonWorkspaceCatalog.js";
 import { sendWorkspaceRequestError } from "./workspaces/workspaceRouteErrors.js";
 import { loadEffectiveProjectAttachmentsConfig, loadEffectiveProjectUploadsConfig } from "./workspaces/projectPiWebConfig.js";
-import { listDirectorySuggestions } from "./projects/directorySuggestions.js";
+import { listDirectorySuggestions, projectDirectoryInfo } from "./projects/directorySuggestions.js";
 import { SessionDaemonClient } from "../sessiond/sessionDaemonClient.js";
 import { loadServerPluginRecoveryConfig } from "../serverPluginRecovery.js";
 import { registerSessionProxyRoutes, type SessionProxyDaemon } from "./sessiond/sessionProxyRoutes.js";
@@ -81,6 +81,11 @@ function registerLocalProjectRoutes(app: FastifyInstance, projects: ProjectServi
     } catch (error) {
       return reply.code(400).send({ error: error instanceof Error ? error.message : String(error) });
     }
+  });
+
+  app.get<{ Querystring: { q?: string } }>(`${prefix}/project-directory-info`, async (request, reply) => {
+    try { return await projectDirectoryInfo(request.query.q ?? ""); }
+    catch (error) { return reply.code(400).send({ error: error instanceof Error ? error.message : String(error) }); }
   });
 
   app.get<{ Params: { projectId: string } }>(`${prefix}/projects/:projectId/workspaces`, async (request, reply) => {

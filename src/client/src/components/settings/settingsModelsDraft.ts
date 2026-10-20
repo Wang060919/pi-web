@@ -1,3 +1,4 @@
+import { t } from "../../../../shared/i18n";
 import { parseConfiguredProvider, type ConfiguredProvider, type ConfiguredModel } from "../../../../shared/modelConfiguration";
 
 export interface ModelEditorDraft {
@@ -24,18 +25,25 @@ export function providerEditorDraft(provider: ConfiguredProvider): ProviderEdito
   return { id: provider.id, baseUrl: provider.baseUrl ?? "", api: provider.api ?? "", apiKey: provider.apiKey ?? "", headers: JSON.stringify(provider.headers ?? {}, null, 2), models: provider.models.map(modelEditorDraft) };
 }
 
-function jsonField(text: string, field: string): unknown {
+export class ModelDraftFieldError extends Error {
+  constructor(readonly field: string, readonly modelIndex?: number) {
+    const label = field.endsWith("headers") ? t("modelsSettings.headers") : field === "model-cost" ? t("modelsSettings.cost") : t("modelsSettings.thinkingMap");
+    super(`${label}: ${t("modelsSettings.invalidJson")}`);
+  }
+}
+
+function jsonField(text: string, field: string, modelIndex?: number): unknown {
   try { const value: unknown = JSON.parse(text === "" ? "{}" : text); return value; }
-  catch { throw new Error(`Invalid JSON: ${field}`); }
+  catch { throw new ModelDraftFieldError(field, modelIndex); }
 }
 
 export function providerFromEditorDraft(draft: ProviderEditorDraft): ConfiguredProvider {
-  const model = (row: ModelEditorDraft): Record<string, unknown> => ({ id: row.id.trim(),
+  const model = (row: ModelEditorDraft, modelIndex: number): Record<string, unknown> => ({ id: row.id.trim(),
     ...(row.name.trim() === "" ? {} : { name: row.name.trim() }), ...(row.api.trim() === "" ? {} : { api: row.api.trim() }), ...(row.baseUrl.trim() === "" ? {} : { baseUrl: row.baseUrl.trim() }),
-    headers: jsonField(row.headers, "model headers"), ...(row.reasoningSet ? { reasoning: row.reasoning } : {}), ...(row.inputSet ? { input: row.imageInput ? ["text", "image"] : ["text"] } : {}), override: row.override,
+    headers: jsonField(row.headers, "model-headers", modelIndex), ...(row.reasoningSet ? { reasoning: row.reasoning } : {}), ...(row.inputSet ? { input: row.imageInput ? ["text", "image"] : ["text"] } : {}), override: row.override,
     ...(row.contextWindow.trim() === "" ? {} : { contextWindow: Number(row.contextWindow) }), ...(row.maxTokens.trim() === "" ? {} : { maxTokens: Number(row.maxTokens) }),
-    ...(row.cost.trim() === "" ? {} : { cost: jsonField(row.cost, "model cost") }), ...(row.thinkingLevelMap.trim() === "" ? {} : { thinkingLevelMap: jsonField(row.thinkingLevelMap, "thinking mapping") }),
+    ...(row.cost.trim() === "" ? {} : { cost: jsonField(row.cost, "model-cost", modelIndex) }), ...(row.thinkingLevelMap.trim() === "" ? {} : { thinkingLevelMap: jsonField(row.thinkingLevelMap, "model-thinking", modelIndex) }),
   });
-  return parseConfiguredProvider({ id: draft.id.trim(), models: draft.models.map(model), headers: jsonField(draft.headers, "provider headers"),
+  return parseConfiguredProvider({ id: draft.id.trim(), models: draft.models.map(model), headers: jsonField(draft.headers, "provider-headers"),
     ...(draft.baseUrl.trim() === "" ? {} : { baseUrl: draft.baseUrl.trim() }), ...(draft.api.trim() === "" ? {} : { api: draft.api.trim() }), ...(draft.apiKey.trim() === "" ? {} : { apiKey: draft.apiKey.trim() }) });
 }

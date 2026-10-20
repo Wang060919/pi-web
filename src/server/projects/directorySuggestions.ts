@@ -1,3 +1,4 @@
+import type { ProjectDirectoryInfo } from "../../shared/apiTypes.js";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, resolve, sep } from "node:path";
 import { readdir, stat } from "node:fs/promises";
@@ -33,4 +34,17 @@ export async function listDirectorySuggestions(query = ""): Promise<ClientFileSu
   }
 
   return suggestions.sort((a, b) => a.path.localeCompare(b.path)).slice(0, 80);
+}
+
+export async function projectDirectoryInfo(query: string): Promise<ProjectDirectoryInfo> {
+  const path = expandUserPath(query.trim());
+  try {
+    const info = await stat(path);
+    return { path, parentPath: dirname(path), exists: true, isDirectory: info.isDirectory() };
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      return { path, parentPath: dirname(path), exists: false, isDirectory: false };
+    }
+    throw error;
+  }
 }

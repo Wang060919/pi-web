@@ -1,4 +1,5 @@
-export type SettingsSection = "general" | "sessiond" | "packages" | "plugins" | "shortcuts" | "models" | "mcp" | "skills";
+import { writeAppHistory } from "./appHistory";
+export type SettingsSection = "general" | "connection" | "sessiond" | "packages" | "plugins" | "shortcuts" | "models" | "mcp" | "skills";
 
 export function readSettingsSection(): SettingsSection | undefined {
   return parseSettingsSection(new URLSearchParams(window.location.search).get("settings"));
@@ -11,12 +12,11 @@ export function writeSettingsSection(section: SettingsSection | undefined, optio
   const next = `${url.pathname}${url.search}${url.hash}`;
   const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
   if (next === current) return;
-  if (options?.replace === true) window.history.replaceState({}, "", url);
-  else window.history.pushState({}, "", url);
+  writeAppHistory(url, options?.replace === true);
 }
 
 export function parseSettingsSection(value: string | null): SettingsSection | undefined {
-  if (value === "general") return "general";
+  if (value === "general" || value === "connection") return value;
   if (value === "models" || value === "mcp" || value === "skills") return value;
   if (value === "sessiond" || value === "sessions") return "sessiond";
   if (value === "packages" || value === "pi-packages") return "packages";

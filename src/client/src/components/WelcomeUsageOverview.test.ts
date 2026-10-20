@@ -45,6 +45,32 @@ afterEach(() => {
 });
 
 describe("welcome usage loading", () => {
+  it("shows the current project beside workspace usage without refetching on a name change", async () => {
+    const get = vi.spyOn(usageOverviewApi, "get").mockResolvedValue(response(100));
+    const overview = await mount(); overview.projectName = "Design project"; await settle(overview);
+    expect(overview.renderRoot.querySelector("header span")?.textContent).toBe("Current workspace · Design project");
+    expect(overview.renderRoot.querySelector("header")?.textContent).not.toContain("Asia/Shanghai");
+    overview.projectName = "Renamed project"; await settle(overview);
+    expect(overview.renderRoot.querySelector("header span")?.textContent).toBe("Current workspace · Renamed project");
+    expect(get).toHaveBeenCalledOnce();
+    overview.cwd = ""; await settle(overview);
+    expect(overview.renderRoot.querySelector("header span")?.textContent).toBe("Current machine · All projects");
+  });
+
+  it("loads machine totals without a workspace and ignores an earlier scoped response", async () => {
+    const old = deferred<UsageOverviewResponse>();
+    const get = vi.spyOn(usageOverviewApi, "get").mockReturnValueOnce(old.promise)
+      .mockResolvedValueOnce({ ...response(300), scope: "machine" });
+    const overview = await mount();
+    overview.cwd = ""; await settle(overview);
+    expect(get.mock.lastCall?.slice(0, 3)).toEqual([undefined, "Asia/Shanghai", "local"]);
+    expect(get.mock.lastCall?.[3]?.signal).toBeInstanceOf(AbortSignal);
+    expect(overview.renderRoot.textContent).toContain("Current machine");
+    expect(panel(overview)?.records[0]?.tokens.input).toBe(300);
+    old.resolve(response(100)); await settle(overview);
+    expect(panel(overview)?.records[0]?.tokens.input).toBe(300);
+  });
+
   it("does not present zero statistics while loading and ignores an old workspace response", async () => {
     const first = deferred<UsageOverviewResponse>();
     const second = deferred<UsageOverviewResponse>();

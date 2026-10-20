@@ -22,7 +22,7 @@ export interface UsageOverviewResponse {
   records: DailyUsageRecord[];
   today: string;
   timeZone: string;
-  scope: "workspace";
+  scope: "workspace" | "machine";
   /** Non-sensitive summaries indicating incomplete persisted history. */
   warnings: string[];
 }

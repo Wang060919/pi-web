@@ -260,7 +260,7 @@ describe("SessionList agent subsession controls", () => {
     list.onArchiveMany = archive;
     list.onMarkReadMany = markRead;
     list.unreadSessionIds = new Set([nested.id]);
-    button(list.shadowRoot, "h2 .bulk-select-entry").click();
+    await toggleCurrentSelection(list);
     await settle(list);
     toolbarButton(list, "Select all").click();
     await settle(list);
@@ -290,7 +290,7 @@ describe("SessionList agent subsession controls", () => {
     const user = child("user", agent);
     const other = session("other");
     const list = await mount([parent, agent, nested, user, other]);
-    button(list.shadowRoot, "h2 .bulk-select-entry").click();
+    await toggleCurrentSelection(list);
     await settle(list);
     row(list, "parent")?.click();
     await settle(list);
@@ -329,7 +329,7 @@ describe("SessionList agent subsession controls", () => {
     const list = await mount([parent, agent, nested]);
     agentToggle(list, "parent").click();
     await settle(list);
-    button(list.shadowRoot, "h2 .bulk-select-entry").click();
+    await toggleCurrentSelection(list);
     await settle(list);
     row(list, "parent")?.querySelector<HTMLInputElement>("input")?.click();
     await settle(list);
@@ -348,7 +348,7 @@ describe("SessionList agent subsession controls", () => {
     const parent = session("parent");
     const agent = child("agent", parent, true);
     const list = await mount([parent, agent]);
-    button(list.shadowRoot, "h2 .bulk-select-entry").click();
+    await toggleCurrentSelection(list);
     await settle(list);
     expect(toolbarButton(list, "Clear selected (2)")).toBeDefined();
 
@@ -356,11 +356,11 @@ describe("SessionList agent subsession controls", () => {
     list.sessions = [parent, agent, nested];
     await settle(list);
     expect(toolbarButton(list, "Clear selected (3)")).toBeDefined();
-    button(list.shadowRoot, "h2 .bulk-select-entry").click();
+    await toggleCurrentSelection(list);
     await settle(list);
     agentToggle(list, "parent").click();
     await settle(list);
-    button(list.shadowRoot, "h2 .bulk-select-entry").click();
+    await toggleCurrentSelection(list);
     await settle(list);
     expect(toolbarButton(list, "Select all")).toBeDefined();
     expect(list.shadowRoot?.querySelectorAll(".session-checkbox:checked")).toHaveLength(0);
@@ -373,7 +373,7 @@ describe("SessionList agent subsession controls", () => {
     const list = await mount([parent, archivedAgent, nested, session("other")]);
     const archive = vi.fn();
     list.onArchiveMany = archive;
-    button(list.shadowRoot, "h2 .bulk-select-entry").click();
+    await toggleCurrentSelection(list);
     await settle(list);
     row(list, "parent")?.querySelector<HTMLInputElement>("input")?.click();
     await settle(list);
@@ -388,7 +388,7 @@ describe("SessionList agent subsession controls", () => {
     const list = await mount([parent, agent]);
     const archive = vi.fn();
     list.onArchiveMany = archive;
-    button(list.shadowRoot, "h2 .bulk-select-entry").click();
+    await toggleCurrentSelection(list);
     await settle(list);
     expect(row(list, "parent")?.querySelector("input")).toBeNull();
     toolbarButton(list, "Select all").click();
@@ -514,3 +514,10 @@ describe("SessionList agent subsession controls", () => {
     expect(row(list, "agent")).not.toBeNull();
   });
 });
+
+async function toggleCurrentSelection(list: SessionList): Promise<void> {
+  button(list.shadowRoot, ".filter-toggle").click();
+  await list.updateComplete;
+  button(list.shadowRoot, ".session-filter-popover .bulk-select-entry").click();
+  await list.updateComplete;
+}

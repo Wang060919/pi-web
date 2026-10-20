@@ -131,13 +131,29 @@ describe("application rendering boundaries", () => {
     expect(new URLSearchParams(window.location.search).get("overview")).toBe("1");
   });
 
+  it("shows machine usage on the welcome surface before selecting a project", async () => {
+    const app = await mountApp({ mainView: "chat" });
+    await settle(app);
+    expect(app.shadowRoot?.querySelector(".welcome-actions")).toBeNull();
+    expect(app.shadowRoot?.querySelector(".welcome p, .welcome button")).toBeNull();
+    const usage = app.shadowRoot?.querySelector("welcome-usage-overview");
+    expect(usage).toBeInstanceOf(WelcomeUsageOverview);
+    if (!(usage instanceof WelcomeUsageOverview)) throw new Error("Expected machine usage");
+    expect(usage.cwd).toBe("");
+    expect(vi.mocked(usageOverviewApi.get).mock.lastCall?.[0]).toBeUndefined();
+    expect(vi.mocked(usageOverviewApi.get).mock.lastCall?.[2]).toBe("local");
+    expect(vi.mocked(usageOverviewApi.get).mock.lastCall?.[3]?.signal).toBeInstanceOf(AbortSignal);
+  });
+
   it("mounts workspace usage only on the welcome surface and unmounts it when a conversation is selected", async () => {
-    const app = await mountApp({ selectedWorkspace: workspace, workspaces: [workspace], mainView: "chat" });
+    const project = { id: workspace.projectId, name: "Project name", path: workspace.path, createdAt: "now" };
+    const app = await mountApp({ projects: [project], selectedProject: project, selectedWorkspace: workspace, workspaces: [workspace], mainView: "chat" });
     await settle(app);
     const usage = app.shadowRoot?.querySelector("welcome-usage-overview");
     expect(usage).toBeInstanceOf(WelcomeUsageOverview);
     if (!(usage instanceof WelcomeUsageOverview)) throw new Error("Expected welcome usage summary");
     expect(usage.cwd).toBe(workspace.path);
+    expect(usage.projectName).toBe("Project name");
     expect(usage.machineId).toBe("local");
     expect(usageOverviewApi.get).toHaveBeenCalledOnce();
     patchState(app, { selectedSession: session });
@@ -518,7 +534,7 @@ describe("application rendering boundaries", () => {
     const context = app.shadowRoot?.querySelector("app-context-bar");
     expect(context?.shadowRoot?.querySelectorAll(".context-item")).toHaveLength(3);
     const controls = [...context?.shadowRoot?.querySelectorAll<HTMLButtonElement>(".context-actions button") ?? []];
-    expect(controls.map((button) => button.getAttribute("aria-label") ?? button.textContent.trim())).toEqual(["Navigation", "Show Actions"]);
+    expect(controls.map((button) => button.getAttribute("aria-label") ?? button.textContent.trim())).toEqual(["Navigation", "Commands"]);
     expect(controls[0]?.classList.contains("selected")).toBe(true);
     controls[0]?.focus();
     controls[0]?.click();

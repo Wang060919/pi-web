@@ -76,6 +76,27 @@ function totals(result: UsageOverviewResponse): { input: number; output: number;
 }
 
 describe("UsageOverviewService", () => {
+  it("aggregates machine stores and own archives across workspaces without counting copied events twice", async () => {
+    const agentDir = join(temp, "agent");
+    const secondDir = defaultPiSessionDir("/srv/other", agentDir);
+    await mkdir(secondDir, { recursive: true });
+    await session("first", [header("first"), assistant("copied")]);
+    await writeFile(join(secondDir, "second.jsonl"), [header("second", DAY_ONE, "/srv/other"), assistant("copied"), assistant("other-event", DAY_TWO)].map((row) => JSON.stringify(row)).join("\n"));
+    const archivePath = join(temp, "own-archive.jsonl");
+    const foreignArchive = join(temp, "foreign-archive.jsonl");
+    await writeFile(archivePath, [header("archived", DAY_ONE, "/srv/third"), assistant("archived-event")].map((row) => JSON.stringify(row)).join("\n"));
+    await writeFile(foreignArchive, [header("foreign"), assistant("foreign-event")].map((row) => JSON.stringify(row)).join("\n"));
+    const usage = service({ archives: { list: () => Promise.resolve([
+      { sessionId: "archived", cwd: "/srv/third", archivedAt: DAY_TWO, archivePath, originalPath: join(defaultPiSessionDir("/srv/third", agentDir), "archived.jsonl") },
+      { sessionId: "foreign", cwd: CWD, archivedAt: DAY_TWO, archivePath: foreignArchive, originalPath: join(temp, "foreign-profile", "sessions", "workspace", "foreign.jsonl") },
+    ]) } });
+    const result = await usage.read(undefined, "UTC");
+    expect(result.scope).toBe("machine");
+    expect(totals(result)).toMatchObject({ input: 300, messages: 3, sessions: 3 });
+    expect(result.warnings).toEqual([]);
+    expect(totals(await usage.read(CWD, "UTC"))).toMatchObject({ input: 100, messages: 1, sessions: 1 });
+  });
+
   it("sums every SDK usage source without double-adding totalTokens", async () => {
     await session("metering", [
       header("metering"), message("user", "user"), assistant("reply"),

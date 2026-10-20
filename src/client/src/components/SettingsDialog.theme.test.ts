@@ -63,8 +63,8 @@ async function mountDialog(): Promise<SettingsDialog> {
   return dialog;
 }
 
-function generalPanel(dialog: SettingsDialog): import("./settings/SettingsGeneralPanel").SettingsGeneralPanel {
-  const panel = dialog.shadowRoot?.querySelector<import("./settings/SettingsGeneralPanel").SettingsGeneralPanel>("settings-general-panel");
+function generalPanel(dialog: SettingsDialog): import("./settings/SettingsPreferencesPanel").SettingsPreferencesPanel {
+  const panel = dialog.shadowRoot?.querySelector<import("./settings/SettingsPreferencesPanel").SettingsPreferencesPanel>("settings-preferences-panel");
   if (panel == null) throw new Error("Expected General settings");
   return panel;
 }

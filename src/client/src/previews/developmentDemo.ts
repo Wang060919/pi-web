@@ -4,6 +4,7 @@ import { state } from "lit/decorators.js";
 import { getLocale } from "../../../shared/i18n";
 import { request } from "../api/http";
 import { resolveAppUrl } from "../appUrl";
+import { hasRenderedModal } from "../components/modalLayerRegistry";
 
 interface DemoSession {
   id: string;
@@ -45,6 +46,21 @@ class DevelopmentDemoLauncher extends LitElement {
   @state() private sessions: DemoSession[] = [];
   @state() private loading = false;
   @state() private error = "";
+  private readonly syncLauncherVisibility = (): void => {
+    const ownsDialog = this.renderRoot.querySelector("dialog[open]") !== null;
+    this.toggleAttribute("app-modal-open", !ownsDialog && hasRenderedModal(this.ownerDocument));
+  };
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.ownerDocument.addEventListener("focusin", this.syncLauncherVisibility, true);
+    this.syncLauncherVisibility();
+  }
+
+  override disconnectedCallback(): void {
+    this.ownerDocument.removeEventListener("focusin", this.syncLauncherVisibility, true);
+    super.disconnectedCallback();
+  }
 
   private openDialog(): void {
     this.requestUpdate();
@@ -100,7 +116,8 @@ class DevelopmentDemoLauncher extends LitElement {
   }
 
   static override styles = css`
-    :host { position: fixed; left: 16px; bottom: 16px; z-index: 80; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 13px/1.5 var(--pi-font-family, system-ui, sans-serif); }
+    :host { position: fixed; left: 16px; bottom: 68px; z-index: 80; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 13px/1.5 var(--pi-font-family, system-ui, sans-serif); }
+    :host([app-modal-open]) .launcher { display: none; }
     button, a { -webkit-tap-highlight-color: transparent; }
     button { cursor: pointer; font: inherit; }
     button:focus-visible, a:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 3px; }
@@ -130,7 +147,7 @@ class DevelopmentDemoLauncher extends LitElement {
     li a:hover { background: var(--pi-selection-bg); }
     li span { color: var(--pi-muted); }
     @media (max-width: 540px) {
-      :host { left: 10px; bottom: max(10px, env(safe-area-inset-bottom)); }
+      :host { left: 10px; bottom: calc(68px + env(safe-area-inset-bottom)); }
       dialog { padding: 18px; }
     }
   `;

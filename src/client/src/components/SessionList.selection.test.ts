@@ -13,7 +13,7 @@ describe("SessionList bulk selection toolbar", () => {
   it("offers Select all with an empty selection and no Clear or Done buttons", async () => {
     const list = await renderSessionList([session("a"), session("b"), session("c")]);
 
-    currentSelectionToggle(list).click();
+    (await currentSelectionToggle(list)).click();
     await list.updateComplete;
 
     expect(toolbarButton(list, "Select all")).not.toBeNull();
@@ -25,7 +25,7 @@ describe("SessionList bulk selection toolbar", () => {
 
   it("selects every session via Select all, then clears them via Clear selected", async () => {
     const list = await renderSessionList([session("a"), session("b"), session("c")]);
-    currentSelectionToggle(list).click();
+    (await currentSelectionToggle(list)).click();
     await list.updateComplete;
 
     toolbarButton(list, "Select all")?.click();
@@ -47,7 +47,7 @@ describe("SessionList bulk selection toolbar", () => {
 
   it("keeps a large selected count inside the clear action", async () => {
     const list = await renderSessionList(Array.from({ length: 121 }, (_, index) => session(String(index))));
-    currentSelectionToggle(list).click();
+    (await currentSelectionToggle(list)).click();
     await list.updateComplete;
 
     toolbarButton(list, "Select all")?.click();
@@ -59,7 +59,7 @@ describe("SessionList bulk selection toolbar", () => {
 
   it("clears a partial manual selection via Clear selected", async () => {
     const list = await renderSessionList([session("a"), session("b"), session("c")]);
-    currentSelectionToggle(list).click();
+    (await currentSelectionToggle(list)).click();
     await list.updateComplete;
 
     checkboxes(list)[0]?.click();
@@ -76,15 +76,15 @@ describe("SessionList bulk selection toolbar", () => {
     expect(toolbarButton(list, "Select all")).not.toBeNull();
   });
 
-  it("closes selection mode, discarding the selection, from the same heading toggle that opened it", async () => {
+  it("closes selection mode, discarding the selection, from the same menu action that opened it", async () => {
     const list = await renderSessionList([session("a"), session("b"), session("c")]);
-    currentSelectionToggle(list).click();
+    (await currentSelectionToggle(list)).click();
     await list.updateComplete;
     toolbarButton(list, "Select all")?.click();
     await list.updateComplete;
     expect(checkedBoxes(list)).toHaveLength(3);
 
-    currentSelectionToggle(list).click();
+    (await currentSelectionToggle(list)).click();
     await list.updateComplete;
 
     expect(list.shadowRoot?.querySelector(".bulk-row.selecting")).toBeNull();
@@ -122,8 +122,10 @@ async function renderSessionList(sessions: SessionInfo[]): Promise<SessionList> 
   return list;
 }
 
-function currentSelectionToggle(list: SessionList): HTMLButtonElement {
-  const button = list.shadowRoot?.querySelector<HTMLButtonElement>("h2:not(.subheading) .bulk-select-entry");
+async function currentSelectionToggle(list: SessionList): Promise<HTMLButtonElement> {
+  list.shadowRoot?.querySelector<HTMLButtonElement>(".filter-toggle")?.click();
+  await list.updateComplete;
+  const button = list.shadowRoot?.querySelector<HTMLButtonElement>(".session-filter-popover .bulk-select-entry");
   if (button === null || button === undefined) throw new Error("Expected the current selection toggle");
   return button;
 }

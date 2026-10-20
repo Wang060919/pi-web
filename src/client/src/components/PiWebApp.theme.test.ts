@@ -1,13 +1,17 @@
 // @vitest-environment happy-dom
 
 import { LitElement } from "lit";
+import { setLocalePreference } from "../../../shared/i18n";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api, configApi, piPackagesApi, pluginsApi, type PiWebConfigValues } from "../api";
 import { THEME_STORAGE_KEY } from "../theme";
+import { CHAT_TEXT_SIZE_STORAGE_KEY } from "../chatTextSize";
+import { usageOverviewApi } from "../api/usageOverview";
 import { PiWebApp } from "./PiWebApp";
 import { SettingsDialog } from "./SettingsDialog";
 import { configResponse, pluginsResponse } from "./SettingsDialog.testSupport";
 import { SettingsThemePanel } from "./settings/SettingsThemePanel";
+import { SettingsChatTextPanel } from "./settings/SettingsChatTextPanel";
 
 // Mount real settings and theme interactions, leaving unrelated session/socket
 // startup out of this component-boundary test.
@@ -35,6 +39,7 @@ beforeEach(() => {
   vi.spyOn(pluginsApi, "plugins").mockResolvedValue(pluginsResponse([]));
   vi.spyOn(piPackagesApi, "packages").mockResolvedValue({ packages: [] });
   vi.spyOn(api, "runtime").mockResolvedValue({ machineId: "local", ok: true, checkedAt: "now", capabilities: [] });
+  vi.spyOn(usageOverviewApi, "get").mockResolvedValue({ records: [], today: "2026-10-21", timeZone: "UTC", scope: "machine", warnings: [] });
   // Layout/transport work is unrelated to preferences; never open real sockets.
   vi.stubGlobal("WebSocket", class {
     static readonly CONNECTING = 0;
@@ -103,6 +108,58 @@ describe("app theme defaults and device overrides", () => {
   });
 });
 
+describe("conversation text size on this device", () => {
+  it("shows Chinese labels rather than translation keys in the Chinese interface", async () => {
+    setLocalePreference("zh-CN");
+    try {
+      const panel = chatTextPanel(await mountApp());
+      await panel.updateComplete;
+      expect(panel.shadowRoot?.textContent).toContain("会话文字大小");
+      expect(panel.shadowRoot?.textContent).not.toContain("settingsChatText.");
+      expect(button(panel, "中").getAttribute("aria-pressed")).toBe("true");
+      expect(button(panel, "小").getAttribute("aria-pressed")).toBe("false");
+      expect(button(panel, "大").getAttribute("aria-pressed")).toBe("false");
+    } finally {
+      setLocalePreference("en");
+    }
+  });
+
+  it("defaults to Medium, applies each choice immediately, and restores it after remounting", async () => {
+    const app = await mountApp();
+    let panel = chatTextPanel(app);
+    await panel.updateComplete;
+    expect(button(panel, "Medium").getAttribute("aria-pressed")).toBe("true");
+    expect(localStorage.getItem(CHAT_TEXT_SIZE_STORAGE_KEY)).toBeNull();
+    for (const [label, size] of [["Small", "s"], ["Medium", "m"], ["Large", "l"]] as const) {
+      button(panel, label).click();
+      await app.updateComplete;
+      await settings(app).updateComplete;
+      await panel.updateComplete;
+      expect(app.dataset["chatTextSize"]).toBe(size);
+      expect(localStorage.getItem(CHAT_TEXT_SIZE_STORAGE_KEY)).toBe(size);
+      expect(button(panel, label).getAttribute("aria-pressed")).toBe("true");
+      expect(panel.shadowRoot?.querySelector('[role="status"]')?.textContent).toBe("Saved on this device.");
+    }
+    app.remove();
+    panel = chatTextPanel(await mountApp());
+    await panel.updateComplete;
+    expect(button(panel, "Large").getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("keeps the current size selected and reports when device storage rejects a save", async () => {
+    const app = await mountApp();
+    const panel = chatTextPanel(app);
+    await panel.updateComplete;
+    vi.spyOn(localStorage, "setItem").mockImplementation(() => { throw new Error("Storage full"); });
+    button(panel, "Large").click();
+    await panel.updateComplete;
+    expect(button(panel, "Medium").getAttribute("aria-pressed")).toBe("true");
+    expect(button(panel, "Large").getAttribute("aria-pressed")).toBe("false");
+    expect(panel.shadowRoot?.querySelector('[role="status"]')?.textContent).toContain("Could not save");
+    expect(localStorage.getItem(CHAT_TEXT_SIZE_STORAGE_KEY)).toBeNull();
+  });
+});
+
 async function mountApp(): Promise<ThemeSettingsApp> {
   const app = new ThemeSettingsApp();
   document.body.append(app);
@@ -124,7 +181,7 @@ function settings(app: ThemeSettingsApp): SettingsDialog {
 }
 
 function themePanel(app: ThemeSettingsApp): SettingsThemePanel {
-  const panel = settings(app).shadowRoot?.querySelector("settings-general-panel")?.querySelector<SettingsThemePanel>("settings-theme-panel");
+  const panel = settings(app).shadowRoot?.querySelector("settings-preferences-panel")?.querySelector<SettingsThemePanel>("settings-theme-panel");
   if (panel == null) throw new Error("Expected theme settings");
   return panel;
 }
@@ -136,7 +193,13 @@ function selectTheme(panel: SettingsThemePanel, id: string): void {
   select.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-function button(panel: SettingsThemePanel, label: string): HTMLButtonElement {
+function chatTextPanel(app: ThemeSettingsApp): SettingsChatTextPanel {
+  const panel = settings(app).shadowRoot?.querySelector<SettingsChatTextPanel>("settings-chat-text-panel");
+  if (panel == null) throw new Error("Expected conversation text settings");
+  return panel;
+}
+
+function button(panel: SettingsThemePanel | SettingsChatTextPanel, label: string): HTMLButtonElement {
   const control = [...panel.shadowRoot?.querySelectorAll<HTMLButtonElement>("button") ?? []].find((element) => element.textContent === label);
   if (control === undefined) throw new Error(`Expected ${label}`);
   return control;

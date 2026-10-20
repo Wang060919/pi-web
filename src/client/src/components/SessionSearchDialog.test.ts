@@ -49,6 +49,46 @@ function deferred<T>() {
   return { promise, finish: (value: T) => { if (resolve === undefined) throw new Error("Missing deferred resolver"); resolve(value); } };
 }
 
+describe("quick conversation search", () => {
+  it("filters recent names without a server search and opens the keyboard-selected conversation", async () => {
+    const load = vi.spyOn(sessionHistoryApi, "search");
+    const dialog = await mount();
+    const open = vi.fn().mockResolvedValue(true); const close = vi.fn();
+    dialog.onOpenSession = open; dialog.onClose = close;
+    dialog.recentSessions = [hit.session, { ...hit.session, id: "two", name: "Another editor", modified: "2026-10-18T01:00:00Z" }, { ...hit.session, id: "elsewhere", cwd: "/other" }];
+    await settleRenderedDialog(dialog);
+    expect(dialog.renderRoot.querySelectorAll(".quick-result")).toHaveLength(2);
+    setQuery(dialog, "EDITOR"); await settleRenderedDialog(dialog);
+    pressKey(dialogSurface(dialog), "ArrowDown"); await settleRenderedDialog(dialog);
+    pressKey(dialogSurface(dialog), "Enter"); await settleRenderedDialog(dialog);
+    expect(open).toHaveBeenCalledExactlyOnceWith(hit.session);
+    expect(load).not.toHaveBeenCalled(); expect(close).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the picker open when navigation is cancelled and reports navigation errors", async () => {
+    const dialog = await mount(); const close = vi.fn();
+    dialog.onClose = close; dialog.recentSessions = [hit.session];
+    const open = vi.fn().mockResolvedValueOnce(false).mockRejectedValueOnce(new Error("Workspace removed")); dialog.onOpenSession = open;
+    await settleRenderedDialog(dialog);
+    requiredElement(dialog.renderRoot.querySelector<HTMLButtonElement>(".quick-result"), "recent conversation").click(); await settleRenderedDialog(dialog);
+    expect(close).not.toHaveBeenCalled();
+    requiredElement(dialog.renderRoot.querySelector<HTMLButtonElement>(".quick-result"), "recent conversation").click(); await settleRenderedDialog(dialog);
+    expect(dialog.renderRoot.querySelector('[role="alert"]')?.textContent).toContain("Workspace removed");
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it("retains full message search and does not reset its mode when callbacks refresh", async () => {
+    const load = vi.spyOn(sessionHistoryApi, "search").mockResolvedValue(response);
+    const dialog = await mount(); dialog.onOpenSession = vi.fn().mockResolvedValue(true);
+    await settleRenderedDialog(dialog);
+    const messages = [...dialog.renderRoot.querySelectorAll<HTMLButtonElement>(".search-modes button")].find((button) => button.textContent === t("ui.sessionSearch.messages"));
+    requiredElement(messages, "message search mode").click(); await settleRenderedDialog(dialog);
+    dialog.onOpenSession = vi.fn().mockResolvedValue(true); await settleRenderedDialog(dialog);
+    await search(dialog);
+    expect(load).toHaveBeenCalledOnce(); expect(dialog.renderRoot.querySelectorAll(".search-result")).toHaveLength(2);
+  });
+});
+
 describe("session history search dialog", () => {
   it.each([
     ["assistant", "Pi"],

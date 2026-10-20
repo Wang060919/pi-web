@@ -1,7 +1,8 @@
 import { renderUiIcon } from "./uiIcons";
 import { localizedTemplate, t } from "../../../shared/i18n";
-import { LitElement, html } from "lit";
+import { LitElement, html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import type { ProjectDirectoryInfo } from "../../../shared/apiTypes";
 import { api, trustApi, type FileSuggestion } from "../api";
 import type { ProjectTrustChoice } from "../controllers/projectController";
 import { css } from "lit";
@@ -21,14 +22,19 @@ export class ProjectDialog extends LitElement {
   @property({ attribute: false }) onSubmit?: (path: string, create: boolean, trust: ProjectTrustChoice | undefined) => void;
   @property({ attribute: false }) onCancel?: () => void;
   @property() machineId = "local";
+  @property() machineLabel = "Local";
+  @state() private directoryInfo: ProjectDirectoryInfo | undefined;
+  @state() private directoryError = "";
+  @state() private infoError = "";
+  @state() private showHidden = false;
   @state() private path = "";
-  @state() private createMissing = true;
+  @state() private createMissing = false;
   @state() private suggestions: FileSuggestion[] = [];
   @state() private selected = 0;
   @state() private loading = false;
   @state() private trust: ProjectTrustState | undefined;
   @state() private trustTouched = false;
-  @query("input") private pathInput?: HTMLInputElement;
+  @query(".path-input") private pathInput?: HTMLInputElement;
 
   // Separate staleness counters: setPath fires both loaders, so a shared one
   // would make the trust read invalidate every in-flight suggestions request
@@ -41,16 +47,50 @@ export class ProjectDialog extends LitElement {
     void this.loadSuggestions();
   }
 
+  protected override willUpdate(changed: PropertyValues<this>): void {
+    if (changed.has("machineId") && this.hasUpdated) {
+      this.setPath("");
+      this.createMissing = false;
+    }
+  }
+
+  private visibleSuggestions(): FileSuggestion[] {
+    return this.suggestions.filter((item) => this.showHidden || !folderName(item.path).startsWith("."));
+  }
+
+  private canSubmit(): boolean {
+    if (this.path.trim() === "" || this.loading) return false;
+    if (this.directoryInfo === undefined) return true;
+    return this.directoryInfo.exists ? this.directoryInfo.isDirectory : this.createMissing;
+  }
+
   private async loadSuggestions() {
     const requestId = ++this.suggestionRequestId;
     this.loading = true;
+    this.directoryInfo = undefined;
+    this.suggestions = [];
+    this.directoryError = "";
+    this.infoError = "";
+    const path = this.path;
+    let info: ProjectDirectoryInfo | undefined;
     try {
-      const suggestions = await api.projectDirectories(this.path, this.machineId);
+      info = await api.projectDirectoryInfo(path, this.machineId);
+      if (requestId !== this.suggestionRequestId) return;
+      this.directoryInfo = info;
+    } catch (error) {
+      if (requestId !== this.suggestionRequestId) return;
+      this.infoError = `${t("ui.projectPicker.checkFailed")}: ${String(error)}`;
+    }
+    try {
+      const query = info?.isDirectory === true ? `${info.path.replace(/[\\/]$/u, "")}/` : path;
+      const suggestions = await api.projectDirectories(query, this.machineId);
       if (requestId !== this.suggestionRequestId) return;
       this.suggestions = suggestions;
-      this.selected = Math.min(this.selected, Math.max(0, suggestions.length - 1));
-    } catch {
-      if (requestId === this.suggestionRequestId) this.suggestions = [];
+      this.selected = Math.min(this.selected, Math.max(0, this.visibleSuggestions().length - 1));
+    } catch (error) {
+      if (requestId !== this.suggestionRequestId) return;
+      this.suggestions = [];
+      this.directoryError = `${t("ui.projectPicker.loadFailed")}: ${String(error)}`;
     } finally {
       if (requestId === this.suggestionRequestId) this.loading = false;
     }
@@ -69,18 +109,13 @@ export class ProjectDialog extends LitElement {
   }
 
   private submit() {
-    if (this.path.trim() === "") return;
+    if (!this.canSubmit()) return;
     this.onSubmit?.(this.path, this.createMissing, this.trust === undefined ? undefined : { trusted: this.trust.trusted, changed: this.trustTouched });
   }
 
   private onPathInput(event: InputEvent) {
     if (!(event.target instanceof HTMLInputElement)) return;
     this.setPath(event.target.value);
-  }
-
-  private onCreateMissingChange(event: InputEvent) {
-    if (!(event.target instanceof HTMLInputElement)) return;
-    this.createMissing = event.target.checked;
   }
 
   /**
@@ -145,12 +180,12 @@ export class ProjectDialog extends LitElement {
       this.submit();
     } else if (event.key === "ArrowDown") {
       event.preventDefault();
-      this.selected = Math.min(this.selected + 1, Math.max(0, this.suggestions.length - 1));
+      this.selected = Math.min(this.selected + 1, Math.max(0, this.visibleSuggestions().length - 1));
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       this.selected = Math.max(0, this.selected - 1);
     } else if (event.key === "Tab") {
-      const suggestion = this.suggestions[this.selected];
+      const suggestion = this.visibleSuggestions()[this.selected];
       if (suggestion === undefined) return;
       event.preventDefault();
       this.pick(suggestion);
@@ -158,43 +193,29 @@ export class ProjectDialog extends LitElement {
   }
 
   override render() {
-    return localizedTemplate("ProjectDialog.add_project_project_folder_create_the_folder.059a9ba1", html)`
-      <modal-surface
-        .onClose=${() => this.onCancel?.()}
-        .initialFocus=${"input"}
-        .label=${t("ProjectDialog.add_project.d38cd98d")}
-        @keydown=${(event: KeyboardEvent) => { this.onKeyDown(event); }}
-      >
-        <header>
-          <strong>Add project</strong>
-          <button @click=${() => { this.onCancel?.(); }} aria-label="Close">${renderUiIcon("close")}</button>
-        </header>
+    const info = this.directoryInfo;
+    const suggestions = this.visibleSuggestions();
+    const status = info === undefined ? "" : !info.exists ? t("ui.projectPicker.missing") : info.isDirectory ? t("ui.projectPicker.exists") : t("ui.projectPicker.notDirectory");
+    return html`
+      <modal-surface .onClose=${() => this.onCancel?.()} .initialFocus=${".path-input"} .label=${t("ProjectDialog.add_project.d38cd98d")} @keydown=${(event: KeyboardEvent) => { this.onKeyDown(event); }}>
+        <header><strong>${t("ProjectDialog.add_project.d38cd98d")}</strong><button type="button" @click=${() => { this.onCancel?.(); }} aria-label=${t("navigation.close")}>${renderUiIcon("close")}</button></header>
         <div class="body">
-          <label>
-            Project folder
-            <input .value=${this.path} @input=${(event: InputEvent) => { this.onPathInput(event); }} placeholder="/path/to/project or ~/code/project" />
-          </label>
+          <p class="machine-target">${t("ui.projectPicker.machine")}: <strong>${this.machineLabel}</strong></p>
+          <label>${t("ui.projectPicker.folder")}<input class="path-input" .value=${this.path} @input=${(event: InputEvent) => { this.onPathInput(event); }} placeholder=${t("ui.projectPicker.pathPlaceholder")} autocomplete="off"></label>
+          <div class="directory-status" role="status">${this.loading ? t("ui.projectPicker.loading") : status}${info === undefined ? null : html`<code>${info.path}</code>`}</div>
+          <div class="browse-actions"><button type="button" ?disabled=${info === undefined || info.parentPath === info.path || this.loading} @click=${() => { if (info !== undefined) this.setPath(info.parentPath); }}>${t("ui.projectPicker.parent")}</button><button type="button" @click=${() => { this.setPath("~"); }}>${t("ui.projectPicker.home")}</button><label class="check"><input type="checkbox" .checked=${this.showHidden} @change=${(event: Event) => { if (event.target instanceof HTMLInputElement) { this.showHidden = event.target.checked; this.selected = 0; } }}>${t("ui.projectPicker.hidden")}</label></div>
+          ${this.infoError === "" ? null : html`<p class="directory-error" role="alert">${this.infoError}</p>`}
           <div class="suggestions">
-            ${this.loading ? localizedTemplate("ProjectDialog.loading_folders.74f367df", html)`<div class="hint">Loading folders…</div>` : null}
-            ${this.suggestions.map((suggestion, index) => html`
-              <button class=${index === this.selected ? "selected" : ""} @click=${() => { this.pick(suggestion); }}>
-                ${suggestion.path}
-              </button>
-            `)}
-            ${!this.loading && this.suggestions.length === 0 ? localizedTemplate("ProjectDialog.no_matching_folders_enter_a_new_path.ebaedc30", html)`<div class="hint">No matching folders. Enter a new path to create it.</div>` : null}
+            ${this.directoryError !== "" ? html`<div class="directory-error" role="alert">${this.directoryError}<button type="button" @click=${() => { void this.loadSuggestions(); }}>${t("ui.projectPicker.retry")}</button></div>` : null}
+            ${this.loading ? html`<div class="hint">${t("ui.projectPicker.loading")}</div>` : null}
+            ${suggestions.map((suggestion, index) => html`<button type="button" class=${index === this.selected ? "selected" : ""} title=${suggestion.path} @click=${() => { this.pick(suggestion); }}>${renderUiIcon("folder")}<span>${folderName(suggestion.path)}</span></button>`)}
+            ${!this.loading && this.directoryError === "" && suggestions.length === 0 ? html`<div class="hint">${t("ui.projectPicker.empty")}</div>` : null}
           </div>
-          <label class="check">
-            <input type="checkbox" .checked=${this.createMissing} @change=${(event: InputEvent) => { this.onCreateMissingChange(event); }} />
-            Create the folder if it does not exist
-          </label>
+          <fieldset class="add-mode"><legend>${t("ui.projectPicker.action")}</legend><label class="check"><input type="radio" name="add-mode" value="existing" .checked=${!this.createMissing} @change=${() => { this.createMissing = false; }}>${t("ui.projectPicker.addExisting")}</label><label class="check"><input type="radio" name="add-mode" value="create" .checked=${this.createMissing} @change=${() => { this.createMissing = true; }}>${t("ui.projectPicker.create")}</label></fieldset>
           ${this.renderTrustChoice()}
         </div>
-        <footer>
-          <button @click=${() => { this.onCancel?.(); }}>Cancel</button>
-          <button class="primary" ?disabled=${this.path.trim() === ""} @click=${() => { this.submit(); }}>Add project</button>
-        </footer>
-      </modal-surface>
-    `;
+        <footer><button type="button" @click=${() => { this.onCancel?.(); }}>${t("ui.projectPicker.cancel")}</button><button type="button" class="primary" ?disabled=${!this.canSubmit()} @click=${() => { this.submit(); }}>${this.createMissing && info?.exists !== true ? t("ui.projectPicker.create") : t("ProjectDialog.add_project.d38cd98d")}</button></footer>
+      </modal-surface>`;
   }
 
   static override styles = css`
@@ -202,6 +223,14 @@ export class ProjectDialog extends LitElement {
     modal-surface { --modal-surface-place-items: start center; --modal-surface-backdrop-padding: min(12dvh, 90px) 0 max(20px, env(safe-area-inset-bottom)); --modal-surface-width: min(720px, calc(100vw - 40px)); --modal-surface-max-height: min(700px, 100%); }
     header, footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px; border-bottom: 0; }
     footer { border-top: 0; border-bottom: 0; justify-content: end; }
+    .machine-target { margin: 0; }
+    .directory-status { color: var(--pi-muted); overflow-wrap: anywhere; }
+    .directory-status code { display: block; margin-top: 4px; white-space: normal; }
+    .browse-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .browse-actions .check { margin-inline-start: auto; }
+    .directory-error { color: var(--pi-danger); overflow-wrap: anywhere; }
+    .add-mode { margin: 0; padding: 8px; border: 1px solid var(--pi-border-muted); border-radius: 6px; display: grid; gap: 6px; }
+    .suggestions button svg { width: 16px; height: 16px; vertical-align: middle; margin-inline-end: 8px; }
     .body { display: grid; gap: 12px; padding: 12px; min-height: 0; overflow: auto; }
     label { display: grid; gap: 6px; color: var(--pi-muted); }
     input[type="text"], input:not([type]) { box-sizing: border-box; width: 100%; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); padding: 9px; font: var(--pi-font-weight-regular, 360) var(--pi-control-font-size, 14px)/1.428571 var(--pi-control-monospace-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); }
@@ -228,4 +257,9 @@ export class ProjectDialog extends LitElement {
     header strong { font-size: 14px; line-height: 20px; }
     input:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 1px; }
   `;
+}
+
+function folderName(path: string): string {
+  const name = path.replace(/[\\/]+$/u, "").split(/[\\/]/u).at(-1);
+  return name === undefined || name === "" ? path : name;
 }

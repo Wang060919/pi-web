@@ -1,16 +1,23 @@
 import { renderUiIcon } from "./uiIcons";
-import { localizedTemplate, localizedText, t } from "../../../shared/i18n";
+import { localizedText, t } from "../../../shared/i18n";
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
+import { keyed } from "lit/directives/keyed.js";
 import { customElement, property, state } from "lit/decorators.js";
 import type { AppAction } from "../actions";
 import { configApi, piPackagesApi, pluginsApi, type Machine, type MachineRuntime, type PiPackageMutationResponse, type PiPackageScope, type PiPackagesResponse, type PiWebConfigResponse, type PiWebConfigValues, type PiWebPluginsResponse } from "../api";
-import type { SettingsSection } from "../settingsRoute";
+import { type SettingsSection } from "../settingsRoute";
 import "./settings/SettingsModelsPanel";
 import "./settings/SettingsMcpPanel";
 import "./settings/SettingsSkillsPanel";
 import "./ModalSurface";
+import type { ModalSurface } from "./ModalSurface";
+import { settingsTargetStyles } from "./settings/settingsDesignStyles";
+import { findSettingsElement, searchSettings, settingsSearchItems, type SettingsSearchItem } from "./settings/settingsSearch";
 import "./settings/SettingsGeneralPanel";
+import "./settings/SettingsPreferencesPanel";
 import "./settings/SettingsThemePanel";
+import "./settings/SettingsChatTextPanel";
+import { DEFAULT_CHAT_TEXT_SIZE, type ChatTextSize } from "../chatTextSize";
 import "./settings/SettingsLanguagePanel";
 import type { QualifiedThemeContribution } from "../plugins/types";
 import { DEFAULT_THEME_PREFERENCE, type ThemePreference } from "../theme";
@@ -38,6 +45,8 @@ export class SettingsDialog extends LitElement {
   @property({ type: Boolean }) hasLocalThemeOverride = false;
   @property({ attribute: false }) onUseLocalTheme?: (preference: ThemePreference) => void;
   @property({ attribute: false }) onUseDefaultTheme?: () => void;
+  @property() chatTextSize: ChatTextSize = DEFAULT_CHAT_TEXT_SIZE;
+  @property({ attribute: false }) onChatTextSizeChange?: (size: ChatTextSize) => void;
   @property({ attribute: false }) machine: Machine | undefined;
   @property({ attribute: false }) machineRuntime: MachineRuntime | undefined;
   @property({ attribute: false }) onNavigate?: (section: SettingsSection) => void;
@@ -65,6 +74,28 @@ export class SettingsDialog extends LitElement {
   @state() private packageError = "";
   @state() private savedMessage = "";
   @state() private packageMessage = "";
+  @state() private sectionQuery = "";
+  @state() private searchIndex = 0;
+  private pendingSearch: SettingsSearchItem | undefined;
+  private highlightedSetting: HTMLElement | undefined;
+  private readonly visitedSections = new Set<SettingsSection>();
+  private readonly onBeforeUnload = (event: BeforeUnloadEvent): void => {
+    if (this.hasUnsavedChanges()) { event.preventDefault(); }
+  };
+
+  private hasUnsavedChanges(): boolean {
+    return Array.from(this.renderRoot.querySelectorAll<HTMLElement & { hasUnsavedChanges?: boolean }>(".settings-section > *")).some((panel) => panel.hasUnsavedChanges === true);
+  }
+
+  confirmDiscardChanges(): boolean {
+    return !this.hasUnsavedChanges() || window.confirm(t("settingsDraft.discard"));
+  }
+
+  private requestClose(): void {
+    if (!this.confirmDiscardChanges()) return;
+    this.onClose?.();
+  }
+
   private savedMessageTimer: number | undefined;
   private loadRequestSeq = 0;
   private accessLoadRequestSeq = 0;
@@ -75,6 +106,7 @@ export class SettingsDialog extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    window.addEventListener("beforeunload", this.onBeforeUnload);
     void this.loadConfig();
     void this.loadAccessConfigForTarget();
     void this.reloadSessiondState();
@@ -83,12 +115,15 @@ export class SettingsDialog extends LitElement {
   }
 
   override disconnectedCallback(): void {
+    window.removeEventListener("beforeunload", this.onBeforeUnload);
     if (this.savedMessageTimer !== undefined) window.clearTimeout(this.savedMessageTimer);
     this.savedMessageTimer = undefined;
     super.disconnectedCallback();
   }
 
   protected override updated(changed: PropertyValues<this>): void {
+    void this.revealSearchTarget();
+    if (changed.has("section")) this.renderRoot.querySelector<HTMLElement>('.mobile-tabs [aria-selected="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
     const currentTarget = this.settingsTarget();
     if (changed.has("machine")) {
       const previousTarget = settingsMachineTarget(changed.get("machine"));
@@ -112,42 +147,122 @@ export class SettingsDialog extends LitElement {
   }
 
   override render(): TemplateResult {
-    return localizedTemplate("SettingsDialog.settings_pi_web.760f578b", html)`
-      <modal-surface .onClose=${() => this.onClose?.()} .label=${t("SettingsDialog.pi_web_settings.5d890f4d")}>
+    this.visitedSections.add(this.section);
+    const groups = [
+      { label: t("settingsLayout.daily"), sections: ["general", "shortcuts"] as const },
+      { label: t("settingsLayout.capabilities"), sections: ["models", "skills", "mcp", "packages", "plugins"] as const },
+      { label: t("settingsLayout.administration"), sections: ["connection", "sessiond"] as const },
+    ];
+    const results = this.searchResults();
+    return html`
+      <modal-surface .onClose=${() => { this.requestClose(); }} .label=${t("SettingsDialog.pi_web_settings.5d890f4d")}>
+        <div class="settings-shell" @keydown=${this.handleSettingsKeydown}>
         <header class="settings-header">
           <div>
-            <span class="eyebrow">Settings</span>
-            <h1>PI WEB</h1>
+            <h1>${t("settingsLayout.title")}</h1>
           </div>
-          <button class="close-button" title="Close settings" aria-label="Close settings" @click=${() => this.onClose?.()}>${renderUiIcon("close")}</button>
+          <button class="close-button" title=${t("settingsLayout.close")} aria-label=${t("settingsLayout.close")} @click=${() => { this.requestClose(); }}>${renderUiIcon("close")}</button>
         </header>
         <div class="settings-body">
-          <nav class="settings-nav" aria-label="Settings sections">
-            ${this.renderNavButton("general", t("SettingsDialog.general.9d6707b6"), t("SettingsDialog.gateway_selected_machine.97827f75"))}
-            ${this.renderNavButton("models", t("modelsSettings.heading"), t("SettingsDialog.selected_machine.60ce1c88"))}
-            ${this.renderNavButton("skills", t("inspection.skills"), t("SettingsDialog.selected_machine.60ce1c88"))}
-            ${this.renderNavButton("mcp", t("ui.settings.mcp"), t("SettingsDialog.selected_machine.60ce1c88"))}
-            ${this.renderNavButton("sessiond", t("SettingsDialog.session_daemon.a8a7922c"), t("SettingsDialog.selected_machine.60ce1c88"))}
-            ${this.renderNavButton("packages", t("SettingsDialog.pi_packages.91f80e11"), t("SettingsDialog.selected_machine.600984f6"))}
-            ${this.renderNavButton("plugins", t("SettingsDialog.pi_web_plugins.e0e9e6b6"), t("SettingsDialog.selected_machine.17c9b7b9"))}
-            ${this.renderNavButton("shortcuts", t("SettingsDialog.keyboard.39b81103"), t("SettingsDialog.gateway_shortcuts.e71cb404"))}
-          </nav>
+          <aside class="settings-sidebar">
+            <div class="settings-search-wrap">
+              <label class="settings-search">${renderUiIcon("search")}<input type="search" role="combobox" aria-autocomplete="list" aria-expanded=${String(this.sectionQuery.trim() !== "")} aria-controls="settings-search-results" aria-activedescendant=${results[this.searchIndex] === undefined ? undefined : `settings-hit-${String(this.searchIndex)}`} aria-label=${t("settingsLayout.search")} placeholder=${t("settingsLayout.search")} .value=${this.sectionQuery} @input=${(event: Event) => { if (event.target instanceof HTMLInputElement) { this.sectionQuery = event.target.value; this.searchIndex = 0; } }}></label>
+              ${this.sectionQuery.trim() === "" ? null : html`<div class="settings-search-results" id="settings-search-results" role="listbox" aria-label=${t("settingsSearch.results")}>
+                ${results.length === 0 ? html`<p class="no-sections" role="status">${t("settingsLayout.noResults")}</p>` : results.map((item, index) => html`<button type="button" role="option" id=${`settings-hit-${String(index)}`} aria-selected=${String(index === this.searchIndex)} @mousedown=${(event: MouseEvent) => { event.preventDefault(); }} @click=${() => { this.selectSearchResult(item); }}><span>${renderUiIcon(settingsSectionIcon(item.section))}<strong>${item.label}</strong></span><small>${settingsSectionLabel(item.section)}</small></button>`)}
+              </div>`}
+            </div>
+            <nav class="settings-nav" aria-label=${t("settingsLayout.sections")}>
+              ${groups.map((group) => html`<div class="nav-group"><h2>${group.label}</h2>${group.sections.map((section) => this.renderNavButton(section, settingsSectionLabel(section), section === "general" ? t("settingsLayout.appearanceLanguage") : section === "connection" ? t("SettingsDialog.gateway_selected_machine.97827f75") : section === "shortcuts" ? t("SettingsDialog.gateway_shortcuts.e71cb404") : t("SettingsDialog.selected_machine.60ce1c88")))}</div>`)}
+            </nav>
+            <nav class="mobile-tabs" role="tablist" aria-label=${t("settingsLayout.sections")} @keydown=${this.handleMobileTabs}>
+              ${groups.flatMap((group) => group.sections).map((section) => html`<button type="button" role="tab" aria-controls=${`settings-panel-${section}`} aria-selected=${String(section === this.section)} tabindex=${section === this.section ? 0 : -1} @click=${() => { this.navigate(section); }}>${renderUiIcon(settingsSectionIcon(section))}${settingsSectionLabel(section)}</button>`)}
+            </nav>
+          </aside>
           <main class="settings-content">
-            ${this.renderActiveSection()}
+            ${keyed(JSON.stringify([this.settingsTarget().id, this.projectId, this.workspaceId]), html`${Array.from(this.visitedSections, (section) => html`<div class="settings-section" id=${`settings-panel-${section}`} role="tabpanel" aria-label=${settingsSectionLabel(section)} ?hidden=${section !== this.section}>${this.renderActiveSection(section)}</div>`)}`)}
           </main>
+        </div>
         </div>
       </modal-surface>
     `;
   }
 
-  private renderActiveSection(): TemplateResult {
-    if (this.section === "skills") return html`<settings-skills-panel .machineId=${this.settingsTarget().id} .projectId=${this.projectId} .workspaceId=${this.workspaceId}></settings-skills-panel>`;
-    if (this.section === "models") return html`<settings-models-panel .machineId=${this.settingsTarget().id} .targetLabel=${settingsMachineTargetLabel(this.settingsTarget())} .onConfigurationSaved=${this.onModelsSaved}></settings-models-panel>`;
-    if (this.section === "mcp") return html`<settings-mcp-panel .machineId=${this.settingsTarget().id} .projectId=${this.projectId} .workspaceId=${this.workspaceId}></settings-mcp-panel>`;
+  private searchResults(): SettingsSearchItem[] {
+    const items = settingsSearchItems();
+    items.push(...this.actions.map((action) => ({ id: `shortcut-${action.id}`, section: "shortcuts" as const, label: action.title, keywords: `${action.id} ${action.description ?? ""} shortcuts 快捷键`, selector: `[data-setting-id="shortcut-${encodeURIComponent(action.id)}"]` })));
+    items.push(...(this.selectedPluginsResponse?.plugins ?? []).map((plugin) => ({ id: `plugin-${plugin.id}`, section: "plugins" as const, label: plugin.id, keywords: "plugin extension 插件 扩展", selector: `[data-setting-id="plugin-${encodeURIComponent(plugin.id)}"]` })));
+    return searchSettings(items, this.sectionQuery);
+  }
+
+  private readonly handleSettingsKeydown = (event: KeyboardEvent): void => {
+    if (event.isComposing || event.defaultPrevented) return;
+    const surface = event.composedPath().find((node) => node instanceof HTMLElement && node.localName === "modal-surface");
+    if (surface !== undefined && surface !== this.renderRoot.querySelector("modal-surface")) return;
+    if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "f") {
+      event.preventDefault(); event.stopPropagation();
+      const input = this.renderRoot.querySelector<HTMLInputElement>(".settings-search input");
+      input?.focus(); input?.select(); return;
+    }
+    if (this.sectionQuery.trim() === "") return;
+    if (event.key === "Escape") {
+      event.preventDefault(); event.stopPropagation(); this.sectionQuery = ""; this.searchIndex = 0; return;
+    }
+    if (!event.composedPath().some((node) => node instanceof HTMLInputElement && node.closest(".settings-search") !== null)) return;
+    const results = this.searchResults();
+    if ((event.key === "ArrowDown" || event.key === "ArrowUp") && results.length > 0) {
+      event.preventDefault(); event.stopPropagation();
+      this.searchIndex = (this.searchIndex + (event.key === "ArrowDown" ? 1 : -1) + results.length) % results.length;
+      void this.updateComplete.then(() => this.renderRoot.querySelector<HTMLElement>(`#settings-hit-${String(this.searchIndex)}`)?.scrollIntoView({ block: "nearest" }));
+    } else if (event.key === "Enter" && results[this.searchIndex] !== undefined) {
+      event.preventDefault(); event.stopPropagation(); const selected = results[this.searchIndex]; if (selected !== undefined) this.selectSearchResult(selected);
+    }
+  };
+
+  private selectSearchResult(item: SettingsSearchItem): void {
+    this.pendingSearch = item;
+    this.sectionQuery = "";
+    this.searchIndex = 0;
+    this.navigate(item.section);
+  }
+
+  private searchTargetCurrent(item: SettingsSearchItem): boolean { return this.isConnected && this.section === item.section; }
+
+  private async revealSearchTarget(): Promise<void> {
+    const item = this.pendingSearch;
+    if (item?.section !== this.section) return;
+    const panel = this.renderRoot.querySelector<HTMLElement>(".settings-section:not([hidden])");
+    if (panel === null) return;
+    const target = item.selector === undefined ? panel.firstElementChild : await findSettingsElement(panel, item.selector);
+    if (!(target instanceof HTMLElement) || this.pendingSearch !== item || this.section !== item.section || !this.isConnected) return;
+    this.pendingSearch = undefined;
+    this.highlightedSetting?.removeAttribute("data-search-highlight");
+    this.highlightedSetting = target;
+    target.setAttribute("data-search-highlight", "");
+    target.scrollIntoView({ block: "center", behavior: "auto" });
+    const control = await findSettingsElement(target.shadowRoot ?? target, 'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])');
+    if (!this.searchTargetCurrent(item)) return;
+    if (control === undefined && !target.hasAttribute("tabindex")) target.tabIndex = -1;
+    this.renderRoot.querySelector<ModalSurface>("modal-surface")?.focusDialog(control ?? target);
+  }
+
+  private readonly handleMobileTabs = (event: KeyboardEvent): void => {
+    if (event.isComposing || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    const tabs = [...this.renderRoot.querySelectorAll<HTMLButtonElement>('.mobile-tabs [role="tab"]')];
+    const current = tabs.findIndex((tab) => event.composedPath().includes(tab));
+    if (current < 0) return;
+    event.preventDefault();
+    const index = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (current + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    tabs[index]?.focus(); tabs[index]?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  };
+
+  private renderActiveSection(section: SettingsSection): TemplateResult {
+    if (section === "skills") return html`<settings-skills-panel .machineId=${this.settingsTarget().id} .projectId=${this.projectId} .workspaceId=${this.workspaceId}></settings-skills-panel>`;
+    if (section === "models") return html`<settings-models-panel .machineId=${this.settingsTarget().id} .targetLabel=${settingsMachineTargetLabel(this.settingsTarget())} .onConfigurationSaved=${this.onModelsSaved}></settings-models-panel>`;
+    if (section === "mcp") return html`<settings-mcp-panel .machineId=${this.settingsTarget().id} .projectId=${this.projectId} .workspaceId=${this.workspaceId}></settings-mcp-panel>`;
     // Keep the section -> panel routing in sync with the public
     // `activeSettingsPanelTag` seam below, which tests assert against instead of
     // scraping this template's markup.
-    if (this.section === "sessiond") {
+    if (section === "sessiond") {
       return html`
         <settings-sessiond-panel
           .configResponse=${this.sessiondConfigResponse}
@@ -161,9 +276,10 @@ export class SettingsDialog extends LitElement {
         ></settings-sessiond-panel>
       `;
     }
-    if (this.section === "shortcuts") {
+    if (section === "shortcuts") {
       return html`
         <settings-shortcuts-panel
+          .active=${section === this.section}
           .actions=${this.actions}
           .configResponse=${this.configResponse}
           .loading=${this.loading}
@@ -175,7 +291,7 @@ export class SettingsDialog extends LitElement {
         ></settings-shortcuts-panel>
       `;
     }
-    if (this.section === "packages") {
+    if (section === "packages") {
       return html`
         <settings-packages-panel
           .packagesResponse=${this.packagesResponse}
@@ -191,7 +307,7 @@ export class SettingsDialog extends LitElement {
         ></settings-packages-panel>
       `;
     }
-    if (this.section === "plugins") {
+    if (section === "plugins") {
       return html`
         <settings-plugins-panel
           .configResponse=${this.selectedPluginConfigResponse}
@@ -207,6 +323,23 @@ export class SettingsDialog extends LitElement {
         ></settings-plugins-panel>
       `;
     }
+    if (section === "general") return html`
+      <settings-preferences-panel .error=${this.error} .savedMessage=${this.savedMessage}>
+        <settings-language-panel></settings-language-panel>
+        <settings-theme-panel
+          .themes=${this.themes}
+          .preference=${this.themePreference}
+          .defaultPreference=${this.configResponse?.effectiveConfig.defaultTheme ?? DEFAULT_THEME_PREFERENCE}
+          .activeThemeId=${this.activeThemeId}
+          .hasLocalOverride=${this.hasLocalThemeOverride}
+          .loading=${this.loading || this.configResponse === undefined}
+          .saving=${this.saving}
+          .onUseLocal=${this.onUseLocalTheme}
+          .onUseDefault=${this.onUseDefaultTheme}
+          .onSetDefault=${(preference: ThemePreference) => this.saveDefaultTheme(preference)}
+        ></settings-theme-panel>
+        <settings-chat-text-panel .value=${this.chatTextSize} .onChange=${this.onChatTextSizeChange}></settings-chat-text-panel>
+      </settings-preferences-panel>`;
     return html`
       <settings-general-panel
         .configResponse=${this.configResponse}
@@ -222,22 +355,7 @@ export class SettingsDialog extends LitElement {
         .onReloadMachine=${() => this.loadAccessConfigForTarget()}
         .onSave=${(config: PiWebConfigValues) => this.saveConfig(config)}
         .onSaveMachineConfig=${(config: PiWebConfigValues) => this.saveMachineAccessConfig(config)}
-      >
-        <settings-language-panel slot="appearance"></settings-language-panel>
-        <settings-theme-panel
-          slot="appearance"
-          .themes=${this.themes}
-          .preference=${this.themePreference}
-          .defaultPreference=${this.configResponse?.effectiveConfig.defaultTheme ?? DEFAULT_THEME_PREFERENCE}
-          .activeThemeId=${this.activeThemeId}
-          .hasLocalOverride=${this.hasLocalThemeOverride}
-          .loading=${this.loading || this.configResponse === undefined}
-          .saving=${this.saving}
-          .onUseLocal=${this.onUseLocalTheme}
-          .onUseDefault=${this.onUseDefaultTheme}
-          .onSetDefault=${(preference: ThemePreference) => this.saveDefaultTheme(preference)}
-        ></settings-theme-panel>
-      </settings-general-panel>
+      ></settings-general-panel>
     `;
   }
 
@@ -245,8 +363,7 @@ export class SettingsDialog extends LitElement {
     const selected = this.section === section;
     return html`
       <button class=${selected ? "selected" : ""} aria-current=${selected ? "page" : "false"} @click=${() => { this.navigate(section); }}>
-        <strong>${label}</strong>
-        <small>${detail}</small>
+        ${renderUiIcon(settingsSectionIcon(section))}<span><strong>${label}</strong><small>${detail}</small></span>
       </button>
     `;
   }
@@ -652,30 +769,54 @@ export class SettingsDialog extends LitElement {
     }, 3000);
   }
 
-  static override styles = css`
+  static override styles = [css`
     :host { position: fixed; inset: 0; z-index: 30; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
-    modal-surface { --modal-surface-backdrop-padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); --modal-surface-width: min(980px, 100%); --modal-surface-max-height: min(760px, 100%); --modal-surface-min-height: min(620px, 100%); --modal-surface-radius: 14px; }
-    .settings-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 0; }
+    modal-surface { --modal-surface-backdrop-padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); --modal-surface-width: min(1120px, 100%); --modal-surface-max-height: min(760px, 100%); --modal-surface-min-height: min(620px, 100%); --modal-surface-radius: 16px; }
+    .settings-shell { position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; background: var(--pi-bg); }
+    .settings-header { position: absolute; top: 0; right: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 0; }
+    .settings-header h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
     .eyebrow { display: block; color: var(--pi-muted); font-size: 12px; line-height: 16px; font-weight: var(--pi-font-weight-medium, 460); letter-spacing: 0; }
     h1 { margin: 0; font-size: 18px; line-height: 24px; font-weight: var(--pi-font-weight-medium, 460); }
     button { border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 7px 9px; font: inherit; cursor: pointer; }
     .close-button { width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: transparent; color: var(--pi-muted); padding: 0; font-size: 24px; }
     .close-button:hover, .close-button:focus-visible { color: var(--pi-text); background: var(--pi-surface-hover); }
-    .settings-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 220px minmax(0, 1fr); }
-    .settings-nav { min-height: 0; padding: 10px; border-right: 0; background: var(--pi-surface); overflow: auto; }
-    .settings-nav button { display: grid; gap: 2px; width: 100%; margin: 0 0 6px; text-align: left; border-color: transparent; background: transparent; }
+    .settings-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 192px minmax(0, 1fr); }
+    .settings-sidebar { min-height: 0; display: flex; flex-direction: column; background: var(--pi-surface); padding-top: 12px; }
+    .settings-nav { min-height: 0; flex: 1; padding: 12px; overflow: auto; }
+    .settings-search-wrap { position: relative; flex: none; margin: 0 12px 8px; z-index: 3; }
+    .settings-search-results { position: absolute; top: calc(100% + 6px); left: 0; width: 300px; max-width: calc(100vw - 48px); max-height: min(360px, 50dvh); overflow: auto; padding: 4px; border: 1px solid var(--pi-border-muted); border-radius: 10px; background: var(--pi-bg); box-shadow: 0 8px 28px var(--pi-shadow); }
+    .settings-search-results button { display: grid; width: 100%; gap: 2px; padding: 8px; text-align: left; }
+    .settings-search-results button[aria-selected="true"] { background: var(--pi-selection-bg); }
+    .settings-search-results button > span { display: flex; align-items: center; gap: 8px; }
+    .settings-search-results small { color: var(--pi-muted); margin-inline-start: 24px; }
+    .settings-nav button { display: flex; align-items: center; gap: 12px; min-height: 32px; width: 100%; margin: 0 0 1px; text-align: left; border-color: transparent; background: transparent; }
     .settings-nav button:hover, .settings-nav button:focus-visible { background: var(--pi-surface-hover); }
     .settings-nav button.selected { background: var(--pi-selection-bg); }
-    .settings-nav small { color: var(--pi-muted); }
-    .settings-content { min-width: 0; min-height: 0; overflow: auto; padding: 18px; }
+    .settings-nav small { display: none; }
+    .settings-nav strong { font-weight: inherit; }
+    .settings-search { display: flex; align-items: center; gap: 8px; min-height: 32px; box-sizing: border-box; padding: 4px 8px; border: 1px solid var(--pi-border-muted); border-radius: 8px; background: var(--pi-bg); color: var(--pi-muted); }
+    .settings-search:focus-within { outline: 2px solid var(--pi-accent); outline-offset: 1px; }
+    .settings-search input { min-width: 0; width: 100%; background: transparent; border: 0; outline: 0; color: var(--pi-text); font: inherit; }
+    .no-sections { color: var(--pi-muted); padding: 8px; }
+    .nav-group + .nav-group { margin-top: 26px; }
+    .nav-group h2 { margin: 6px 9px 8px; color: var(--pi-muted); font-size: 12px; font-weight: inherit; }
+    .mobile-tabs { display: none; }
+    .settings-section[hidden] { display: none; }
+    .settings-content { min-width: 0; min-height: 0; overflow: auto; padding: 58px 24px 24px; border-left: 1px solid var(--pi-border-muted); }
 
     @media (max-width: 760px) {
       modal-surface { --modal-surface-backdrop-padding: 0; --modal-surface-place-items: stretch; --modal-surface-width: 100%; --modal-surface-max-height: 100%; --modal-surface-min-height: 0; --modal-surface-border: 0; --modal-surface-radius: 0; }
-      .settings-header { padding: max(12px, env(safe-area-inset-top)) 12px 12px; }
+      .settings-header { top: env(safe-area-inset-top); padding: 6px 8px; }
       .settings-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-      .settings-nav { display: flex; gap: 8px; padding: 8px; border-right: 0; border-bottom: 0; overflow-x: auto; overflow-y: hidden; }
-      .settings-nav button { flex: 0 0 auto; width: auto; min-width: 128px; margin: 0; }
-      .settings-content { padding: 14px 12px calc(18px + env(safe-area-inset-bottom)); }
+      .settings-nav { display: none; }
+      .settings-sidebar { padding-top: max(8px, env(safe-area-inset-top)); }
+      .settings-search-wrap { margin: 0 60px 8px 12px; }
+      .settings-search { min-height: 44px; }
+      .settings-search-results { width: calc(100vw - 32px); max-width: calc(100vw - 32px); }
+      .mobile-tabs { display: flex; gap: 4px; overflow-x: auto; padding: 0 12px 8px; scrollbar-width: none; }
+      .mobile-tabs button { display: flex; flex: none; align-items: center; gap: 6px; white-space: nowrap; color: var(--pi-muted); min-height: 44px; }
+      .mobile-tabs button[aria-selected="true"] { background: var(--pi-selection-bg); color: var(--pi-text); }
+      .settings-content { border-left: 0; border-top: 1px solid var(--pi-border-muted); padding: 18px 12px calc(18px + env(safe-area-inset-bottom)); }
     }
     button:not(:disabled):hover { background: var(--pi-surface-hover); }
     button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
@@ -685,7 +826,7 @@ export class SettingsDialog extends LitElement {
       button { min-height: 44px; }
       header button { min-width: 44px; }
     }
-  `;
+  `, settingsTargetStyles];
 }
 
 function errorMessage(error: unknown): string {
@@ -697,6 +838,7 @@ export type SettingsPanelTag =
   | "settings-models-panel"
   | "settings-mcp-panel"
   | "settings-general-panel"
+  | "settings-preferences-panel"
   | "settings-sessiond-panel"
   | "settings-packages-panel"
   | "settings-plugins-panel"
@@ -723,7 +865,24 @@ export function activeSettingsPanelTag(section: SettingsSection): SettingsPanelT
       return "settings-plugins-panel";
     case "shortcuts":
       return "settings-shortcuts-panel";
-    case "general":
+    case "connection":
       return "settings-general-panel";
+    case "general":
+      return "settings-preferences-panel";
   }
+}
+
+function settingsSectionLabel(section: SettingsSection): string {
+  const keys = {
+    general: "settingsLayout.preferences", connection: "settingsLayout.connection",
+    models: "modelsSettings.heading", skills: "inspection.skills", mcp: "ui.settings.mcp",
+    sessiond: "SettingsDialog.session_daemon.a8a7922c", packages: "SettingsDialog.pi_packages.91f80e11",
+    plugins: "SettingsDialog.pi_web_plugins.e0e9e6b6", shortcuts: "SettingsDialog.keyboard.39b81103",
+  } as const;
+  return t(keys[section]);
+}
+
+function settingsSectionIcon(section: SettingsSection): Parameters<typeof renderUiIcon>[0] {
+  const icons = { general: "settings", shortcuts: "keyboard", models: "sparkles", skills: "file", mcp: "link", packages: "package", plugins: "puzzle", connection: "server", sessiond: "server" } as const;
+  return icons[section];
 }

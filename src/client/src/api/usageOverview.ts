@@ -2,8 +2,8 @@ import type { DailyUsageRecord, UsageOverviewResponse, UsageTokens } from "../..
 import { request } from "./http";
 
 /** Unresolved application reference; request() resolves the browser URL once. */
-export function usageOverviewPath(cwd: string, timeZone: string, machineId = "local"): string {
-  return `api/machines/${encodeURIComponent(machineId)}/usage-overview?${new URLSearchParams({ cwd, timeZone }).toString()}`;
+export function usageOverviewPath(cwd: string | undefined, timeZone: string, machineId = "local"): string {
+  return `api/machines/${encodeURIComponent(machineId)}/usage-overview?${new URLSearchParams(cwd === undefined ? { scope: "machine", timeZone } : { cwd, timeZone }).toString()}`;
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -51,15 +51,15 @@ export function parseUsageOverviewResponse(value: unknown): UsageOverviewRespons
   const warnings = fields["warnings"];
   const timeZone = fields["timeZone"];
   if (!Array.isArray(records) || !Array.isArray(warnings) || !warnings.every((warning): warning is string => typeof warning === "string")
-    || fields["scope"] !== "workspace" || typeof timeZone !== "string" || timeZone.trim() === "") {
+    || (fields["scope"] !== "workspace" && fields["scope"] !== "machine") || typeof timeZone !== "string" || timeZone.trim() === "") {
     throw new Error("Invalid usage overview response");
   }
   // A malformed reporting zone must not silently label otherwise valid totals.
   new Intl.DateTimeFormat("en", { timeZone }).format();
-  return { records: records.map(dailyRecord), today: date(fields["today"]), timeZone, scope: "workspace", warnings: [...warnings] };
+  return { records: records.map(dailyRecord), today: date(fields["today"]), timeZone, scope: fields["scope"], warnings: [...warnings] };
 }
 
 export const usageOverviewApi = {
-  get: (cwd: string, timeZone: string, machineId = "local", options: { signal?: AbortSignal } = {}): Promise<UsageOverviewResponse> =>
+  get: (cwd: string | undefined, timeZone: string, machineId = "local", options: { signal?: AbortSignal } = {}): Promise<UsageOverviewResponse> =>
     request(usageOverviewPath(cwd, timeZone, machineId), parseUsageOverviewResponse, { cache: "no-store", ...options }),
 };

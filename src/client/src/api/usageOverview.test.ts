@@ -10,6 +10,11 @@ const response: UsageOverviewResponse = {
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe("usage overview API", () => {
+  it("requests an explicit machine scope and preserves it in the response", () => {
+    expect(usageOverviewPath(undefined, "UTC", "remote/a")).toBe("api/machines/remote%2Fa/usage-overview?scope=machine&timeZone=UTC");
+    expect(parseUsageOverviewResponse({ ...response, scope: "machine" }).scope).toBe("machine");
+  });
+
   it("encodes machine and query values while preserving the nested application base", async () => {
     const path = usageOverviewPath("/repo/a ?&中", "Asia/Shanghai", "remote/a");
     expect(path).toBe("api/machines/remote%2Fa/usage-overview?cwd=%2Frepo%2Fa+%3F%26%E4%B8%AD&timeZone=Asia%2FShanghai");

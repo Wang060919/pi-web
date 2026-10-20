@@ -5,11 +5,12 @@ import type { UsageOverviewResponse } from "../../../shared/usageOverview";
 import { usageOverviewApi } from "../api/usageOverview";
 import "./UsageOverview";
 
-/** Reads workspace summaries only while the welcome surface is mounted. */
+/** Reads the selected workspace or machine summaries while the welcome surface is mounted. */
 @customElement("welcome-usage-overview")
 export class WelcomeUsageOverview extends LitElement {
   @property() cwd = "";
   @property() machineId = "local";
+  @property() projectName = "";
   @property() timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   @property() locale = getLocale();
   @state() private result: UsageOverviewResponse | undefined;
@@ -52,16 +53,12 @@ export class WelcomeUsageOverview extends LitElement {
     this.requestController?.abort();
     this.requestController = undefined;
     const epoch = ++this.requestEpoch;
-    if (this.cwd.trim() === "") {
-      this.loading = false;
-      return;
-    }
     const controller = new AbortController();
     this.requestController = controller;
     this.loading = true;
     this.failed = false;
     try {
-      const result = await usageOverviewApi.get(this.cwd, this.timeZone, this.machineId, { signal: controller.signal });
+      const result = await usageOverviewApi.get(this.cwd.trim() === "" ? undefined : this.cwd, this.timeZone, this.machineId, { signal: controller.signal });
       if (!this.isConnected || epoch !== this.requestEpoch) return;
       this.result = result;
     } catch {
@@ -77,11 +74,12 @@ export class WelcomeUsageOverview extends LitElement {
   }
 
   override render() {
-    if (this.cwd.trim() === "") return nothing;
+    const machineScope = this.cwd.trim() === "";
+    const projectLabel = machineScope ? t("ui.usageOverview.allProjects") : this.projectName;
     return html`
       <section aria-label=${t("ui.usageOverview.title")} aria-busy=${String(this.loading)}>
         <header>
-          <span>${t("ui.usageOverview.scope")} · ${this.result?.timeZone ?? this.timeZone}</span>
+          <span>${t(machineScope ? "ui.usageOverview.machineScope" : "ui.usageOverview.scope")}${projectLabel === "" ? nothing : html` · ${projectLabel}`}</span>
           <button type="button" ?disabled=${this.loading} @click=${() => { void this.reload(); }}>${t(this.loading && this.result !== undefined ? "ui.usageOverview.refreshing" : "ui.usageOverview.refresh")}</button>
         </header>
         ${this.result === undefined ? this.failed ? html`
@@ -92,7 +90,7 @@ export class WelcomeUsageOverview extends LitElement {
           ${this.result.warnings.length === 0 ? nothing : html`<p class="partial" role="status">${t("ui.usageOverview.partial")}</p>`}
           <usage-overview .records=${this.result.records} .today=${this.result.today} .locale=${this.locale}></usage-overview>
         `}
-        <details><summary>${t("ui.usageOverview.methodLabel")}</summary><p>${t("ui.usageOverview.method")}</p></details>
+        <details><summary>${t("ui.usageOverview.methodLabel")}</summary><p>${t(this.cwd.trim() === "" ? "ui.usageOverview.machineMethod" : "ui.usageOverview.method")}</p></details>
       </section>
     `;
   }

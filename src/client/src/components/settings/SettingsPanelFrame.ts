@@ -1,3 +1,4 @@
+import { settingsDesignStyles } from "./settingsDesignStyles";
 import { localizedTemplate, t } from "../../../../shared/i18n";
 import { css, html, LitElement, nothing, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
@@ -91,7 +92,7 @@ export class SettingsPanelFrame extends LitElement {
     `;
   }
 
-  static override styles = css`
+  static override styles = [css`
     :host { display: block; font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     small { font-size: 12px; line-height: 16px; }
     strong { font-weight: var(--pi-font-weight-medium, 460); }
@@ -127,7 +128,7 @@ export class SettingsPanelFrame extends LitElement {
     @media (max-width: 760px), (pointer: coarse) {
       button { min-height: 44px; }
     }
-  `;
+  `, settingsDesignStyles];
 }
 
 function defaultNoticeRole(tone: SettingsNoticeTone): SettingsNoticeRole {

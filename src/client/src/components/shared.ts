@@ -199,11 +199,7 @@ export const appStyles = css`
   .welcome-heading { display: flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 0; }
   .welcome .pi-mark { color: var(--pi-text); }
   .welcome-heading .pi-mark { flex-shrink: 0; }
-  .welcome h1 { min-width: 0; overflow-wrap: anywhere; margin: 0; color: var(--pi-text); font-size: 20px; line-height: 28px; font-weight: var(--pi-font-weight-regular, 360); letter-spacing: -.02em; }
-  .welcome-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; width: 480px; max-width: 100%; }
-  .welcome p { margin: 0; font-size: 14px; line-height: 22px; }
-  .welcome-actions p { flex: 1 1 200px; }
-  .welcome-actions button { flex: 0 0 auto; background: var(--pi-selection-bg); }
+  .welcome h1 { min-width: 0; overflow-wrap: anywhere; margin: 0; color: var(--pi-text); font-family: var(--pi-font-serif, serif); font-size: 20px; line-height: 28px; font-weight: var(--pi-font-weight-regular, 360); letter-spacing: -.02em; }
   .welcome welcome-usage-overview { flex: 0 0 auto; margin-top: 8px; }
   @media (max-width: 420px) { .welcome { padding: 24px 16px; } }
   .error { display: flex; gap: 8px; align-items: flex-start; padding: 10px 16px; border-bottom: 1px solid var(--pi-border); color: var(--pi-danger); }
@@ -337,7 +333,7 @@ export const listStyles = css`
 `;
 
 export const chatStyles = css`
-  :host { position: relative; z-index: 0; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 14px/20px var(--pi-font-family, system-ui, sans-serif); }
+  :host { --pi-prose-font-size: var(--pi-chat-font-size, .875rem); --pi-prose-leading: var(--pi-chat-leading, 1.42857); --pi-prose-item-gap: calc(var(--pi-prose-font-size) * var(--pi-prose-leading) * .5); --pi-chat-turn-gap: calc(var(--pi-prose-font-size) * var(--pi-prose-leading) * .75); --pi-prose-code-font-size: .8125rem; --pi-prose-code-leading: 1.1875rem; position: relative; z-index: 0; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) var(--pi-prose-font-size)/var(--pi-prose-leading) var(--pi-font-family, system-ui, sans-serif); }
   .chat-wrap { position: relative; flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
   .top-notices { box-sizing: border-box; flex: 0 0 auto; max-height: 40%; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border-bottom: 1px solid var(--pi-border); background: var(--pi-bg-overlay); }
   .session-warnings { flex: 0 1 auto; display: grid; gap: 8px; max-height: 50%; min-height: 0; overflow-y: auto; box-sizing: border-box; padding: 10px 16px; border-bottom: 1px solid var(--pi-border-muted); }
@@ -423,10 +419,10 @@ export const chatStyles = css`
   .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .45; flex: 0 0 auto; }
   .activity-dock.active .dot { width: 6px; height: 6px; animation: pulse 1s ease-in-out infinite; opacity: 1; }
   /* Keep the full-bleed header aligned with the bubble at every breakpoint. */
-  .msg { --message-padding-inline: 16px; max-width: 100%; min-width: 0; box-sizing: border-box; margin: 0 0 15px; padding: 12px var(--message-padding-inline); border: 1px solid var(--pi-border-muted); border-radius: 12px; background: var(--pi-surface); overflow: visible; }
+  .msg { --message-padding-inline: 16px; max-width: 100%; min-width: 0; box-sizing: border-box; margin: 0 0 var(--pi-chat-turn-gap); padding: 12px var(--message-padding-inline); border: 1px solid var(--pi-border-muted); border-radius: 12px; background: var(--pi-surface); overflow: visible; }
   .chat > .msg:last-child, .chat > .session-activity:last-child { margin-bottom: 0; }
   .msg.assistant, .msg.tool-image-output { border-color: transparent; background: var(--pi-bg); }
-  :is(.msg, .group-msg).assistant > formatted-text.part { --pi-prose-font-family: var(--pi-font-serif, var(--pi-font-family, system-ui, sans-serif)); }
+  :is(.msg, .group-msg).assistant > formatted-text.part { --pi-prose-font-family: var(--pi-font-serif, serif); }
   .msg.user { --message-user-bg: color-mix(in srgb, var(--pi-text) 6%, var(--pi-bg)); border-color: transparent; background: var(--message-user-bg); }
   .msg.tool { border-color: var(--pi-warning-border); background: var(--pi-warning-surface); color: var(--pi-warning); }
   .msg.tool-execution-shell, .msg.ask-user-record-shell { padding: 0; border: 0; background: transparent; color: var(--pi-text); }
@@ -564,17 +560,17 @@ export const chatStyles = css`
 
 export const formattedTextStyles = css`
   :host { display: block; font-family: var(--pi-font-family, system-ui, sans-serif); }
-  .formatted { white-space: normal; overflow-wrap: anywhere; font-family: var(--pi-prose-font-family, var(--pi-font-family, system-ui, sans-serif)); font-size: 14px; font-weight: var(--pi-font-weight-regular, 360); line-height: 20px; text-align: start; unicode-bidi: plaintext; }
+  .formatted { white-space: normal; overflow-wrap: anywhere; font-family: var(--pi-prose-font-family, var(--pi-font-family, system-ui, sans-serif)); font-size: var(--pi-prose-font-size, 14px); font-weight: var(--pi-font-weight-regular, 360); line-height: var(--pi-prose-leading, 20px); text-align: start; unicode-bidi: plaintext; }
   .formatted :is(b, strong) { font-weight: var(--pi-font-weight-bold, 560); }
   .formatted :is(h1, h2, h3, h4, h5, h6, th) { font-weight: var(--pi-font-weight-semibold, 540); }
-  p, ul, ol, pre, blockquote, .table-scroll, .code-block-wrapper, .plain-code-block { margin: 0 0 8px; }
+  p, ul, ol, pre, blockquote, .table-scroll, .code-block-wrapper, .plain-code-block { margin: 0 0 var(--pi-prose-item-gap, 8px); }
   :is(p, ul, ol, pre, blockquote, .table-scroll, .code-block-wrapper, .plain-code-block):last-child { margin-bottom: 0; }
-  .plain-code-block { white-space: pre-wrap; font: var(--pi-font-weight-regular, 360) 12px/1.46 var(--pi-font-monospace, ui-monospace, monospace); font-variant-ligatures: none; }
+  .plain-code-block { white-space: pre-wrap; font: var(--pi-font-weight-regular, 360) var(--pi-prose-code-font-size, 12px)/var(--pi-prose-code-leading, 1.46) var(--pi-font-monospace, ui-monospace, monospace); font-variant-ligatures: none; }
   ul, ol { padding-left: 22px; }
   li + li { margin-top: 3px; }
-  code { border: 1px solid var(--pi-border); border-radius: 4px; background: var(--pi-bg); padding: 1px 4px; font: var(--pi-font-weight-regular, 360) 12px/1.46 var(--pi-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-variant-ligatures: none; direction: ltr; text-align: left; unicode-bidi: isolate; }
+  code { border: 1px solid var(--pi-border); border-radius: 4px; background: var(--pi-bg); padding: 1px 4px; font: var(--pi-font-weight-regular, 360) var(--pi-prose-code-font-size, 12px)/var(--pi-prose-code-leading, 1.46) var(--pi-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-variant-ligatures: none; direction: ltr; text-align: left; unicode-bidi: isolate; }
   .code-block-wrapper > :is(pre, .plain-code-block) { margin: 0; padding: 12px; border: 0; border-radius: 0 0 7px 7px; background: transparent; }
-  pre { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); padding: 10px; white-space: pre-wrap; overflow: visible; font: var(--pi-font-weight-regular, 360) 12px/1.46 var(--pi-font-monospace, ui-monospace, monospace); font-variant-ligatures: none; direction: ltr; text-align: left; unicode-bidi: isolate; }
+  pre { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); padding: 10px; white-space: pre-wrap; overflow: visible; font: var(--pi-font-weight-regular, 360) var(--pi-prose-code-font-size, 12px)/var(--pi-prose-code-leading, 1.46) var(--pi-font-monospace, ui-monospace, monospace); font-variant-ligatures: none; direction: ltr; text-align: left; unicode-bidi: isolate; }
   .code-blocks-scroll :is(pre, .plain-code-block) { white-space: pre; overflow-wrap: normal; overflow-x: auto; overflow-y: hidden; }
   pre code { border: 0; padding: 0; background: transparent; }
   blockquote { border-left: 3px solid var(--pi-border); padding-left: 10px; color: var(--pi-muted); }
@@ -582,10 +578,10 @@ export const formattedTextStyles = css`
   a { color: var(--pi-accent); }
   h1, h2, h3, h4 { margin: 16px 0 8px; line-height: 1.4; }
   h1:first-child, h2:first-child, h3:first-child, h4:first-child { margin-top: 0; }
-  h1 { font-size: 21px; }
-  h2 { font-size: 18px; }
-  h3 { font-size: 16px; }
-  h4 { font-size: 15px; }
+  h1 { font-size: 1.5em; }
+  h2 { font-size: 1.285714em; }
+  h3 { font-size: 1.142857em; }
+  h4 { font-size: 1.071429em; }
   .table-scroll { max-width: 100%; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
   .table-scroll:focus-visible { outline: 1px solid var(--pi-accent); outline-offset: 2px; }
   table { border-collapse: collapse; width: max-content; min-width: 100%; max-width: none; }
@@ -664,9 +660,9 @@ export const promptEditorStyles = css`
   .select-thinking .prompt-thinking-gauge .gauge-bar-active { opacity: 1; }
   .editor-attach { width: 28px; height: 28px; border-color: transparent; border-radius: 5px; background: transparent; color: var(--pi-muted); }
   .attach-mark { display: inline-flex; align-items: center; justify-content: center; }
-  textarea, .markdown-editor .cm-editor { box-sizing: border-box; width: 100%; min-height: 30px; max-height: 220px; resize: none; overflow: hidden; border-radius: 8px; border: 0; background: transparent; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) 16px/20px var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
+  textarea, .markdown-editor .cm-editor { box-sizing: border-box; width: 100%; min-height: 30px; max-height: 220px; resize: none; overflow: hidden; border-radius: 8px; border: 0; background: transparent; color: var(--pi-text); font: var(--pi-font-weight-regular, 360) var(--pi-chat-font-size, .875rem)/var(--pi-chat-leading, 1.42857) var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); }
   textarea { overflow-y: auto; padding: 4px; }
-  .markdown-editor .cm-scroller { max-height: 220px; overflow-y: auto; font-family: var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); line-height: 20px; }
+  .markdown-editor .cm-scroller { max-height: 220px; overflow-y: auto; font-family: var(--pi-control-font-family, var(--pi-font-family, system-ui, sans-serif)); line-height: var(--pi-chat-leading, 1.42857); }
   .markdown-editor .cm-content { min-height: 24px; padding: 3px 5px; caret-color: var(--pi-text); text-align: start; unicode-bidi: plaintext; }
   .markdown-editor .cm-line { padding: 0; unicode-bidi: plaintext; }
   .markdown-editor .cm-placeholder { color: var(--pi-dim); }

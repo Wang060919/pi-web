@@ -77,5 +77,22 @@ describe("model settings panel", () => {
     button(panel, "save").click(); await settled(panel);
     expect(api.write).not.toHaveBeenCalled(); expect(panel.shadowRoot?.querySelector('[role="alert"]')?.textContent).toContain("Invalid JSON");
     expect(headers.value).toBe("broken JSON");
+    expect(headers.getAttribute("aria-invalid")).toBe("true");
+    expect(headers.getAttribute("aria-describedby")).toBe("model-field-error");
+    expect(panel.shadowRoot?.activeElement).toBe(headers);
+    expect(panel.shadowRoot?.querySelector('.save-feedback [role="alert"]')?.textContent).toContain("Invalid JSON");
+  });
+
+  it("opens advanced options and focuses the invalid model JSON without losing the draft", async () => {
+    const { panel, api } = await mount();
+    const cost = panel.shadowRoot?.querySelector<HTMLTextAreaElement>('[data-field="model-cost"]');
+    if (cost == null) throw new Error("Missing model cost");
+    cost.value = "{"; cost.dispatchEvent(new Event("input", { bubbles: true })); await panel.updateComplete;
+    const advanced = cost.closest("details");
+    if (advanced == null) throw new Error("Missing advanced options");
+    advanced.open = false;
+    button(panel, "save").click(); await settled(panel);
+    expect(advanced.open).toBe(true); expect(panel.shadowRoot?.activeElement).toBe(cost);
+    expect(api.write).not.toHaveBeenCalled(); expect(panel.hasUnsavedChanges).toBe(true);
   });
 });

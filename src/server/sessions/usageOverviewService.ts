@@ -49,6 +49,7 @@ interface FileSnapshot {
 
 interface SessionFile {
   path: string;
+  cwd?: string;
   id?: string;
   archived: boolean;
 }
@@ -57,7 +58,7 @@ const MAX_FILE_BYTES = 128 * 1024 * 1024;
 const MAX_CACHED_FILES = 128;
 const MAX_CACHED_EVENTS = 100_000;
 
-/** Read-only, workspace-scoped metering; never creates or resumes a Pi runtime. */
+/** Read-only metering for one workspace or the active machine profile. */
 export class UsageOverviewService {
   private readonly env: Readonly<NodeJS.ProcessEnv>;
   private readonly now: () => Date;
@@ -73,8 +74,8 @@ export class UsageOverviewService {
     this.archiveStore = options.archiveStore ?? new SessionArchiveStore(defaultSessionArchiveFilePath({ ...this.env }));
   }
 
-  read(cwd: string, timeZone: string): Promise<UsageOverviewResponse> {
-    const workspace = normalizeRequestCwd(cwd);
+  read(cwd: string | undefined, timeZone: string): Promise<UsageOverviewResponse> {
+    const workspace = cwd === undefined ? undefined : normalizeRequestCwd(cwd);
     // Validate the timezone before looking at any files. The route translates
     // RangeError to a request error instead of returning an invented UTC day.
     const formatter = dateFormatter(timeZone);
@@ -91,39 +92,43 @@ export class UsageOverviewService {
     });
   }
 
-  private async readOverview(agentDir: string, cwd: string, timeZone: string, formatter: Intl.DateTimeFormat): Promise<UsageOverviewResponse> {
+  private async readOverview(agentDir: string, cwd: string | undefined, timeZone: string, formatter: Intl.DateTimeFormat): Promise<UsageOverviewResponse> {
     const resolver = new SessionDirResolver({ agentDir, env: this.env });
-    const sessionDir = resolver.resolve(cwd).sessionDir;
-    // The existing listing intentionally treats unreadable directories as
-    // empty. Metering must distinguish that failure from genuine zero usage.
-    let fileNames: string[] = [];
-    try {
-      fileNames = await readdir(sessionDir);
-    } catch (error: unknown) {
-      if (!isNodeErrorWithCode(error, "ENOENT")) throw error;
+    const sessionDirs = await usageSessionDirectories(resolver, cwd);
+    const files = new Map<string, SessionFile>();
+    for (const sessionDir of sessionDirs) {
+      let fileNames: string[];
+      try { fileNames = await readdir(sessionDir); }
+      catch (error: unknown) {
+        if (!isNodeErrorWithCode(error, "ENOENT")) throw error;
+        continue;
+      }
+      for (const name of fileNames) {
+        if (!name.endsWith(".jsonl")) continue;
+        const path = join(sessionDir, name);
+        files.set(path, { path, archived: false });
+      }
     }
     const archived = await this.archiveStore.list();
-    const files = new Map<string, SessionFile>(fileNames.filter((name) => name.endsWith(".jsonl")).map((name) => {
-      const path = join(sessionDir, name);
-      return [path, { path, archived: false }];
-    }));
     let unlistedHistory = 0;
     let missingArchives = 0;
     let unscopedArchives = 0;
     for (const session of archived) {
-      if (!cwdPathsEqual(session.cwd, cwd)) continue;
+      if (cwd !== undefined && !cwdPathsEqual(session.cwd, cwd)) continue;
       // The archive index is shared across agent profiles. Its original path
       // is the only persisted indication of which session store owned it.
       if (session.originalPath === undefined || !isAbsolute(session.originalPath)) {
         unscopedArchives += 1;
         continue;
       }
-      if (!cwdPathsEqual(dirname(session.originalPath), sessionDir)) continue;
+      const originalDir = dirname(session.originalPath);
+      const inDefaultStore = cwd === undefined && cwdPathsEqual(dirname(originalDir), resolver.defaultSessionsRoot());
+      if (!inDefaultStore && !sessionDirs.some((directory) => cwdPathsEqual(originalDir, directory))) continue;
       if (session.archivePath === undefined) {
         missingArchives += 1;
         continue;
       }
-      files.set(session.archivePath, { path: session.archivePath, id: session.sessionId, archived: true });
+      files.set(session.archivePath, { path: session.archivePath, id: session.sessionId, cwd: session.cwd, archived: true });
     }
 
     const now = this.now();
@@ -161,7 +166,7 @@ export class UsageOverviewService {
           unlistedHistory += 1;
           continue;
         }
-        if (session === undefined || (file.id !== undefined && session.id !== file.id) || !cwdPathsEqual(session.cwd, cwd)) {
+        if (session === undefined || (file.id !== undefined && session.id !== file.id) || (cwd !== undefined && !cwdPathsEqual(session.cwd, cwd)) || (file.cwd !== undefined && !cwdPathsEqual(session.cwd, file.cwd))) {
           mismatchedFiles += 1;
           continue;
         }
@@ -195,7 +200,7 @@ export class UsageOverviewService {
     if (oversizedFiles > 0) warnings.push(`Usage history may be incomplete: ${String(oversizedFiles)} session files exceed the 128 MiB read limit or are not regular files.`);
     if (mismatchedFiles > 0) warnings.push(`Usage history is incomplete: ${String(mismatchedFiles)} session files failed identity validation.`);
     return {
-      scope: "workspace",
+      scope: cwd === undefined ? "machine" : "workspace",
       records: [...records.values()].sort((a, b) => a.date.localeCompare(b.date) || a.model.localeCompare(b.model)),
       today: localDateAndHour(formatter, latestTimestamp).date,
       timeZone,
@@ -203,7 +208,7 @@ export class UsageOverviewService {
     };
   }
 
-  private readSnapshot(path: string, signature: string, size: number, cwd: string): Promise<FileSnapshot> {
+  private readSnapshot(path: string, signature: string, size: number, cwd: string | undefined): Promise<FileSnapshot> {
     // Shared configured stores may contain several workspaces. Cache the
     // bounded foreign-header result too, without treating it as parsed usage
     // when the same file is later requested for its own workspace.
@@ -240,7 +245,23 @@ export class UsageOverviewService {
   }
 }
 
-async function parseSessionFile(path: string, signature: string, size: number, cwd: string): Promise<FileSnapshot> {
+async function usageSessionDirectories(resolver: SessionDirResolver, cwd: string | undefined): Promise<string[]> {
+  if (cwd !== undefined) return [resolver.resolve(cwd).sessionDir];
+  const root = resolver.defaultSessionsRoot();
+  const directories = new Set<string>();
+  try {
+    for (const entry of await readdir(root, { withFileTypes: true })) {
+      if (entry.isDirectory()) directories.add(join(root, entry.name));
+    }
+  } catch (error: unknown) {
+    if (!isNodeErrorWithCode(error, "ENOENT")) throw error;
+  }
+  const configured = resolver.globalEnvSessionDir();
+  if (configured !== undefined) directories.add(configured);
+  return [...directories];
+}
+
+async function parseSessionFile(path: string, signature: string, size: number, cwd: string | undefined): Promise<FileSnapshot> {
   const issues = emptyIssues();
   const snapshot: FileSnapshot = { signature, session: undefined, foreignWorkspace: false, events: [], issues };
   if (size === 0) return snapshot;
@@ -248,7 +269,7 @@ async function parseSessionFile(path: string, signature: string, size: number, c
   // a second, uncached full-transcript listing before metering the same file.
   const header = await readSessionHeaderSummary(path);
   if (header?.cwd === undefined || !isAbsolute(header.cwd)) return snapshot;
-  if (!cwdPathsEqual(header.cwd, cwd)) return { ...snapshot, foreignWorkspace: true };
+  if (cwd !== undefined && !cwdPathsEqual(header.cwd, cwd)) return { ...snapshot, foreignWorkspace: true };
   const events: MeteredEvent[] = [];
   const stream = createReadStream(path, { encoding: "utf8", end: size - 1 });
   const lines = createInterface({ input: stream, crlfDelay: Infinity });

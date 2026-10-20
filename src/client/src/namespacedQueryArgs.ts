@@ -1,3 +1,4 @@
+import { writeAppHistory } from "./appHistory";
 import type { QualifiedContributionId } from "./plugins/ids";
 
 export type QueryValue = string | number | boolean | readonly (string | number | boolean)[];
@@ -255,8 +256,7 @@ function commitUrl(url: URL, options?: { replace?: boolean | undefined }): boole
   const next = `${url.pathname}${url.search}${url.hash}`;
   const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
   if (next === current) return false;
-  if (options?.replace === true) window.history.replaceState({}, "", url);
-  else window.history.pushState({}, "", url);
+  writeAppHistory(url, options?.replace === true);
   return true;
 }
 

@@ -1,5 +1,5 @@
 import { renderUiIcon } from "../uiIcons";
-import { localizedTemplate, t } from "../../../../shared/i18n";
+import { t } from "../../../../shared/i18n";
 import { LitElement, css, html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import type { Machine, MachineHealth, Project, SessionActivity, SessionInfo, SessionStatus, Workspace } from "../../api";
@@ -56,6 +56,8 @@ export class AppNavigationPanel extends LitElement {
   @property({ type: Number }) startingSessionCount = 0;
   @property({ type: Boolean }) canStartSession = false;
   @property({ attribute: false }) onShowActions?: () => void;
+  @property({ attribute: false }) onAddProject?: () => void;
+  @property({ attribute: false }) onShowSettings?: () => void;
   @property({ attribute: false }) onSearchHistory?: () => void;
   @property({ attribute: false }) onShowOverview?: () => void;
   @property({ attribute: false }) onToggleMachines?: () => void;
@@ -166,9 +168,9 @@ export class AppNavigationPanel extends LitElement {
   };
 
   override render() {
-    return localizedTemplate("AppNavigationPanel.pi_web_actions.a6cbb6f6", html)`
+    return html`
       <header>
-        <div class="brand">${this.renderBrandMark()}<strong>PI WEB</strong></div>
+        <div class="brand">${this.renderBrandMark()}<strong>Pi Web</strong></div>
         <machine-switcher
           .machines=${this.machines}
           .selected=${this.selectedMachine}
@@ -183,7 +185,7 @@ export class AppNavigationPanel extends LitElement {
         <div class="header-actions">
           ${this.refreshControl}
           ${this.onSearchHistory ? html`<button class="history-search" title=${t("ui.sessionSearch.title")} aria-label=${t("ui.sessionSearch.title")} @click=${this.onSearchHistory}><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m16 16 4 4"></path></svg></button>` : null}
-          <button class="palette-button" title="Show Actions" aria-label="Show Actions" @click=${() => { this.onShowActions?.(); }}><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="5" height="5" rx="1"></rect><rect x="15" y="4" width="5" height="5" rx="1"></rect><rect x="4" y="15" width="5" height="5" rx="1"></rect><rect x="15" y="15" width="5" height="5" rx="1"></rect></svg>Actions</button>
+          <button class="palette-button" title=${t("ui.navigation.searchCommands")} aria-label=${t("ui.navigation.searchCommands")} @click=${() => { this.onShowActions?.(); }}><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="5" height="5" rx="1"></rect><rect x="15" y="4" width="5" height="5" rx="1"></rect><rect x="4" y="15" width="5" height="5" rx="1"></rect><rect x="15" y="15" width="5" height="5" rx="1"></rect></svg>${t("ui.navigation.searchCommands")}</button>
         </div>
       </header>
       ${this.compact && shouldShowMachinesSection(this.machines) ? html`
@@ -203,6 +205,9 @@ export class AppNavigationPanel extends LitElement {
       ` : null}
       ${this.compact ? html`${this.renderProjectList()}${this.renderWorkspaceList()}` : html`${this.renderQuickActions()}${this.renderContextSwitcher()}`}
       <session-list
+        .scopeKey=${JSON.stringify([this.selectedMachine?.id, this.selectedWorkspace?.id])}
+        .workspaceLabel=${this.selectedWorkspace?.label ?? ""}
+        .onSearchHistory=${this.onSearchHistory}
         .sessions=${this.sessions}
         .pinnedRootIds=${this.pinnedRootIds}
         .onPin=${this.childCallbacks.pinSession}
@@ -240,6 +245,7 @@ export class AppNavigationPanel extends LitElement {
         .onFocusNextSection=${this.childCallbacks.nextFromSessions}
         .onCancelKeyboardNavigation=${this.childCallbacks.cancelKeyboardNavigation}
       ></session-list>
+      ${this.onShowSettings === undefined ? null : html`<footer class="navigation-footer"><button type="button" @click=${this.onShowSettings}>${t("ui.navigation.settings")}</button></footer>`}
       ${this.renderContextPicker()}
     `;
   }
@@ -336,9 +342,15 @@ export class AppNavigationPanel extends LitElement {
         <modal-surface .label=${label} .onClose=${() => { void this.closeContextPicker(); }}>
           <div class="picker-heading"><strong>${label}</strong><button class="picker-close" aria-label=${t("ui.navigation.closePicker")} title=${t("ui.navigation.closePicker")} @click=${() => { void this.closeContextPicker(); }}>${renderUiIcon("close")}</button></div>
           ${projectPicker ? this.renderProjectList() : this.renderWorkspaceList()}
+          ${projectPicker && this.onAddProject !== undefined ? html`<footer class="picker-footer"><button type="button" @click=${() => { void this.addProject(); }}>+ ${t("ui.navigation.addProject")}</button></footer>` : null}
         </modal-surface>
       </div>
     `;
+  }
+
+  private async addProject(): Promise<void> {
+    await this.closeContextPicker();
+    this.onAddProject?.();
   }
 
   private async openContextPicker(picker: ContextPicker): Promise<boolean> {
@@ -409,7 +421,7 @@ export class AppNavigationPanel extends LitElement {
     :host { --navigation-panel-bg: light-dark(color-mix(in srgb, var(--pi-bg) 98%, var(--pi-text)), color-mix(in srgb, var(--pi-bg) 86%, #000)); display: flex; flex-direction: column; min-height: 0; overflow: hidden; background: var(--navigation-panel-bg); font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     :host([compact]) { flex: 1 1 auto; }
     header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; padding: 12px; border-bottom: 0; }
-    .brand { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; color: var(--pi-text); }
+    .brand { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; color: var(--pi-text); font-family: var(--pi-font-serif, serif); }
     .brand-mark { display: inline-flex; align-items: center; justify-content: center; padding: 0; border-radius: 4px; }
     header strong { font-size: 13px; line-height: 18px; font-weight: var(--pi-font-weight-medium, 460); letter-spacing: .01em; white-space: nowrap; }
     machine-switcher { flex: 1 1 auto; min-width: 0; }
@@ -427,6 +439,9 @@ export class AppNavigationPanel extends LitElement {
     /* Expanded sections share the panel height equally, so collapsing one
        section distributes its space to every remaining section, not just the
        session list. Collapsed sections keep only their heading height. */
+    .navigation-footer, .picker-footer { flex: 0 0 auto; padding: 8px; }
+    .navigation-footer { margin-top: auto; }
+    .navigation-footer button, .picker-footer button { width: 100%; min-height: 36px; text-align: left; }
     machine-list, project-list, workspace-list, session-list { flex: 1 1 0px; min-height: 0; overflow: hidden; border-bottom: 0; }
     machine-list[collapsed],
     project-list[collapsed],

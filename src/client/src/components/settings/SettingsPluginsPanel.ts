@@ -1,3 +1,4 @@
+import { settingsDesignStyles } from "./settingsDesignStyles";
 import { localizedTemplate, localizedText, t } from "../../../../shared/i18n";
 import { css, html, LitElement, nothing, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
@@ -144,7 +145,7 @@ export class SettingsPluginsPanel extends LitElement {
         ? t("SettingsPluginsPanel.desired_package_config_absent.452bd625")
         : configured?.enabled === false ? t("SettingsPluginsPanel.config_disabled.6c15bc5a") : configured?.enabled === true ? t("SettingsPluginsPanel.config_enabled.2e14a829") : t("SettingsPluginsPanel.default_enabled.fb4224b7");
     return html`
-      <article class=${`plugin-card${plugin.enabled ? "" : " disabled"}`}>
+      <article class=${`plugin-card${plugin.enabled ? "" : " disabled"}`} data-setting-id=${`plugin-${encodeURIComponent(plugin.id)}`}>
         <div class="plugin-main">
           <strong>${plugin.id}</strong>
           <small>${plugin.configOnly ? t("SettingsPluginsPanel.configured_only_package_not_discovered.b48e308b") : `${plugin.source} · ${pluginScopeLabel(plugin.scope)}${plugin.machineSpecific ? t("SettingsPluginsPanel.machine_specific.8fbefaec") : ""}${plugin.required === true ? t("SettingsPluginsPanel.required.fbe1d01e") : ""}${plugin.discovered ? "" : t("SettingsPluginsPanel.active_snapshot_only.3055b694")}`}</small>
@@ -197,7 +198,7 @@ export class SettingsPluginsPanel extends LitElement {
     await this.onTogglePlugin?.(plugin.id, enabled);
   }
 
-  static override styles = css`
+  static override styles = [css`
     :host { display: block; font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     small { font-size: 12px; line-height: 16px; }
     strong { font-weight: var(--pi-font-weight-medium, 460); }
@@ -234,7 +235,7 @@ export class SettingsPluginsPanel extends LitElement {
     @media (max-width: 760px), (pointer: coarse) {
       .toggle { box-sizing: border-box; min-height: 44px; }
     }
-  `;
+  `, settingsDesignStyles];
 }
 
 export function settingsPluginRows(

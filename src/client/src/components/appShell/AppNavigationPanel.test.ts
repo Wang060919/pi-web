@@ -29,6 +29,18 @@ describe("shouldShowMachinesSection", () => {
 });
 
 describe("header identity", () => {
+  it("offers Add project in the project picker and a direct settings entry", async () => {
+    const panel = await mountHeaderPanel([machine("local")]);
+    const add = vi.fn(); const settings = vi.fn(); panel.onAddProject = add; panel.onShowSettings = settings;
+    await panel.updateComplete;
+    panel.shadowRoot?.querySelector<HTMLButtonElement>(".navigation-footer button")?.click();
+    expect(settings).toHaveBeenCalledOnce();
+    await panel.focusSection("projects"); await panel.updateComplete;
+    const button = panel.shadowRoot?.querySelector<HTMLButtonElement>(".picker-footer button");
+    expect(button?.textContent).toContain("Add project"); button?.click();
+    await vi.waitFor(() => { expect(add).toHaveBeenCalledOnce(); });
+    expect(panel.shadowRoot?.querySelector(".context-picker")).toBeNull();
+  });
   it("opens usage from the Pi mark only when a workspace is selected and uses the latest callback", async () => {
     const panel = await mountHeaderPanel([machine("local")]);
     const firstOpen = vi.fn();
@@ -56,7 +68,7 @@ describe("header identity", () => {
   it("pairs the brand name with a decorative Pi mark", async () => {
     const panel = await mountHeaderPanel([machine("local")]);
 
-    expect(panel.shadowRoot?.querySelector("header strong")?.textContent).toBe("PI WEB");
+    expect(panel.shadowRoot?.querySelector("header strong")?.textContent).toBe("Pi Web");
     expect(panel.shadowRoot?.querySelector(".brand .pi-mark")?.getAttribute("aria-hidden")).toBe("true");
     expect(panel.shadowRoot?.querySelector(".brand svg")).not.toBeNull();
     expect(panel.shadowRoot?.querySelector(".brand-domain")).toBeNull();

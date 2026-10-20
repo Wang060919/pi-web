@@ -1,3 +1,4 @@
+import { settingsDesignStyles } from "./settingsDesignStyles";
 import { css, html, LitElement, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { t } from "../../../../shared/i18n";
@@ -25,6 +26,8 @@ export class SettingsMcpPanel extends LitElement {
   private generation = 0;
   private polling: ReturnType<typeof setTimeout> | undefined;
   private flowTarget: { machineId: string; target: McpManagementTarget } | undefined;
+
+  get hasUnsavedChanges(): boolean { return this.editing; }
 
   private target(): McpManagementTarget { return { projectId: this.projectId, workspaceId: this.workspaceId }; }
 
@@ -254,7 +257,7 @@ export class SettingsMcpPanel extends LitElement {
     .login form { display: grid; gap: 12px; }
     a { color: var(--pi-accent); overflow-wrap: anywhere; }
     @media (max-width: 600px) { .editor { grid-template-columns: minmax(0, 1fr); } }
-  `];
+  `, settingsDesignStyles];
 }
 
 function errorMessage(error: unknown): string { return error instanceof Error && !(error instanceof SyntaxError) ? error.message : t("mcp.requestFailed"); }

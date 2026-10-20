@@ -1,3 +1,4 @@
+import { settingsDesignStyles } from "./settingsDesignStyles";
 import { localizedTemplate, localizedText, t } from "../../../../shared/i18n";
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -24,6 +25,9 @@ export class SettingsShortcutsPanel extends LitElement {
   @property() savedMessage = "";
   @property({ attribute: false }) onReload?: () => void | Promise<void>;
   @property({ attribute: false }) onSave?: (config: PiWebConfigValues) => void | Promise<void>;
+  @property({ type: Boolean }) active = true;
+  get hasUnsavedChanges(): boolean { return Object.keys(this.drafts).length > 0; }
+
   @state() private drafts: Record<string, string> = {};
   @state() private localError = "";
   @state() private recording: RecordingState | undefined;
@@ -55,7 +59,9 @@ export class SettingsShortcutsPanel extends LitElement {
   };
 
   protected override willUpdate(changed: PropertyValues<this>): void {
-    if (changed.has("configResponse") && this.configResponse !== undefined) {
+    if (changed.has("active") && !this.active) this.stopRecording();
+    if (changed.has("configResponse") && this.configResponse !== undefined
+      && (!this.hasUnsavedChanges || JSON.stringify(changed.get("configResponse")?.config.shortcuts) !== JSON.stringify(this.configResponse.config.shortcuts))) {
       this.drafts = {};
       this.localError = "";
       this.stopRecording();
@@ -77,7 +83,7 @@ export class SettingsShortcutsPanel extends LitElement {
         actionLabel="Reload"
         .actionDisabled=${this.loading}
         .notices=${this.panelNotices()}
-        .onAction=${this.onReload}
+        .onAction=${() => { if (!this.hasUnsavedChanges || window.confirm(t("settingsDraft.reload"))) { this.drafts = {}; void this.onReload?.(); } }}
       >
         ${this.configResponse === undefined && this.loading ? localizedTemplate("SettingsShortcutsPanel.loading_shortcuts.7e2bb2b0", html)`<div class="loading-card">Loading shortcuts…</div>` : localizedTemplate("SettingsShortcutsPanel.config_file_shortcut_overrides_are_saved_under.ee0e1670", html)`
           <div class="config-path-card">
@@ -85,7 +91,7 @@ export class SettingsShortcutsPanel extends LitElement {
             <code>${this.configResponse?.path ?? t("SettingsShortcutsPanel.unknown.86cdea82")}</code>
             <small>Shortcut overrides are saved under <code>shortcuts</code>. A value of <code>null</code> disables the action shortcut.</small>
           </div>
-          <section class="shortcut-group">
+          <section class="shortcut-group" data-setting-id="send">
             <h3>Send behavior</h3>
             <label class="shortcut-input-label">
               <span>Send while agent is running</span>
@@ -136,7 +142,7 @@ export class SettingsShortcutsPanel extends LitElement {
     const recordingHint = this.recordingHint(action.id);
     const conflictLabel = shortcutConflictLabel(resolution);
     return localizedTemplate("SettingsShortcutsPanel.shortcut_save_none_reset.b33ef031", html)`
-      <article class=${shortcutRowClass(resolution)}>
+      <article class=${shortcutRowClass(resolution)} data-setting-id=${`shortcut-${encodeURIComponent(action.id)}`}>
         <div class="shortcut-main">
           <strong>${action.title}</strong>
           ${action.description !== undefined && action.description !== "" ? html`<small>${action.description}</small>` : null}
@@ -312,7 +318,7 @@ export class SettingsShortcutsPanel extends LitElement {
     this.recordingListenerActive = false;
   }
 
-  static override styles = css`
+  static override styles = [css`
     :host { display: block; font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     small { font-size: 12px; line-height: 16px; }
     strong { font-weight: var(--pi-font-weight-medium, 460); }
@@ -368,7 +374,7 @@ export class SettingsShortcutsPanel extends LitElement {
     @media (max-width: 760px), (pointer: coarse) {
       button, input, select { min-height: 44px; }
     }
-  `;
+  `, settingsDesignStyles];
 }
 
 interface RecordingState {

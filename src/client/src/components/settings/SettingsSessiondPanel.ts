@@ -1,3 +1,4 @@
+import { settingsDesignStyles } from "./settingsDesignStyles";
 import { localizedTemplate, localizedText, t } from "../../../../shared/i18n";
 import { css, html, LitElement, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
@@ -130,7 +131,7 @@ export class SettingsSessiondPanel extends LitElement {
     await this.onSave?.(askUserConfigPatch(enabled));
   }
 
-  static override styles = css`
+  static override styles = [css`
     :host { display: block; font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     small { font-size: 12px; line-height: 16px; }
     strong { font-weight: var(--pi-font-weight-medium, 460); }
@@ -161,7 +162,7 @@ export class SettingsSessiondPanel extends LitElement {
     @media (max-width: 760px), (pointer: coarse) {
       .toggle { box-sizing: border-box; min-height: 44px; }
     }
-  `;
+  `, settingsDesignStyles];
 }
 
 export function sessiondDescription(targetLabel: string): string {

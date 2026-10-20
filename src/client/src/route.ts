@@ -1,3 +1,4 @@
+import { writeAppHistory } from "./appHistory";
 import type { QualifiedContributionId } from "./plugins/types";
 import { normalizeContributionQueryRecord, replaceContributionQueryParams, type ContributionQuerySnapshot } from "./namespacedQueryArgs";
 
@@ -102,8 +103,7 @@ export function writeRoute(route: ParsedAppRoute, options?: { replace?: boolean 
   const next = `${url.pathname}${url.search}${url.hash}`;
   const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
   if (next === current) return;
-  if (options?.replace === true) window.history.replaceState({}, "", url);
-  else window.history.pushState({}, "", url);
+  writeAppHistory(url, options?.replace === true);
 }
 
 function nonEmpty(value: string | null): string | undefined {

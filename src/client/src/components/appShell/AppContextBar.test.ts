@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Machine } from "../../api";
 import { AppContextBar, machineContextDetail } from "./AppContextBar";
 
@@ -27,6 +27,27 @@ describe("machineContextDetail", () => {
 });
 
 describe("machine crumb", () => {
+  it("opens sessions directly from the dedicated compact switcher", async () => {
+    const opened: string[] = [];
+    const bar = await mountBar({ machines: [machine("local")], onOpenSection: (section) => { opened.push(section); } });
+    const switcher = bar.shadowRoot?.querySelector<HTMLButtonElement>(".mobile-session");
+    expect(switcher).toBeInstanceOf(HTMLButtonElement);
+    switcher?.click();
+    expect(opened).toEqual(["sessions"]);
+  });
+
+  it("closes the compact context menu before opening the project picker", async () => {
+    const opened: string[] = [];
+    const bar = await mountBar({ machines: [machine("local")], onOpenSection: (section) => { opened.push(section); } });
+    bar.shadowRoot?.querySelector<HTMLButtonElement>(".mobile-context")?.click(); await bar.updateComplete;
+    const menu = bar.shadowRoot?.querySelector(".context-picker");
+    expect(menu).not.toBeNull();
+    const project = menu?.querySelector<HTMLButtonElement>('button[aria-label^="Project:"]');
+    expect(project).toBeInstanceOf(HTMLButtonElement);
+    project?.click(); await bar.updateComplete; await Promise.resolve();
+    expect(bar.shadowRoot?.querySelector(".context-picker")).toBeNull();
+    expect(opened).toEqual(["projects"]);
+  });
   it("always shows the machine crumb in PWA mode, falling back to the local machine", async () => {
     const bar = await mountBar({ machines: [machine("local")], locationIndicator: true });
 
@@ -111,3 +132,16 @@ function machine(id: string): Machine {
     updatedAt: "2026-06-04T00:00:00.000Z",
   };
 }
+
+it("labels the mobile project and menu controls and keeps commands reachable", async () => {
+  const bar = await mountBar({ machines: [machine("local")] });
+  const showMenu = vi.fn(); const showActions = vi.fn();
+  bar.onShowNavigation = showMenu; bar.onShowActions = showActions; await bar.updateComplete;
+  const project = bar.shadowRoot?.querySelector<HTMLButtonElement>('.mobile-context');
+  const menu = bar.shadowRoot?.querySelector<HTMLButtonElement>('.menu-button');
+  expect(project?.textContent).toContain("Project");
+  expect(menu?.textContent).toContain("Menu");
+  menu?.click(); expect(showMenu).toHaveBeenCalledOnce();
+  bar.shadowRoot?.querySelector<HTMLButtonElement>('.desktop-actions')?.click();
+  expect(showActions).toHaveBeenCalledOnce();
+});

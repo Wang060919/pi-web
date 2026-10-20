@@ -1,3 +1,4 @@
+import { settingsDesignStyles } from "./settingsDesignStyles";
 import { localizedTemplate, localizedText, t } from "../../../../shared/i18n";
 import { css, html, LitElement, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -216,7 +217,7 @@ export class SettingsPackagesPanel extends LitElement {
     return this.operation !== undefined;
   }
 
-  static override styles = css`
+  static override styles = [css`
     :host { display: block; font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     small { font-size: 12px; line-height: 16px; }
     strong { font-weight: var(--pi-font-weight-medium, 460); }
@@ -264,7 +265,7 @@ export class SettingsPackagesPanel extends LitElement {
     @media (max-width: 760px), (pointer: coarse) {
       button, input { min-height: 44px; }
     }
-  `;
+  `, settingsDesignStyles];
 }
 
 function packagesDescription(targetLabel: string): TemplateResult {

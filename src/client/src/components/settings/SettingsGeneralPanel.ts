@@ -1,3 +1,4 @@
+import { settingsDesignStyles } from "./settingsDesignStyles";
 import { localizedTemplate, t } from "../../../../shared/i18n";
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -39,29 +40,39 @@ export class SettingsGeneralPanel extends LitElement {
   @state() private gatewayLocalError = "";
   @state() private machineLocalError = "";
 
+  get hasUnsavedChanges(): boolean {
+    return (this.configResponse !== undefined && JSON.stringify(this.gatewayDraft) !== JSON.stringify(gatewayServerDraftFromConfig(this.configResponse.config)))
+      || (this.machineConfigResponse !== undefined && JSON.stringify(this.machineDraft) !== JSON.stringify(machineAccessDraftFromConfig(this.machineConfigResponse.config)));
+  }
+
   protected override willUpdate(changed: PropertyValues<this>): void {
     if (changed.has("configResponse") && this.configResponse !== undefined) {
-      this.gatewayDraft = gatewayServerDraftFromConfig(this.configResponse.config);
+      const previous = changed.get("configResponse");
+      const next = gatewayServerDraftFromConfig(this.configResponse.config);
+      if (previous === undefined || JSON.stringify(gatewayServerDraftFromConfig(previous.config)) !== JSON.stringify(next)
+        || JSON.stringify(this.gatewayDraft) === JSON.stringify(gatewayServerDraftFromConfig(previous.config))) this.gatewayDraft = next;
       this.gatewayLocalError = "";
     }
     if (changed.has("machineConfigResponse") && this.machineConfigResponse !== undefined) {
-      this.machineDraft = machineAccessDraftFromConfig(this.machineConfigResponse.config);
+      const previous = changed.get("machineConfigResponse");
+      const next = machineAccessDraftFromConfig(this.machineConfigResponse.config);
+      if (previous === undefined || JSON.stringify(machineAccessDraftFromConfig(previous.config)) !== JSON.stringify(next)
+        || JSON.stringify(this.machineDraft) === JSON.stringify(machineAccessDraftFromConfig(previous.config))) this.machineDraft = next;
       this.machineLocalError = "";
     }
   }
 
   override render(): TemplateResult {
-    return localizedTemplate("SettingsGeneralPanel.template.559216e4", html)`
+    return html`
       <settings-panel-frame
-        heading="General configuration"
+        .heading=${t("settingsLayout.connection")}
         .description=${generalDescription(this.targetLabel)}
-        actionLabel="Reload"
+        .actionLabel=${t("modelsSettings.reload")}
         .actionDisabled=${this.loading || this.machineLoading}
         .notices=${this.panelNotices()}
         .onAction=${() => { this.reloadAll(); }}
       >
         <div class="settings-sections">
-          <slot name="appearance"></slot>
           ${this.renderGatewayServerSettings()}
           ${this.renderSelectedMachineAccessSettings()}
         </div>
@@ -84,7 +95,7 @@ export class SettingsGeneralPanel extends LitElement {
             <small>${config?.exists === true ? t("SettingsGeneralPanel.existing_file.63fefc92") : t("SettingsGeneralPanel.this_file_will_be_created_on_save.812f722e")}</small>
           </div>
           <form class="config-form" @submit=${(event: Event) => { void this.saveGatewayConfig(event); }}>
-            <label class="field">
+            <label class="field" data-setting-id="host">
               <span class="field-heading">
                 <span>Host</span>
                 ${this.renderOverrideBadge("host")}
@@ -93,7 +104,7 @@ export class SettingsGeneralPanel extends LitElement {
               <small>Address the web server should bind to. Leave empty to use PI WEB's default.</small>
             </label>
 
-            <label class="field">
+            <label class="field" data-setting-id="port">
               <span class="field-heading">
                 <span>Port</span>
                 ${this.renderOverrideBadge("port")}
@@ -102,7 +113,7 @@ export class SettingsGeneralPanel extends LitElement {
               <small>TCP port from 1 to 65535. Leave empty to use PI WEB's default.</small>
             </label>
 
-            <div class="field">
+            <div class="field" data-setting-id="allowed-hosts">
               <span class="field-heading">
                 <span>Allowed hosts</span>
                 ${this.renderOverrideBadge("allowedHosts")}
@@ -118,6 +129,7 @@ export class SettingsGeneralPanel extends LitElement {
             ${this.renderGatewayEffectiveConfig()}
 
             <footer class="form-actions">
+              <span role="status" class="save-feedback">${this.gatewayLocalError || this.error || this.savedMessage}</span>
               <button class="primary" ?disabled=${this.loading || this.saving}>${this.saving ? t("SettingsGeneralPanel.saving.3d58be6e") : t("SettingsGeneralPanel.save_gateway_server_config.93519a05")}</button>
             </footer>
           </form>
@@ -142,7 +154,7 @@ export class SettingsGeneralPanel extends LitElement {
             <small>${config.exists ? t("SettingsGeneralPanel.existing_file.35d20e24") : t("SettingsGeneralPanel.this_file_will_be_created_on_save.c784f502")}</small>
           </div>
           <form class="config-form" @submit=${(event: Event) => { void this.saveMachineAccessConfig(event); }}>
-            <label class="field">
+            <label class="field" data-setting-id="paths">
               <span class="field-heading">
                 <span>External filesystem roots</span>
               </span>
@@ -150,7 +162,7 @@ export class SettingsGeneralPanel extends LitElement {
               <small>Allowlist for absolute <code>@</code> completions and file explorer reads outside a workspace on ${this.targetLabel}. Enter one absolute path, Windows absolute path, or <code>~</code>-prefixed path per line. Leave empty to deny external paths by default.</small>
             </label>
 
-            <label class="field">
+            <label class="field" data-setting-id="uploads">
               <span class="field-heading">
                 <span>Default upload folder</span>
               </span>
@@ -158,7 +170,7 @@ export class SettingsGeneralPanel extends LitElement {
               <small>Workspace-relative folder for manual file uploads on ${this.targetLabel}. Leave empty to use PI WEB's default <code>${DEFAULT_WORKSPACE_UPLOADS_FOLDER}</code>.</small>
             </label>
 
-            <label class="field">
+            <label class="field" data-setting-id="attachments">
               <span class="field-heading">
                 <span>Default attachments folder</span>
               </span>
@@ -168,7 +180,7 @@ export class SettingsGeneralPanel extends LitElement {
 
             ${this.renderMachineEffectiveConfig()}
 
-            <footer class="form-actions">
+            <footer class="form-actions"><span role="status" class="save-feedback">${this.machineLocalError || this.machineError || this.savedMessage}</span>
               <button class="primary" ?disabled=${this.machineLoading || this.saving}>${this.saving ? t("SettingsGeneralPanel.saving.1400bac6") : t("SettingsGeneralPanel.save_file_upload_config.b04e4894")}</button>
             </footer>
           </form>
@@ -225,6 +237,9 @@ export class SettingsGeneralPanel extends LitElement {
   }
 
   private reloadAll(): void {
+    if (this.hasUnsavedChanges && !window.confirm(t("settingsDraft.reload"))) return;
+    if (this.configResponse !== undefined) this.gatewayDraft = gatewayServerDraftFromConfig(this.configResponse.config);
+    if (this.machineConfigResponse !== undefined) this.machineDraft = machineAccessDraftFromConfig(this.machineConfigResponse.config);
     void this.onReload?.();
     void this.onReloadMachine?.();
   }
@@ -259,7 +274,7 @@ export class SettingsGeneralPanel extends LitElement {
     this.machineLocalError = "";
   }
 
-  static override styles = css`
+  static override styles = [css`
     :host { display: block; font: var(--pi-font-weight-regular, 360) 13px/18px var(--pi-font-family, system-ui, sans-serif); }
     small { font-size: 12px; line-height: 16px; }
     strong { font-weight: var(--pi-font-weight-medium, 460); }
@@ -296,7 +311,8 @@ export class SettingsGeneralPanel extends LitElement {
     .effective-card dl > div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; align-items: baseline; }
     dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
     .muted { color: var(--pi-muted); }
-    .form-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 2px; }
+    .form-actions { position: sticky; bottom: -18px; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; padding: 10px 0; background: var(--pi-surface); }
+    .save-feedback { flex: 1 1 180px; min-width: 0; overflow-wrap: anywhere; }
     .primary { background: var(--pi-selection-bg); color: var(--pi-text-bright); font-weight: var(--pi-font-weight-medium, 460); }
 
     @media (max-width: 760px) {
@@ -307,7 +323,7 @@ export class SettingsGeneralPanel extends LitElement {
       button, input, select { min-height: 44px; }
       .toggle { box-sizing: border-box; min-height: 44px; }
     }
-  `;
+  `, settingsDesignStyles];
 }
 
 function formatAllowedHosts(value: PiWebConfigValues["allowedHosts"]): string | TemplateResult {

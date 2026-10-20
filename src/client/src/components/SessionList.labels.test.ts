@@ -35,8 +35,8 @@ it("renders text, safe links, and custom controls without activating the row", a
   await list.updateComplete;
   const secondary = list.shadowRoot?.querySelector(".session-secondary");
   const labels = secondary?.querySelector(".session-labels");
-  expect(secondary?.querySelector(".session-meta")?.textContent).toBe("2 messages");
-  expect(secondary?.querySelectorAll(".session-label-separator")).toHaveLength(3);
+  expect(secondary?.querySelector(".session-meta")).toBeNull();
+  expect(secondary?.querySelectorAll(".session-label-separator")).toHaveLength(2);
   expect(list.shadowRoot?.querySelector(".action-name")?.getAttribute("title")).toBe("Conversation");
   expect(labels?.textContent).toContain("Leg 2");
   expect(labels?.querySelector("span.session-label-item")?.getAttribute("title")).toBe("Workflow membership");
@@ -111,7 +111,7 @@ it.each(["visible", "items", "render"] as const)("keeps rows and selection usabl
     expect(rows).toHaveLength(2);
     for (const row of rows ?? []) {
       expect(row.querySelector(".session-labels")?.textContent).toBe("Healthy indicator");
-      expect(row.querySelectorAll(".session-label-separator")).toHaveLength(1);
+      expect(row.querySelectorAll(".session-label-separator")).toHaveLength(0);
       expect(row.querySelector(".action-menu-toggle")).not.toBeNull();
     }
     rows?.[0]?.click();
@@ -149,7 +149,7 @@ it("refreshes row-owned labels for archived rows and when the provider is replac
   list.sessionLabelItems = () => [];
   await list.updateComplete;
   expect(list.shadowRoot?.querySelector(".session-labels")).toBeNull();
-  expect(list.shadowRoot?.querySelector(".action-row:not(.archived) .session-secondary")?.textContent.trim()).toBe("2 messages");
-  expect(list.shadowRoot?.querySelector(".action-row.archived .session-secondary")?.textContent.trim()).toBe("read-only · 2 messages");
+  expect(list.shadowRoot?.querySelector(".action-row:not(.archived) .session-secondary")).toBeNull();
+  expect(list.shadowRoot?.querySelector(".action-row.archived .session-secondary")?.textContent.trim()).toBe("read-only");
   expect(list.shadowRoot?.querySelector(".session-label-separator")).toBeNull();
 });

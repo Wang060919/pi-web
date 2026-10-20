@@ -1,11 +1,12 @@
 import { renderUiIcon } from "./uiIcons";
 import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { roleDisplayLabel, t } from "../../../shared/i18n";
+import { getLocale, roleDisplayLabel, t } from "../../../shared/i18n";
 import { sessionHistoryApi, type SessionHistoryEntry, type SessionSearchHit, type SessionSearchResponse } from "../api/sessionHistory";
 import { keyboardEventOriginatesFromNativeActivationControl } from "./keyboardEventTarget";
 import { paletteStyles } from "./paletteStyles";
 import { scrollWhenSelected } from "./scrollWhenSelected";
+import type { SessionInfo } from "../api";
 import type { ModalSurface } from "./ModalSurface";
 import "./ModalSurface";
 
@@ -13,6 +14,9 @@ import "./ModalSurface";
 export class SessionSearchDialog extends LitElement {
   @property() machineId = "local";
   @property() cwd?: string;
+  @property({ attribute: false }) recentSessions: readonly SessionInfo[] = [];
+  @property({ attribute: false }) onOpenSession?: (session: SessionInfo) => Promise<boolean>;
+  @state() private searchMode: "names" | "messages" = "messages";
   @property({ attribute: false }) onSelect?: (hit: SessionSearchHit) => Promise<void>;
   @property({ attribute: false }) onClose?: () => void;
   @state() private query = "";
@@ -29,6 +33,7 @@ export class SessionSearchDialog extends LitElement {
   private generation = 0;
 
   protected override willUpdate(changed: PropertyValues<this>): void {
+    if (changed.has("onOpenSession") && (changed.get("onOpenSession") === undefined) !== (this.onOpenSession === undefined)) this.searchMode = this.onOpenSession === undefined ? "messages" : "names";
     if (!changed.has("machineId") && !changed.has("cwd")) return;
     this.clearResults();
     if (this.cwd === undefined || this.cwd === "") this.scope = "machine";
@@ -48,11 +53,14 @@ export class SessionSearchDialog extends LitElement {
 
   override render() {
     const results = this.response?.results ?? [];
+    const names = this.nameResults();
+    const quick = this.searchMode === "names";
     return html`
       <modal-surface .label=${t("ui.sessionSearch.title")} .initialFocus=${".search-input"} .onClose=${() => { this.close(); }} @keydown=${(event: KeyboardEvent) => { this.handleKeyDown(event); }}>
-        <form @submit=${(event: SubmitEvent) => { event.preventDefault(); void this.search(); }}>
+        <form @submit=${(event: SubmitEvent) => { event.preventDefault(); if (quick) { const first = names[this.selectedIndex]; if (first !== undefined) void this.openSession(first); } else void this.search(); }}>
           <header>
-            <input class="search-input" type="search" .value=${this.query} placeholder=${t("ui.sessionSearch.placeholder")} aria-label=${t("ui.sessionSearch.placeholder")} aria-controls=${this.previewHit === undefined ? "session-search-results" : nothing} aria-activedescendant=${results.length === 0 || this.previewHit !== undefined ? nothing : `session-search-result-${String(this.selectedIndex)}`} ?disabled=${this.opening || this.locating} @input=${(event: Event) => {
+            ${renderUiIcon("search", 18)}
+            <input class="search-input" type="search" .value=${this.query} placeholder=${t(quick ? "ui.sessionSearch.quickPlaceholder" : "ui.sessionSearch.placeholder")} aria-label=${t(quick ? "ui.sessionSearch.quickPlaceholder" : "ui.sessionSearch.placeholder")} aria-controls=${this.previewHit === undefined ? "session-search-results" : nothing} aria-activedescendant=${this.previewHit !== undefined || (quick ? names.length : results.length) === 0 ? nothing : `${quick ? "quick-session" : "session-search-result"}-${String(this.selectedIndex)}`} ?disabled=${this.opening || this.locating} @input=${(event: Event) => {
               if (!(event.target instanceof HTMLInputElement)) return;
               this.query = event.target.value;
               this.clearResults();
@@ -60,17 +68,20 @@ export class SessionSearchDialog extends LitElement {
             <button type="button" aria-label=${t("navigation.close")} title=${t("navigation.close")} @click=${() => { this.close(); }}>${renderUiIcon("close")}</button>
           </header>
           <div class="search-controls">
-            <label><span>${t("ui.sessionSearch.scope")}</span><select aria-label=${t("ui.sessionSearch.scope")} .value=${this.scope} ?disabled=${this.opening || this.locating} @change=${(event: Event) => { this.changeScope(event); }}>
+            ${this.onOpenSession === undefined ? nothing : html`<div class="search-modes" role="group" aria-label=${t("ui.sessionSearch.title")}>
+              ${(["names", "messages"] as const).map((mode) => html`<button type="button" aria-pressed=${String(this.searchMode === mode)} ?disabled=${this.opening || this.locating} @click=${() => { this.searchMode = mode; this.clearResults(); }}>${t(`ui.sessionSearch.${mode}`)}</button>`)}
+            </div>`}
+            ${quick ? nothing : html`<label><span>${t("ui.sessionSearch.scope")}</span><select aria-label=${t("ui.sessionSearch.scope")} .value=${this.scope} ?disabled=${this.opening || this.locating} @change=${(event: Event) => { this.changeScope(event); }}>
               <option value="workspace" ?disabled=${this.cwd === undefined || this.cwd === ""}>${t("ui.sessionSearch.workspace")}</option>
               <option value="machine">${t("ui.sessionSearch.machine")}</option>
             </select></label>
-            <button class="search-submit" type="submit" ?disabled=${this.query.trim() === "" || this.opening || this.locating}>${t("ui.sessionSearch.search")}</button>
+            <button class="search-submit" type="submit" ?disabled=${this.query.trim() === "" || this.opening || this.locating}>${t("ui.sessionSearch.search")}</button>`}
           </div>
         </form>
-        <div class="search-state" role="status" aria-live="polite">${this.searching ? t("ui.sessionSearch.searching") : this.opening ? t("ui.sessionSearch.opening") : this.locating ? t("ui.sessionSearch.locating") : this.response === undefined ? t("ui.sessionSearch.instructions") : `${t("ui.sessionSearch.matches")}: ${String(results.length)} · ${t("ui.sessionSearch.scannedSessions")}: ${String(this.response.scannedSessions)}`}</div>
+        <div class="search-state" role="status" aria-live="polite">${this.searching ? t("ui.sessionSearch.searching") : this.opening ? t("ui.sessionSearch.opening") : this.locating ? t("ui.sessionSearch.locating") : quick ? t("ui.sessionSearch.recent") : this.response === undefined ? t("ui.sessionSearch.instructions") : `${t("ui.sessionSearch.matches")}: ${String(results.length)} · ${t("ui.sessionSearch.scannedSessions")}: ${String(this.response.scannedSessions)}`}</div>
         ${this.error === undefined ? nothing : html`<div class="search-error" role="alert">${this.error}</div>`}
         ${this.response?.truncated === true ? html`<div class="search-truncated" role="status">${t("ui.sessionSearch.truncated")}</div>` : nothing}
-        ${this.previewHit !== undefined ? this.renderPreview() : html`<div class="options" id="session-search-results" role="listbox" aria-label=${t("ui.sessionSearch.results")} aria-busy=${String(this.searching)}>
+        ${quick ? this.renderNames(names) : this.previewHit !== undefined ? this.renderPreview() : html`<div class="options" id="session-search-results" role="listbox" aria-label=${t("ui.sessionSearch.results")} aria-busy=${String(this.searching)}>
           ${this.response !== undefined && results.length === 0 ? html`<div class="empty">${t("ui.sessionSearch.noResults")}</div>` : nothing}
           ${results.map((hit, index) => html`
             <button type="button" class=${`search-result ${index === this.selectedIndex ? "selected" : ""}`} id=${`session-search-result-${String(index)}`} role="option" aria-selected=${String(index === this.selectedIndex)} ?disabled=${this.opening} ${scrollWhenSelected(index === this.selectedIndex, hit)} @focus=${() => { this.selectedIndex = index; }} @click=${() => { void this.select(hit); }}>
@@ -82,6 +93,37 @@ export class SessionSearchDialog extends LitElement {
         </div>`}
       </modal-surface>
     `;
+  }
+
+  private nameResults(): SessionInfo[] {
+    const query = this.query.trim().toLocaleLowerCase();
+    return this.recentSessions.filter((session) => this.cwd === undefined || session.cwd === this.cwd)
+      .filter((session) => (quickSessionLabel(session)).toLocaleLowerCase().includes(query))
+      .sort((a, b) => Date.parse(b.modified) - Date.parse(a.modified)).slice(0, 40);
+  }
+
+  private renderNames(sessions: SessionInfo[]) {
+    return html`<div class="options quick-options" id="session-search-results" role="listbox" aria-label=${t("ui.sessionSearch.results")}>
+      ${sessions.length === 0 ? html`<p class="empty">${t(this.query.trim() === "" ? "ui.sessionSearch.noRecent" : "ui.sessionSearch.noNames")}</p>` : sessions.map((session, index) => html`
+        <button class=${`quick-result ${index === this.selectedIndex ? "selected" : ""}`} id=${`quick-session-${String(index)}`} role="option" aria-selected=${String(index === this.selectedIndex)} type="button" ?disabled=${this.opening} ${scrollWhenSelected(index === this.selectedIndex, session)} @click=${() => { void this.openSession(session); }}>
+          ${renderUiIcon("file")}<span class="quick-name">${quickSessionLabel(session)}${session.archived === true ? html`<small class="archived">${t("ui.sessionSearch.archived")}</small>` : nothing}</span>
+          <time datetime=${session.modified}>${Number.isNaN(Date.parse(session.modified)) ? "" : new Date(session.modified).toLocaleDateString(getLocale(), { month: "short", day: "numeric" })}</time>
+        </button>`)}
+    </div>`;
+  }
+
+  private async openSession(session: SessionInfo): Promise<void> {
+    if (this.opening || this.onOpenSession === undefined) return;
+    const generation = this.generation;
+    this.opening = true; this.error = undefined;
+    try {
+      const accepted = await this.onOpenSession(session);
+      if (accepted && generation === this.generation && this.isConnected) this.close();
+    } catch (error) {
+      if (generation === this.generation && this.isConnected) this.error = `${t("ui.sessionSearch.openFailed")}${error instanceof Error ? `: ${error.message}` : ""}`;
+    } finally {
+      if (generation === this.generation) this.opening = false;
+    }
   }
 
   private renderPreview() {
@@ -160,6 +202,15 @@ export class SessionSearchDialog extends LitElement {
   private handleKeyDown(event: KeyboardEvent): void {
     if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey || this.opening || this.locating || keyboardEventOriginatesFromNativeActivationControl(event)
       || event.composedPath().some((target) => target instanceof HTMLSelectElement)) return;
+    if (this.searchMode === "names") {
+      const names = this.nameResults();
+      if ((event.key === "ArrowDown" || event.key === "ArrowUp") && names.length > 0) {
+        event.preventDefault(); this.selectedIndex = (this.selectedIndex + (event.key === "ArrowUp" ? -1 : 1) + names.length) % names.length;
+      } else if (event.key === "Enter") {
+        event.preventDefault(); const selected = names[this.selectedIndex]; if (selected !== undefined) void this.openSession(selected);
+      }
+      return;
+    }
     if (this.previewHit !== undefined) {
       if (event.key === "Enter") { event.preventDefault(); void this.search(); }
       return;
@@ -213,7 +264,21 @@ export class SessionSearchDialog extends LitElement {
   }
 
   static override styles = [paletteStyles, css`
+    modal-surface { --modal-surface-width: min(672px, 100%); --modal-surface-radius: 14px; }
+    header { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; padding: 12px 16px; gap: 8px; }
+    header > svg { color: var(--pi-muted); }
+    .search-input:focus-visible { outline: none; }
     form { flex: none; }
+    .search-modes { display: flex; gap: 4px; }
+    .search-modes button { padding: 4px 10px; color: var(--pi-muted); }
+    .search-modes button[aria-pressed="true"] { color: var(--pi-text); background: var(--pi-selection-bg); }
+    .quick-options { padding: 4px 10px 12px; }
+    .quick-result { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; text-align: start; }
+    .quick-result.selected { background: var(--pi-selection-bg); }
+    .quick-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .quick-name .archived { margin-inline-start: 8px; }
+    .quick-result time { flex: none; color: var(--pi-muted); font-size: 12px; }
+    @media (max-width: 680px) { .search-controls { flex-wrap: wrap; } }
     .search-controls { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 16px 10px; }
     .search-controls label { display: flex; align-items: center; gap: 8px; color: var(--pi-muted); }
     select { min-width: 0; max-width: 230px; padding: 5px; border: 1px solid var(--pi-border-muted); border-radius: 6px; background: var(--pi-bg); color: var(--pi-text); font: inherit; }
@@ -254,4 +319,8 @@ export function highlightSearchText(text: string, query: string): { text: string
   }
   if (from < text.length) parts.push({ text: text.slice(from), match: false });
   return parts;
+}
+
+function quickSessionLabel(session: SessionInfo): string {
+  return session.name !== undefined && session.name !== "" ? session.name : session.firstMessage !== "" ? session.firstMessage : session.id;
 }

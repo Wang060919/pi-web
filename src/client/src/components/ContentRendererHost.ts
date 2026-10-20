@@ -201,7 +201,7 @@ export class ContentRendererHost extends LitElement {
     #content > .plain-code-block { padding: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
     #content > pre.source-wrap { overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; }
     #content > .plain-code-block.source-scroll { overflow: auto; white-space: pre; overflow-wrap: normal; }
-    code { font: var(--pi-font-weight-regular, 360) 12px/17.5px var(--pi-font-monospace, ui-monospace, monospace); }
+    code { font: var(--pi-font-weight-regular, 360) var(--pi-prose-code-font-size, 12px)/var(--pi-prose-code-leading, 17.5px) var(--pi-font-monospace, ui-monospace, monospace); }
     .preview { overflow: auto; padding: 12px; }
     p { color: var(--pi-muted); margin: 0; padding: 10px 12px; font: var(--pi-font-weight-regular, 360) 12px/16px var(--pi-font-family, system-ui, sans-serif); }
     @media (pointer: coarse) { button, select { min-height: 44px; } }

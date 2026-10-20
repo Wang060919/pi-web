@@ -13,6 +13,21 @@ import { registerUsageOverviewRoutes } from "./usageOverviewRoutes.js";
 const overview: UsageOverviewResponse = { records: [], today: "2026-10-17", timeZone: "Asia/Shanghai", scope: "workspace", warnings: [] };
 
 describe("usage overview routes", () => {
+  it("requires explicit machine scope for a request without cwd", async () => {
+    const read = vi.fn((): Promise<UsageOverviewResponse> => Promise.resolve({ ...overview, scope: "machine" }));
+    const app = Fastify(); registerUsageOverviewRoutes(app, { read });
+    try {
+      for (const query of ["scope=unknown", "scope=machine&cwd=%2Ftmp", "scope=machine&timeZone=invalid"]) {
+        expect((await app.inject({ url: `/api/usage-overview?${query}` })).statusCode).toBe(400);
+      }
+      expect(read).not.toHaveBeenCalled();
+      const response = await app.inject({ url: "/api/usage-overview?scope=machine&timeZone=UTC" });
+      expect(response.statusCode).toBe(200);
+      expect(response.json<UsageOverviewResponse>().scope).toBe("machine");
+      expect(read).toHaveBeenCalledExactlyOnceWith(undefined, "UTC");
+    } finally { await app.close(); }
+  });
+
   it("serves both local API paths with an absolute cwd and reporting time zone", async () => {
     const read = vi.fn(() => Promise.resolve(overview));
     const app = Fastify();
@@ -98,6 +113,12 @@ describe("usage overview routes", () => {
       expect(response.headers["cache-control"]).toBe("no-store");
       expect(response.json<UsageOverviewResponse>().records.reduce((sum, record) => sum + record.tokens.input, 0)).toBe(333);
       expect(request).toHaveBeenCalledExactlyOnceWith("GET", `/usage-overview?${new URLSearchParams({ cwd, timeZone: "UTC" })}`);
+      request.mockClear();
+      const global = await app.inject({ url: "/api/machines/local/usage-overview?scope=machine&timeZone=UTC" });
+      expect(global.statusCode).toBe(200);
+      expect(global.json<UsageOverviewResponse>().scope).toBe("machine");
+      expect(global.json<UsageOverviewResponse>().records.reduce((sum, record) => sum + record.tokens.input, 0)).toBe(333);
+      expect(request).toHaveBeenCalledExactlyOnceWith("GET", "/usage-overview?scope=machine&timeZone=UTC");
     } finally {
       vi.unstubAllEnvs();
       await app?.close();

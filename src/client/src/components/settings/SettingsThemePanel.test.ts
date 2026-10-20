@@ -22,7 +22,7 @@ describe("theme settings controls", () => {
     panel.hasLocalOverride = true;
     await panel.updateComplete;
     selectTheme(panel, "themes:pi-web-light");
-    const auto = required(panel.shadowRoot?.querySelector<HTMLInputElement>('input[type="checkbox"]'));
+    const auto = button(panel, "Fixed theme");
     auto.click();
     await panel.updateComplete;
     expect(useLocal).not.toHaveBeenCalled();

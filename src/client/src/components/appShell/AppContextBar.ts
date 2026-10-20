@@ -5,6 +5,8 @@ import type { Machine, Project, SessionInfo, Workspace } from "../../api";
 import { browserGatewayDisplayUrl, machineIconUrl } from "../../instanceIdentity";
 import { shortSessionId } from "../../sessionLabels";
 import { renderNavigationMenuIcon } from "../tabIcons";
+import "../ModalSurface";
+import { renderUiIcon } from "../uiIcons";
 import type { NavigationSection } from "../../appShell/navigationState";
 
 @customElement("app-context-bar")
@@ -22,6 +24,7 @@ export class AppContextBar extends LitElement {
   @property({ attribute: false }) onShowNavigation?: () => void;
   @property({ type: Boolean }) hiddenActiveDestination = false;
   @query(".context-items") private contextItems?: HTMLElement | null;
+  @state() private contextOpen = false;
   @state() private canScrollLeft = false;
   @state() private canScrollRight = false;
   private observedContextItems: HTMLElement | undefined;
@@ -54,14 +57,12 @@ export class AppContextBar extends LitElement {
     const projectLabel = projectContextLabel(this.project);
     const workspaceLabel = workspaceContextLabel(this.workspace);
     const sessionLabel = sessionContextLabel(this.session);
-    return localizedTemplate("AppContextBar.location_project_workspace_session.90317777", html)`
-      <nav class=${this.contextBarClass()} aria-label="Current location">
-        <span class="context-bar-label">Location</span>
+    const contextItems = html`
         <ol class="context-items" @scroll=${this.onContextScroll}>
           ${showMachineChip ? html`
             <li class="context-item">
               ${machineChoice ? html`
-                <button type="button" class=${machineChipClass} title=${machineContextTitle(machine)} aria-label=${localizedText("AppContextBar.machine_open_machine_selection.fc7b1a94")`Machine: ${machineContextLabel(machine)}. Open machine selection.`} @click=${() => { this.onOpenSection?.("machines"); }}>
+                <button type="button" class=${machineChipClass} title=${machineContextTitle(machine)} aria-label=${localizedText("AppContextBar.machine_open_machine_selection.fc7b1a94")`Machine: ${machineContextLabel(machine)}. Open machine selection.`} @click=${() => { this.openSection("machines"); }}>
                   ${this.renderMachineChipContent(machine, this.locationIndicator)}
                 </button>
               ` : html`
@@ -73,27 +74,40 @@ export class AppContextBar extends LitElement {
             </li>
           ` : null}
           <li class="context-item">
-            <button type="button" class=${this.project === undefined ? "context-chip empty" : "context-chip"} title=${projectContextTitle(this.project)} aria-label=${localizedText("AppContextBar.project_open_project_selection.805aa728")`Project: ${projectLabel}. Open project selection.`} @click=${() => { this.onOpenSection?.("projects"); }}>
-              <span class="context-kind">Project</span>
+            <button type="button" class=${this.project === undefined ? "context-chip empty" : "context-chip"} title=${projectContextTitle(this.project)} aria-label=${localizedText("AppContextBar.project_open_project_selection.805aa728")`Project: ${projectLabel}. Open project selection.`} @click=${() => { this.openSection("projects"); }}>
+              <span class="context-kind">${t("ui.navigation.project")}</span>
               <span class="context-value">${projectLabel}</span>
             </button>
           </li>
           <li class="context-item">
-            <button type="button" class=${this.workspace === undefined ? "context-chip empty" : "context-chip"} title=${workspaceContextTitle(this.workspace)} aria-label=${localizedText("AppContextBar.workspace_open_workspace_selection.1e2f44a7")`Workspace: ${workspaceLabel}. Open workspace selection.`} @click=${() => { this.onOpenSection?.("workspaces"); }}>
-              <span class="context-kind">Workspace</span>
+            <button type="button" class=${this.workspace === undefined ? "context-chip empty" : "context-chip"} title=${workspaceContextTitle(this.workspace)} aria-label=${localizedText("AppContextBar.workspace_open_workspace_selection.1e2f44a7")`Workspace: ${workspaceLabel}. Open workspace selection.`} @click=${() => { this.openSection("workspaces"); }}>
+              <span class="context-kind">${t("ui.navigation.workspace")}</span>
               <span class="context-value">${workspaceLabel}</span>
             </button>
           </li>
           <li class="context-item">
-            <button type="button" class=${this.session === undefined ? "context-chip empty" : "context-chip"} title=${sessionContextTitle(this.session)} aria-label=${localizedText("AppContextBar.session_open_session_selection.b575725d")`Session: ${sessionLabel}. Open session selection.`} @click=${() => { this.onOpenSection?.("sessions"); }}>
-              <span class="context-kind">Session</span>
+            <button type="button" class=${this.session === undefined ? "context-chip empty" : "context-chip"} title=${sessionContextTitle(this.session)} aria-label=${localizedText("AppContextBar.session_open_session_selection.b575725d")`Session: ${sessionLabel}. Open session selection.`} @click=${() => { this.openSection("sessions"); }}>
+              <span class="context-kind">${t("ui.navigation.session")}</span>
               <span class="context-value">${sessionLabel}</span>
             </button>
           </li>
-        </ol>
-        ${this.hasContextActions() ? html`<div class="context-actions">${this.onShowNavigation === undefined ? null : localizedTemplate("AppContextBar.template.29f1820d", html)`<button type="button" class=${`context-action-button${this.hiddenActiveDestination ? " selected" : ""}`} title="Navigation" aria-label="Navigation" aria-haspopup="dialog" @click=${this.onShowNavigation}>${renderNavigationMenuIcon()}</button>`}${this.renderActionsButton()}${this.refreshControl}</div>` : null}
+        </ol>`;
+    return html`
+      <nav class=${this.contextBarClass()} aria-label=${t("ui.navigation.context")}>
+        <span class="context-bar-label">${t("ui.navigation.context")}</span>
+        <button type="button" class="mobile-session" aria-label=${localizedText("AppContextBar.session_open_session_selection.b575725d")`Session: ${sessionLabel}. Open session selection.`} @click=${() => { this.onOpenSection?.("sessions"); }}><span>${sessionLabel}</span>${renderUiIcon("chevronDown")}</button>
+        <button type="button" class="mobile-context context-action-button" aria-label=${t("ui.navigation.context")} title=${t("ui.navigation.context")} aria-haspopup="dialog" aria-expanded=${String(this.contextOpen)} @click=${() => { this.contextOpen = true; }}>${renderUiIcon("folder")}<span>${t("ui.navigation.project")}</span></button>
+        ${contextItems}
+        ${this.hasContextActions() ? html`<div class="context-actions">${this.onShowNavigation === undefined ? null : html`<button type="button" class=${`context-action-button menu-button${this.hiddenActiveDestination ? " selected" : ""}`} title=${t("NavigationDialog.navigation.81259b67")} aria-label=${t("NavigationDialog.navigation.81259b67")} aria-haspopup="dialog" @click=${this.onShowNavigation}>${renderNavigationMenuIcon()}<span class="mobile-action-label">${t("navigation.menu")}</span></button>`}${this.renderActionsButton()}${this.refreshControl}</div>` : null}
       </nav>
+      ${this.contextOpen ? html`<modal-surface class="context-picker" .label=${t("ui.navigation.context")} .onClose=${() => { this.contextOpen = false; }} .initialFocus=${"button"}><header><strong>${t("ui.navigation.context")}</strong><button type="button" aria-label=${t("navigation.close")} @click=${() => { this.contextOpen = false; }}>${renderUiIcon("close")}</button></header>${contextItems}</modal-surface>` : null}
     `;
+  }
+
+  private openSection(section: NavigationSection): void {
+    if (!this.contextOpen) { this.onOpenSection?.(section); return; }
+    this.contextOpen = false;
+    void this.updateComplete.then(() => { this.onOpenSection?.(section); });
   }
 
   private renderMachineChipContent(machine: Machine | undefined, locationIndicator: boolean) {
@@ -115,8 +129,8 @@ export class AppContextBar extends LitElement {
 
   private renderActionsButton() {
     if (this.onShowActions === undefined) return null;
-    return localizedTemplate("AppContextBar.template.f9feeffd", html)`
-      <button type="button" class="context-action-button" title="Show Actions" aria-label="Show Actions" @click=${(event: MouseEvent) => { event.stopPropagation(); this.onShowActions?.(); }}>
+    return html`
+      <button type="button" class=${`context-action-button${this.onShowNavigation === undefined ? "" : " desktop-actions"}`} title=${t("navigation.commands")} aria-label=${t("navigation.commands")} @click=${(event: MouseEvent) => { event.stopPropagation(); this.onShowActions?.(); }}>
         <svg class="context-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M4 4h5v5H4zM15 4h5v5h-5zM4 15h5v5H4zM15 15h5v5h-5z"></path>
         </svg>
@@ -174,7 +188,14 @@ export class AppContextBar extends LitElement {
     .context-bar::before { left: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--pi-shadow-strong) 55%, transparent) 0%, transparent 100%); }
     .context-bar::after { right: 0; background: linear-gradient(270deg, color-mix(in srgb, var(--pi-shadow-strong) 55%, transparent) 0%, transparent 100%); }
     .context-bar.can-scroll-left::before, .context-bar.can-scroll-right::after { opacity: 1; }
-    .context-bar-label { display: none; }
+    .context-bar-label, .mobile-session, .mobile-context { display: none; }
+    .context-picker { --modal-surface-width: min(460px, calc(100vw - 24px)); }
+    .context-picker header { display: flex; align-items: center; justify-content: space-between; padding: 12px; }
+    .context-picker header button { border: 0; background: transparent; color: var(--pi-text); padding: 8px; }
+    .context-picker .context-items { display: flex; flex-direction: column; padding: 8px; }
+    .context-picker .context-chip { width: 100%; max-width: none; min-height: 44px; }
+    .context-picker .context-kind { display: inline; color: var(--pi-muted); }
+    .context-picker .context-value { overflow-wrap: anywhere; white-space: normal; }
     .context-items { flex: 1 1 auto; min-width: 0; display: flex; align-items: stretch; gap: 5px; margin: 0; padding: 0 8px; list-style: none; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-padding-inline: 8px; scrollbar-width: thin; }
     .context-item { flex: 0 0 auto; min-width: 0; display: flex; }
     .context-actions { position: relative; flex: 0 0 auto; z-index: 3; display: flex; align-items: center; gap: 6px; padding: 0 8px; background: var(--pi-bg); pointer-events: none; }
@@ -183,6 +204,7 @@ export class AppContextBar extends LitElement {
     .context-action-button { box-sizing: border-box; width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 0; line-height: 1; }
     .context-action-button.selected, .context-action-button:hover { background: var(--pi-selection-bg); }
     .context-action-button:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: -2px; }
+    .mobile-action-label { display: none; }
     .context-action-icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; pointer-events: none; }
     .context-chip { flex: 0 0 auto; min-width: 0; display: inline-flex; align-items: center; gap: 5px; border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); padding: 4px 8px; font: inherit; text-align: left; }
     .context-chip-icon { flex: 0 0 auto; width: 14px; height: 14px; }
@@ -195,6 +217,14 @@ export class AppContextBar extends LitElement {
     button { cursor: pointer; }
     @media (max-width: 760px) {
       .context-bar { padding: 0; }
+      .context-bar > .context-items { display: none; }
+      .mobile-session { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 4px 8px; border: 0; background: transparent; color: var(--pi-text); font: inherit; text-align: left; }
+      .mobile-session span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .mobile-session svg { flex: 0 0 auto; width: 16px; height: 16px; }
+      .context-action-button.mobile-context, .context-action-button.menu-button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; width: auto; min-width: 44px; padding: 0 8px; flex: 0 0 auto; }
+      .mobile-action-label { display: inline; }
+      .context-action-button.desktop-actions { display: none; }
+      .context-actions { gap: 2px; padding: 0 4px; }
     }
     @media (max-width: 760px), (pointer: coarse) {
       .context-action-button { width: 44px; height: 44px; }

@@ -43,7 +43,7 @@ describe("project-dialog modal surface", () => {
 
     pressKey(input, "Enter");
 
-    expect(onSubmit).toHaveBeenCalledWith("/work/new-project", true, { trusted: false, changed: false });
+    expect(onSubmit).toHaveBeenCalledWith("/work/new-project", false, { trusted: false, changed: false });
   });
 
   it("disables the trust choice until a path is entered", async () => {
@@ -90,7 +90,7 @@ describe("project-dialog modal surface", () => {
 
     pressKey(input, "Enter");
 
-    expect(onSubmit).toHaveBeenCalledWith("/work/new-project", true, { trusted: true, changed: true });
+    expect(onSubmit).toHaveBeenCalledWith("/work/new-project", false, { trusted: true, changed: true });
   });
 
   // Regression: the suggestions and trust loaders used to share one staleness
@@ -108,7 +108,7 @@ describe("project-dialog modal surface", () => {
     });
     await settleRenderedDialog(dialog);
 
-    expect(dialog.shadowRoot?.querySelector(".suggestions button")?.textContent).toContain("/work/proj/");
+    expect(dialog.shadowRoot?.querySelector(".suggestions button")?.getAttribute("title")).toBe("/work/proj/");
     expect(dialog.shadowRoot?.textContent).not.toContain("Loading folders…");
   });
 
@@ -146,6 +146,50 @@ describe("project-dialog modal surface", () => {
     expect(link?.getAttribute("rel")).toBe("noreferrer");
     expect(link?.textContent).toBe("Learn about project trust");
   });
+  it("hides dot folders by default and shows them when requested", async () => {
+    const dialog = await mountDialog();
+    vi.mocked(api.projectDirectories).mockResolvedValue([{ path: "/work/.hidden/", kind: "other" }, { path: "/work/project/", kind: "other" }]);
+    pathInput(dialog).value = "/work"; pathInput(dialog).dispatchEvent(new Event("input", { bubbles: true }));
+    await vi.waitFor(() => { expect(dialog.shadowRoot?.querySelectorAll(".suggestions button")).toHaveLength(1); });
+    const hidden = requiredElement(dialog.shadowRoot?.querySelector<HTMLInputElement>(".browse-actions input"), "hidden folder choice");
+    hidden.click(); await settleRenderedDialog(dialog);
+    expect(dialog.shadowRoot?.querySelectorAll(".suggestions button")).toHaveLength(2);
+  });
+
+  it("requires an explicit create choice for a missing folder and never creates on browsing", async () => {
+    const onSubmit = vi.fn(); const dialog = await mountDialog({ onSubmit });
+    vi.mocked(api.projectDirectoryInfo).mockResolvedValue({ path: "/work/new", parentPath: "/work", exists: false, isDirectory: false });
+    pathInput(dialog).value = "/work/new"; pathInput(dialog).dispatchEvent(new Event("input", { bubbles: true }));
+    await waitForTrustRead(dialog);
+    pressKey(pathInput(dialog), "Enter"); expect(onSubmit).not.toHaveBeenCalled();
+    createCheckbox(dialog).click(); await settleRenderedDialog(dialog);
+    pressKey(pathInput(dialog), "Enter");
+    expect(onSubmit).toHaveBeenCalledWith("/work/new", true, { trusted: false, changed: false });
+  });
+
+  it("keeps folder read errors visible and supports retry", async () => {
+    const dialog = await mountDialog();
+    vi.mocked(api.projectDirectories).mockRejectedValueOnce(new Error("Permission denied"));
+    pathInput(dialog).value = "/private"; pathInput(dialog).dispatchEvent(new Event("input", { bubbles: true }));
+    await vi.waitFor(() => { expect(dialog.shadowRoot?.textContent).toContain("Permission denied"); });
+    expect(dialog.shadowRoot?.textContent).not.toContain("No visible subfolders");
+    const retry = [...dialog.shadowRoot?.querySelectorAll<HTMLButtonElement>("button") ?? []].find((item) => item.textContent === "Retry");
+    requiredElement(retry, "retry").click();
+    await vi.waitFor(() => { expect(dialog.shadowRoot?.textContent).not.toContain("Permission denied"); });
+  });
+
+  it("navigates to the parent on the selected machine without submitting", async () => {
+    const onSubmit = vi.fn(); const dialog = await mountDialog({ onSubmit });
+    dialog.machineId = "remote"; dialog.machineLabel = "Build machine";
+    await settleRenderedDialog(dialog);
+    vi.mocked(api.projectDirectoryInfo).mockResolvedValue({ path: "/work/project", parentPath: "/work", exists: true, isDirectory: true });
+    pathInput(dialog).value = "/work/project"; pathInput(dialog).dispatchEvent(new Event("input", { bubbles: true }));
+    await waitForTrustRead(dialog);
+    requiredElement([...dialog.shadowRoot?.querySelectorAll<HTMLButtonElement>("button") ?? []].find((item) => item.textContent === "Parent folder"), "parent").click();
+    expect(api.projectDirectoryInfo).toHaveBeenLastCalledWith("/work", "remote");
+    expect(dialog.shadowRoot?.textContent).toContain("Build machine"); expect(onSubmit).not.toHaveBeenCalled();
+  });
+
 });
 
 interface ProjectDialogProps {
@@ -154,12 +198,14 @@ interface ProjectDialogProps {
 }
 
 async function mountDialog(props: ProjectDialogProps = {}): Promise<ProjectDialog> {
+  vi.spyOn(api, "projectDirectoryInfo").mockImplementation((path) => Promise.resolve({ path: path || "/home/test", parentPath: "/", exists: true, isDirectory: true }));
   vi.spyOn(api, "projectDirectories").mockResolvedValue([]);
   vi.spyOn(trustApi, "projectTrust").mockResolvedValue({ path: "", decision: null, trusted: false });
   const dialog = new ProjectDialog();
   if (props.onSubmit !== undefined) dialog.onSubmit = props.onSubmit;
   if (props.onCancel !== undefined) dialog.onCancel = props.onCancel;
   document.body.append(dialog);
+  await vi.waitFor(() => { expect(dialog.shadowRoot?.textContent).not.toContain("Loading folders…"); });
   await settleRenderedDialog(dialog);
   return dialog;
 }
@@ -167,6 +213,7 @@ async function mountDialog(props: ProjectDialogProps = {}): Promise<ProjectDialo
 /** Waits until the trust read for the current path has resolved and rendered. */
 async function waitForTrustRead(dialog: ProjectDialog): Promise<void> {
   await vi.waitFor(() => { expect(trustCheckbox(dialog).disabled).toBe(false); });
+  await vi.waitFor(() => { expect(dialog.shadowRoot?.textContent).not.toContain("Loading folders…"); });
   await settleRenderedDialog(dialog);
 }
 
@@ -175,10 +222,10 @@ function pathInput(dialog: ProjectDialog): HTMLInputElement {
 }
 
 function createCheckbox(dialog: ProjectDialog): HTMLInputElement {
-  return requiredElement(dialog.shadowRoot?.querySelector<HTMLInputElement>("input[type='checkbox']"), "project-dialog create checkbox");
+  return requiredElement(dialog.shadowRoot?.querySelector<HTMLInputElement>("input[value='create']"), "project-dialog create choice");
 }
 
-/** The trust choice checkbox: the second of the two checkboxes the dialog renders. */
+/** The trust choice follows the hidden-folder checkbox. */
 function trustCheckbox(dialog: ProjectDialog): HTMLInputElement {
   const checkbox = dialog.shadowRoot?.querySelectorAll<HTMLInputElement>("input[type='checkbox']")[1];
   return requiredElement(checkbox, "project-dialog trust checkbox");
