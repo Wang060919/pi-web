@@ -23,6 +23,9 @@ import {
 import plugin, { parseGitWorktreeList } from "./server-plugin.js";
 
 const tempRoots: string[] = [];
+// Real init/commit/worktree/submodule commands can exceed Vitest's 5 s
+// default on Windows runners, as in the adjacent Git backend fixture suites.
+const FIXTURE_TEST_TIMEOUT_MS = 30_000;
 const gitLocalEnvironmentKeys = [
   "GIT_ALTERNATE_OBJECT_DIRECTORIES",
   "GIT_COMMON_DIR",
@@ -35,10 +38,12 @@ const gitLocalEnvironmentKeys = [
 ] as const;
 
 afterEach(async () => {
-  await Promise.all(tempRoots.splice(0).map((path) => rm(path, { recursive: true, force: true })));
+  await Promise.all(tempRoots.splice(0).map((path) => rm(path, {
+    recursive: true, force: true, maxRetries: 5, retryDelay: 100,
+  })));
 });
 
-describe("bundled Git workspace provider", () => {
+describe("bundled Git workspace provider", { timeout: FIXTURE_TEST_TIMEOUT_MS }, () => {
   it("is a fallback provider and passes plain folders", async () => {
     const folder = await temporaryDirectory("plain folder");
     const workspaceProvider = await providerFor(createServerPluginExecFile({ env: cleanGitEnvironment() }));
@@ -55,7 +60,7 @@ describe("bundled Git workspace provider", () => {
     runGit(repository.path, ["worktree", "add", "-b", "feature/with-space", linked]);
     runGit(repository.path, ["worktree", "add", "--detach", detached]);
     runGit(repository.path, ["worktree", "add", "-b", "gone", gone]);
-    await rm(gone, { recursive: true, force: true });
+    await rm(gone, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 
     // Poison repository-local variables at the host boundary. The bundled
     // plugin must use the public unsetEnv capability rather than ambient state.

@@ -14,7 +14,9 @@ afterEach(() => {
   localStorage.clear();
 });
 
-it("loads saved Markdown Preview through the bundled Files plugin without crossing Lit directive runtimes", async () => {
+// Importing the production browser bundle and rendering its first preview can
+// exceed the default 5 s on Windows; keep this delivery check separately bounded.
+it("loads saved Markdown Preview through the bundled Files plugin without crossing Lit directive runtimes", { timeout: 30_000 }, async () => {
   const files = await import(pathToFileURL(resolve("dist/pi-web-plugins/files/browser/pi-web-plugin.js")).href);
   files.defineFilesCustomElements();
   const viewer = document.createElement("pi-web-files-viewer");
