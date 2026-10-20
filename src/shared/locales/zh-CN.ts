@@ -286,6 +286,7 @@ export const messages: Record<keyof typeof englishMessages, string> = {
   "ui.chatTimeline.transcript": "对话内容",
   "ui.chatTimeline.controls": "滚动控制",
   "ui.chatTimeline.navigation": "对话导航",
+  "ui.chatTimeline.loaded": "已加载的消息",
   "ui.chatTimeline.preview": "消息预览",
   "ui.chatTimeline.jump": "跳转到消息",
   "ui.chatTimeline.emptyReply": "暂无回复正文",
@@ -7032,3 +7033,4 @@ export const templates = {
     ]
   }
 } as const;
+

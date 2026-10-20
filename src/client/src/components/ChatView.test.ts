@@ -8,9 +8,6 @@ import {
 } from "../sessionNotifications";
 import {
   ChatView,
-  chatEventAnchorKey,
-  chatGroupAnchorKey,
-  chatMessageAnchorKey,
   chatMessageGroupClassName,
   chatMessageGroupLabel,
   chatMessageMetadataLabel,
@@ -19,7 +16,6 @@ import {
   chatSessionWarningRows,
 } from "./ChatView";
 import { templateEventHandlerAfterMarker, templateEventHandlerNearMarker } from "../templateInspection.testSupport";
-import type { ChatLine } from "./shared";
 
 describe("chatQueuedMessageSections", () => {
   it("labels client-side pending-start sends separately from server queued messages", () => {
@@ -270,25 +266,6 @@ describe("chatMessageMetadataLabel", () => {
 describe("chat event-group content seams", () => {
   // Content/structure decisions have pure seams; native disclosure behavior is
   // covered through the DOM in ChatView.behaviors.test.ts.
-  it("never derives scroll-anchor keys from display indexes or empty entry IDs", () => {
-    for (const key of [chatMessageAnchorKey, chatEventAnchorKey, chatGroupAnchorKey]) {
-      expect(key(40)).toBeUndefined();
-      expect(key(41, { role: "assistant", parts: [] })).toBeUndefined();
-      expect(key(42, { entryId: "", role: "assistant", parts: [] })).toBeUndefined();
-    }
-  });
-
-  it("keeps durable entry keys independent of normalized indexes and separates entry slices", () => {
-    const reply: ChatLine = { entryId: "entry-1", role: "user", parts: [{ type: "text", text: "Question" }] };
-    const invocation: ChatLine = { ...reply, parts: [{ type: "skillInvocation", name: "testing", location: "SKILL.md", content: "Instructions" }] };
-    for (const key of [chatMessageAnchorKey, chatEventAnchorKey, chatGroupAnchorKey]) {
-      expect(key(495, reply)).toBe(key(453, reply));
-      expect(key(495, reply)).not.toBe(key(495, invocation));
-      expect(key(495, reply)).not.toBe(key(495, { ...reply, entryId: "entry-2" }));
-    }
-    expect(chatMessageAnchorKey(495, reply)).not.toBe(chatEventAnchorKey(495, reply));
-  });
-
   it("distinguishes the live tail group by class and disclosure label", () => {
     expect(chatMessageGroupClassName(true)).toBe("msg event-group live");
     expect(chatMessageGroupClassName(false)).toBe("msg event-group");

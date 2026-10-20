@@ -10,6 +10,17 @@ export function reviewScope(projectId: string, workspaceId: string): string {
 }
 
 export class ReviewStore {
+  private pending: Promise<void> = Promise.resolve();
+
+  // One activation owns this store. Do not let its polling readers retain a
+  // destination handle during atomic replacement (Windows rejects that rename).
+  // This coordinates this instance only, not external processes or stores.
+  private exclusive<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.pending.then(operation);
+    this.pending = result.then(() => undefined, () => undefined);
+    return result;
+  }
+
   constructor(private readonly dataDirectory: string) {}
 
   private async directory(scope: string): Promise<string> {
@@ -21,29 +32,33 @@ export class ReviewStore {
   }
 
   async save(scope: string, review: Review): Promise<void> {
-    if (!isReview(review)) throw new Error("Invalid review record");
-    const directory = await this.directory(scope);
-    const temporary = join(directory, `.${randomUUID()}.tmp`);
-    try {
-      const file = await open(temporary, "wx", 0o600);
-      try { await file.writeFile(JSON.stringify(review)); await file.sync(); } finally { await file.close(); }
-      await rename(temporary, join(directory, `${review.id}.json`));
-    } finally { await rm(temporary, { force: true }); }
+    return this.exclusive(async () => {
+      if (!isReview(review)) throw new Error("Invalid review record");
+      const directory = await this.directory(scope);
+      const temporary = join(directory, `.${randomUUID()}.tmp`);
+      try {
+        const file = await open(temporary, "wx", 0o600);
+        try { await file.writeFile(JSON.stringify(review)); await file.sync(); } finally { await file.close(); }
+        await rename(temporary, join(directory, `${review.id}.json`));
+      } finally { await rm(temporary, { force: true }); }
+    });
   }
 
   async read(scope: string, id: unknown): Promise<Review> {
-    if (typeof id !== "string" || !/^[a-f0-9-]{36}$/.test(id)) throw new Error("Invalid review id");
-    const path = join(await this.directory(scope), `${id}.json`);
-    // O_NOFOLLOW is not enforced on Windows; reject existing links there too.
-    if (!(await lstat(path)).isFile()) throw new Error("Invalid review file");
-    const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
-    try {
-      const stat = await file.stat();
-      if (!stat.isFile() || stat.size > 300_000) throw new Error("Invalid review file");
-      const value: unknown = JSON.parse(await file.readFile("utf8"));
-      if (!isReview(value) || value.id !== id) throw new Error("Invalid saved review");
-      return value;
-    } finally { await file.close(); }
+    return this.exclusive(async () => {
+      if (typeof id !== "string" || !/^[a-f0-9-]{36}$/.test(id)) throw new Error("Invalid review id");
+      const path = join(await this.directory(scope), `${id}.json`);
+      // O_NOFOLLOW is not enforced on Windows; reject existing links there too.
+      if (!(await lstat(path)).isFile()) throw new Error("Invalid review file");
+      const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+      try {
+        const stat = await file.stat();
+        if (!stat.isFile() || stat.size > 300_000) throw new Error("Invalid review file");
+        const value: unknown = JSON.parse(await file.readFile("utf8"));
+        if (!isReview(value) || value.id !== id) throw new Error("Invalid saved review");
+        return value;
+      } finally { await file.close(); }
+    });
   }
 
   async list(scope: string): Promise<Review[]> {

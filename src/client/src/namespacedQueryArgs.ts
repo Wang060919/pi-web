@@ -15,6 +15,27 @@ const MAX_CONTRIBUTION_QUERY_PARAMETER_LENGTH = 256;
 const MAX_CONTRIBUTION_QUERY_VALUE_LENGTH = 4_096;
 const MAX_CONTRIBUTION_QUERY_RECORD_LENGTH = 65_536;
 
+/** Compare query snapshots without normalizing scalar values or array order. */
+export function sameContributionQueryRecord(
+  left: Readonly<Record<string, string | readonly string[]>>,
+  right: Readonly<Record<string, string | readonly string[]>>,
+): boolean {
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  return leftKeys.length === rightKeys.length
+    && leftKeys.every((key) => Object.hasOwn(right, key) && sameContributionQueryValue(left[key], right[key]));
+}
+
+function sameContributionQueryValue(left: string | readonly string[] | undefined, right: string | readonly string[] | undefined): boolean {
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return Array.isArray(left)
+      && Array.isArray(right)
+      && left.length === right.length
+      && left.every((value, index) => value === right[index]);
+  }
+  return left === right;
+}
+
 export function queryNamespace(contributionId: string): string {
   return contributionId.replaceAll(":", ".");
 }

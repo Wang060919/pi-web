@@ -1,3 +1,5 @@
+import { type ComposerOptionAction } from "./ComposerOptionsDialog";
+import "./ComposerOptionsDialog";
 import { VisualViewportSizing } from "../appShell/visualViewportSizing";
 import { getLocale, localizedTemplate, localizedText, t } from "../../../shared/i18n";
 import { queuedMessageRecallConfirmation, type QueuedMessageActionTarget } from "../queuedMessageActions";
@@ -54,7 +56,7 @@ import { PluginRegistry, installApplicationPanelScope, installPluginRuntimeScope
 import { createPluginPeer } from "../plugins/pluginPeer";
 import { REQUIRED_TERMINAL_BROWSER_FACADE_CAPABILITY, requiredTerminalUnavailableError, type RequiredTerminalBrowserComposition, type WorkspaceContributionNavigationV1 } from "../plugins/requiredTerminalFacade";
 import { createWorkspaceFiles as createPluginWorkspaceFiles } from "../plugins/workspaceFiles";
-import { contributionQueryFromRecord, isContributionQueryLocalKey, patchContributionQueryRecord, readContributionQuery, readContributionQueryRecord, setContributionQueryKey, writeContributionQueryRecord, type ContributionQueryRecord } from "../namespacedQueryArgs";
+import { sameContributionQueryRecord, contributionQueryFromRecord, isContributionQueryLocalKey, patchContributionQueryRecord, readContributionQuery, readContributionQueryRecord, setContributionQueryKey, writeContributionQueryRecord, type ContributionQueryRecord } from "../namespacedQueryArgs";
 import { AppShellController } from "../appShell/appShellController";
 import { BrowserResumeController } from "../appShell/browserResumeController";
 import { NavigationSectionsController, type NavigationSection } from "../appShell/navigationState";
@@ -241,6 +243,7 @@ export class PiWebApp extends LitElement {
   @property({ attribute: false }) chatBehaviors: ChatBehaviors = DEFAULT_CHAT_BEHAVIORS;
   @state() private state: AppState = initialAppState();
   @state() private composerPicker: "model" | "thinking" = "model";
+  @state() private mobileComposerOptionsChat: string | undefined;
   @state() private composerContextPicker: "machines" | "workspaces" | undefined = undefined;
   private composerPickerRequestId = 0;
   private readonly browserErrors = new BrowserErrorReporter(() => this.state, (patch) => { this.setState(patch); });
@@ -498,6 +501,8 @@ export class PiWebApp extends LitElement {
     this.toggleAttribute("pwa-display-mode", this.appShell.isPwaDisplayMode);
     this.syncSessionWarningVisibility();
     this.syncSessionActivityAcknowledgement();
+    if (!this.appShell.isMobileNavigationLayout || !this.mobileComposerAvailable(this.state)
+      || this.mobileComposerOptionsChat !== selectedChatIdentity(this.state)) this.mobileComposerOptionsChat = undefined;
   }
 
   protected override updated(): void {
@@ -3734,6 +3739,46 @@ export class PiWebApp extends LitElement {
     this.requestUpdate();
   };
 
+  private mobileComposerAvailable(state: AppState): boolean {
+    return state.selectedSession !== undefined && state.mainView === "chat"
+      && this.unacknowledgedActivitySessionKey(state) === undefined && !this.isRevertingMessage(state);
+  }
+
+  private readonly handleOpenMobileComposerOptions = (): void => {
+    if (this.appShell.isMobileNavigationLayout && this.mobileComposerAvailable(this.state)) {
+      this.mobileComposerOptionsChat = selectedChatIdentity(this.state);
+    }
+  };
+
+  private readonly handleCloseMobileComposerOptions = (): void => { this.mobileComposerOptionsChat = undefined; };
+
+  private readonly handleMobileComposerOption = async (action: ComposerOptionAction): Promise<void> => {
+    const identity = this.mobileComposerOptionsChat;
+    this.mobileComposerOptionsChat = undefined;
+    // Unmount the sheet and restore its opener before opening another modal or
+    // moving focus into the transcript. Never focus the text editor here.
+    await this.updateComplete;
+    if (identity === undefined || identity !== selectedChatIdentity(this.state) || !this.mobileComposerAvailable(this.state)) return;
+    if (action === "top" || action === "end") this.chatView?.jumpToBoundary(action);
+    else if (action === "timeline") this.chatView?.openTimeline();
+    else if (action === "machine") this.handleSelectComposerMachine();
+    else if (action === "workspace") this.handleSelectComposerWorkspace();
+    else this.handleSelectThinking();
+  };
+
+  private renderMobileComposerOptions() {
+    if (this.mobileComposerOptionsChat === undefined) return null;
+    return html`<composer-options-dialog
+      .machineLabel=${this.state.selectedMachine?.name ?? t("ui.composer.local")}
+      .workspaceLabel=${this.state.selectedWorkspace?.path ?? ""}
+      .hasWorkspace=${this.state.selectedWorkspace !== undefined}
+      .thinkingLabel=${this.state.status?.thinkingLevel === undefined ? "" : thinkingDisplayLabel(this.state.status.thinkingLevel)}
+      .navigationEnabled=${this.state.messages.length > 0}
+      .onSelect=${(action: ComposerOptionAction) => { void this.handleMobileComposerOption(action); }}
+      .onClose=${this.handleCloseMobileComposerOptions}
+    ></composer-options-dialog>`;
+  }
+
   private readonly handleSelectComposerMachine = (): void => {
     this.closeComposerPicker();
     this.composerContextPicker = "machines";
@@ -3948,7 +3993,7 @@ export class PiWebApp extends LitElement {
       this.notificationView = selectedNotificationView(state.selectedNotificationInbox);
     }
     return html`
-      <chat-view .showWelcome=${showWelcome} .onQuoteSelection=${session.archived === true ? undefined : this.quoteChatSelection} .behaviors=${this.chatBehaviors} .contentRendering=${this.plugins.getChatContentRendering(selectedMachineId(state))} .machineId=${selectedMachineId(state)} @workspace-file-open=${this.handleWorkspaceFileOpen} .workspaceContext=${this.chatWorkspaceContext} .sessionId=${session.id} .sessionCwd=${session.cwd} .onMessageAction=${this.handleMessageAction} .onDisplayedMessageAction=${this.handleDisplayedMessageAction} .messageActions=${this.plugins.getMessageActions(selectedMachineId(state))} .messageActionContext=${this.messageActionContext(state)} .messages=${state.messages} .messageStart=${state.messagePageStart} .messageEnd=${state.messagePageEnd} .messageTotal=${state.messagePageTotal} .hasMore=${state.messagePageStart > 0} .historyReady=${this.readyChatIdentity === selectedChatIdentity(state)} .loadingMore=${state.isLoadingEarlierMessages} .isSendingPrompt=${state.sendingPrompts[session.id] === true} .isCompacting=${state.status?.isCompacting === true} .pendingMessageCount=${state.status?.pendingMessageCount ?? 0} .clientQueuedMessages=${state.clientQueuedSessionMessages[session.id] ?? this.emptyClientQueue} .status=${state.status} .suggestedInputPending=${treeActionPending} .suppressedSuggestedInput=${state.suppressedSuggestedInputs[machineSessionKey(selectedMachineId(state), session.id)]} .onUseSuggestedInput=${session.archived === true || this.isRevertingMessage(state) ? undefined : this.handleUseSuggestedInput} .onDismissSuggestedInput=${session.archived === true ? undefined : this.handleDismissSuggestedInput} .activity=${state.activity} .pendingDialogs=${state.pendingDialogs} .closedDialogs=${state.closedDialogs} .onAnswerDialog=${this.handleAnswerDialog} .onCancelDialog=${this.handleCancelDialog} .onDismissClosedDialog=${this.handleDismissClosedDialog} .askDraftSessionId=${machineSessionKey(selectedMachineId(state), session.id)} .onSubmitAsk=${session.archived === true ? undefined : this.handleSubmitAsk} .notificationInbox=${this.notificationView} .onClearServerQueue=${this.handleClearServerQueue} .onQueuedMessageAction=${session.archived === true ? undefined : this.handleQueuedMessageAction} .queuedMessageActionPending=${this.queuedMessageActionTarget !== undefined || this.messageRevertTarget !== undefined} .onDismissWarning=${this.handleDismissWarning} .onDismissNotification=${this.handleDismissNotification} .onDismissAllNotifications=${this.handleDismissAllNotifications} .warningsVisible=${!this.sessionWarningVisibility.collapsed} .onToggleWarnings=${this.handleToggleWarnings} .onLoadMore=${this.handleLoadEarlierMessages}>${showWelcome ? this.renderSessionEmptyState(true) : null}</chat-view>
+      <chat-view .mobileNavigationExternal=${this.mobileComposerAvailable(state)} .showWelcome=${showWelcome} .onQuoteSelection=${session.archived === true ? undefined : this.quoteChatSelection} .behaviors=${this.chatBehaviors} .contentRendering=${this.plugins.getChatContentRendering(selectedMachineId(state))} .machineId=${selectedMachineId(state)} @workspace-file-open=${this.handleWorkspaceFileOpen} .workspaceContext=${this.chatWorkspaceContext} .sessionId=${session.id} .sessionCwd=${session.cwd} .onMessageAction=${this.handleMessageAction} .onDisplayedMessageAction=${this.handleDisplayedMessageAction} .messageActions=${this.plugins.getMessageActions(selectedMachineId(state))} .messageActionContext=${this.messageActionContext(state)} .messages=${state.messages} .messageStart=${state.messagePageStart} .messageEnd=${state.messagePageEnd} .messageTotal=${state.messagePageTotal} .hasMore=${state.messagePageStart > 0} .historyReady=${this.readyChatIdentity === selectedChatIdentity(state)} .loadingMore=${state.isLoadingEarlierMessages} .isSendingPrompt=${state.sendingPrompts[session.id] === true} .isCompacting=${state.status?.isCompacting === true} .pendingMessageCount=${state.status?.pendingMessageCount ?? 0} .clientQueuedMessages=${state.clientQueuedSessionMessages[session.id] ?? this.emptyClientQueue} .status=${state.status} .suggestedInputPending=${treeActionPending} .suppressedSuggestedInput=${state.suppressedSuggestedInputs[machineSessionKey(selectedMachineId(state), session.id)]} .onUseSuggestedInput=${session.archived === true || this.isRevertingMessage(state) ? undefined : this.handleUseSuggestedInput} .onDismissSuggestedInput=${session.archived === true ? undefined : this.handleDismissSuggestedInput} .activity=${state.activity} .pendingDialogs=${state.pendingDialogs} .closedDialogs=${state.closedDialogs} .onAnswerDialog=${this.handleAnswerDialog} .onCancelDialog=${this.handleCancelDialog} .onDismissClosedDialog=${this.handleDismissClosedDialog} .askDraftSessionId=${machineSessionKey(selectedMachineId(state), session.id)} .onSubmitAsk=${session.archived === true ? undefined : this.handleSubmitAsk} .notificationInbox=${this.notificationView} .onClearServerQueue=${this.handleClearServerQueue} .onQueuedMessageAction=${session.archived === true ? undefined : this.handleQueuedMessageAction} .queuedMessageActionPending=${this.queuedMessageActionTarget !== undefined || this.messageRevertTarget !== undefined} .onDismissWarning=${this.handleDismissWarning} .onDismissNotification=${this.handleDismissNotification} .onDismissAllNotifications=${this.handleDismissAllNotifications} .warningsVisible=${!this.sessionWarningVisibility.collapsed} .onToggleWarnings=${this.handleToggleWarnings} .onLoadMore=${this.handleLoadEarlierMessages}>${showWelcome ? this.renderSessionEmptyState(true) : null}</chat-view>
     `;
   }
 
@@ -4140,12 +4185,13 @@ export class PiWebApp extends LitElement {
           ${state.selectedSession ? html`
             ${this.renderChatView(state, state.selectedSession)}
             <div class="composer-area">
-              <prompt-editor .inputHistory=${state.messages.filter((message) => message.role === "user").map((message) => message.parts.filter((part) => part.type === "text").map((part) => part.text).join("\n"))} ?inert=${activityNoticeVisible || this.isRevertingMessage(state)} .promptChips=${this.selectedPromptChips()} .onRemoveChip=${this.handleRemovePromptChip} .shortcuts=${this.shortcutConfig} .defaultStreamingBehavior=${this.defaultStreamingBehavior} .sessionId=${state.selectedSession.id} .cwd=${state.selectedWorkspace?.path} .machineId=${selectedMachineId(state)} .machineLabel=${state.selectedMachine?.name} .projectId=${state.selectedWorkspace?.projectId} .workspaceId=${state.selectedWorkspace?.id} .attachmentsFolder=${workspaceEffectiveAttachmentsFolder(state.selectedWorkspace?.effectiveConfig, this.workspaceAttachmentsDefaultFolder)} .disabled=${state.selectedSession.archived === true || activityNoticeVisible || this.isRevertingMessage(state)} .canSteer=${state.status?.isStreaming === true} .isCompacting=${state.status?.isCompacting === true} .canStop=${state.status?.isStreaming === true || state.status?.isBashRunning === true || state.status?.isCompacting === true || (state.status?.pendingMessageCount ?? 0) > 0} .status=${state.status} .sending=${state.sendingPrompts[state.selectedSession.id] === true} .onSend=${this.handleSendPrompt} .onStop=${this.handleStopActiveWork} .onSelectModel=${this.handleSelectModel} .onSelectThinking=${this.handleSelectThinking} .onSelectMachine=${this.handleSelectComposerMachine} .onSelectWorkspace=${this.handleSelectComposerWorkspace}>${this.renderStatusBar(state)}</prompt-editor>
+              <prompt-editor .onOpenMobileOptions=${this.handleOpenMobileComposerOptions} .mobileOptionsOpen=${this.mobileComposerOptionsChat !== undefined} .inputHistory=${state.messages.filter((message) => message.role === "user").map((message) => message.parts.filter((part) => part.type === "text").map((part) => part.text).join("\n"))} ?inert=${activityNoticeVisible || this.isRevertingMessage(state)} .promptChips=${this.selectedPromptChips()} .onRemoveChip=${this.handleRemovePromptChip} .shortcuts=${this.shortcutConfig} .defaultStreamingBehavior=${this.defaultStreamingBehavior} .sessionId=${state.selectedSession.id} .cwd=${state.selectedWorkspace?.path} .machineId=${selectedMachineId(state)} .machineLabel=${state.selectedMachine?.name} .projectId=${state.selectedWorkspace?.projectId} .workspaceId=${state.selectedWorkspace?.id} .attachmentsFolder=${workspaceEffectiveAttachmentsFolder(state.selectedWorkspace?.effectiveConfig, this.workspaceAttachmentsDefaultFolder)} .disabled=${state.selectedSession.archived === true || activityNoticeVisible || this.isRevertingMessage(state)} .canSteer=${state.status?.isStreaming === true} .isCompacting=${state.status?.isCompacting === true} .canStop=${state.status?.isStreaming === true || state.status?.isBashRunning === true || state.status?.isCompacting === true || (state.status?.pendingMessageCount ?? 0) > 0} .status=${state.status} .sending=${state.sendingPrompts[state.selectedSession.id] === true} .onSend=${this.handleSendPrompt} .onStop=${this.handleStopActiveWork} .onSelectModel=${this.handleSelectModel} .onSelectThinking=${this.handleSelectThinking} .onSelectMachine=${this.handleSelectComposerMachine} .onSelectWorkspace=${this.handleSelectComposerWorkspace}>${this.renderStatusBar(state)}</prompt-editor>
               ${this.renderSessionActivityNotice()}
             </div>
             ${state.commandDialog !== undefined ? html`<command-picker .title=${state.commandDialog.title} .options=${state.commandDialog.options} .onPick=${(value: string) => this.sessions.respondToCommand(state.commandDialog?.requestId ?? "", value)} .onCancel=${() => { this.sessions.cancelCommand(); }}></command-picker>` : null}
             ${this.renderModelDialog()}
             ${this.renderComposerContextPicker()}
+            ${this.renderMobileComposerOptions()}
           ` : this.renderSessionEmptyState()}
         </main>
         ${this.renderWorkspacePanelEdgeControl()}
@@ -4265,26 +4311,6 @@ function sameStringSet(left: ReadonlySet<string>, right: ReadonlySet<string>): b
   return left.size === right.size && [...left].every((value) => right.has(value));
 }
 
-function sameContributionQueryRecord(
-  left: Readonly<Record<string, string | readonly string[]>>,
-  right: Readonly<Record<string, string | readonly string[]>>,
-): boolean {
-  const leftKeys = Object.keys(left);
-  const rightKeys = Object.keys(right);
-  return leftKeys.length === rightKeys.length
-    && leftKeys.every((key) => Object.hasOwn(right, key) && sameContributionQueryValue(left[key], right[key]));
-}
-
-function sameContributionQueryValue(left: string | readonly string[] | undefined, right: string | readonly string[] | undefined): boolean {
-  if (Array.isArray(left) || Array.isArray(right)) {
-    return Array.isArray(left)
-      && Array.isArray(right)
-      && left.length === right.length
-      && left.every((value, index) => value === right[index]);
-  }
-  return left === right;
-}
-
 function isActive(state: Pick<AppState, "status" | "activity">): boolean {
   return isSessionActive(state.status, state.activity);
 }
@@ -4386,3 +4412,4 @@ function omitWorkspaceDeletionRun(runs: Record<string, TerminalCommandRun>, work
 function nextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => { resolve(); }));
 }
+

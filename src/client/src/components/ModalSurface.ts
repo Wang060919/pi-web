@@ -167,8 +167,11 @@ export class ModalSurface extends LitElement {
   private handleBackdropMouseDown(event: MouseEvent): void {
     // Presses that start on dialog content bubble through the slot; only a
     // press targeting the backdrop itself counts as a dismissal.
-    if (event.target !== event.currentTarget || this.busy) return;
-    this.onClose?.();
+    if (event.target !== event.currentTarget || this.busy || this.onClose === undefined) return;
+    // Dismissal restores the opener; the press must not then move focus back
+    // to the removed backdrop (or the document body) via its native default.
+    event.preventDefault();
+    this.onClose();
   }
 
   static override styles = css`

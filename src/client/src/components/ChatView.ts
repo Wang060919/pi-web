@@ -16,11 +16,14 @@ import { chatGroupProgress, type ChatGroupProgress } from "../chatGroupProgress"
 import { openTranscriptQuestion, transcriptQuestionOutcomes } from "../chatQuestions";
 import { chatTimelineEntries, type ChatTimelineEntry } from "../chatTimeline";
 import { ChatTimeline } from "./ChatTimeline";
+import "./ChatTimelineDialog";
 import { ChatScrollFlows } from "../ChatScrollFlows";
 import { turnWrittenFiles } from "../toolPresentation";
 import { selectedContentIn, type QuotedChatSelection } from "../quotedSelection";
 import { selectionQuotePosition, type QuoteAnchorRect, type QuotePopoverPosition } from "../selectionQuotePosition";
 import { ChatRenderKeys } from "../chatRenderKeys";
+import { chatLineIdentity, chatLineScrollIdentity, chatMessageAnchorKey, chatEventAnchorKey } from "../chatMessageIdentity";
+export { chatMessageAnchorKey } from "../chatMessageIdentity";
 import { DEFAULT_CHAT_BEHAVIORS, type ChatBehaviors } from "../chatBehaviors";
 import type { AskUserSubmission, PendingExtensionDialog, QueuedSessionMessage, SessionActivity, SessionRef, SessionStatus, SessionWarningSeverity } from "../api";
 import type { ClosedExtensionDialog } from "../appState";
@@ -111,36 +114,6 @@ export function chatImagePartSource(part: ChatImagePart, session?: SessionRef, m
 /** The message-header label used when a tool message renders as an image output. */
 export function chatToolOutputLabel(toolName?: string): string {
   return toolName === undefined || toolName === "" ? t("ChatView.tool_output.81a5fb0b") : localizedText("ChatView.output.d2396e67")`${toolName} output`;
-}
-
-function chatLineIdentity(index: number, message?: ChatLine): string {
-  return chatLineScrollIdentity(message) ?? String(index);
-}
-
-function chatLineScrollIdentity(message?: ChatLine): string | undefined {
-  if (message?.entryId === undefined || message.entryId === "") return undefined;
-  // Page offsets count raw entries, whereas display indexes count normalized
-  // lines. Only durable entry identity survives coalescing during a prepend.
-  // Skill invocations can also produce a user-text line from the same entry.
-  const slice = message.parts.some((part) => part.type === "skillInvocation") ? "skill-invocation" : "message";
-  return JSON.stringify([message.entryId, message.role, slice]);
-}
-
-/** Scroll identities never fall back to normalized display indexes. */
-export function chatMessageAnchorKey(_index: number, message?: ChatLine): string | undefined {
-  const identity = chatLineScrollIdentity(message);
-  return identity === undefined ? undefined : `m:${identity}`;
-}
-
-export function chatGroupAnchorKey(_startIndex: number, message?: ChatLine): string | undefined {
-  const identity = chatLineScrollIdentity(message);
-  return identity === undefined ? undefined : `g:${identity}`;
-}
-
-/** Event identity is separate from the readable slice of the same entry. */
-export function chatEventAnchorKey(_index: number, message?: ChatLine): string | undefined {
-  const identity = chatLineScrollIdentity(message);
-  return identity === undefined ? undefined : `e:${identity}`;
 }
 
 /** The CSS class list for an event-group `<details>`, distinguishing the live tail. */
@@ -359,6 +332,7 @@ export class ChatView extends LitElement {
   @property({ attribute: false }) onAnswerDialog?: ExtensionDialogAnswerCallback;
   @property({ attribute: false }) onCancelDialog?: ExtensionDialogCancelCallback;
   @property({ attribute: false }) onDismissClosedDialog?: ExtensionDialogDismissCallback;
+  @property({ type: Boolean, attribute: "mobile-navigation-external", reflect: true }) mobileNavigationExternal = false;
   @property({ attribute: false }) notificationInbox?: SelectedSessionNotificationView;
   @property({ attribute: false }) onClearServerQueue?: () => void;
   @property({ attribute: false }) onQueuedMessageAction?: (target: QueuedMessageActionTarget) => Promise<void>;
@@ -372,12 +346,15 @@ export class ChatView extends LitElement {
   @property({ attribute: false }) onLoadMore?: () => void;
   @property({ attribute: false }) behaviors: ChatBehaviors = DEFAULT_CHAT_BEHAVIORS;
   @query(".chat") private chat?: HTMLDivElement;
+  @property({ type: Boolean, attribute: "timeline-open", reflect: true }) private timelineOpen = false;
   @query("chat-timeline") private timeline?: ChatTimeline;
   @query("dialog.image-zoom") private imageZoomDialog?: HTMLDialogElement;
   @state() private followingLive = false;
   @state() private zoomedImage: { src: string; alt: string } | undefined = undefined;
   @state() private expandedMetaKey: string | undefined;
   @state() private collapsedNotificationTargetKeys: ReadonlySet<string> = new Set();
+  private expandedNotificationTargetKeys = new Set<string>();
+  @state() private compactNotificationDefault = false;
   @state() private retainedEmptyNotificationTrayTargetKey: string | undefined;
   private pendingNotificationFocus: PendingNotificationFocus | undefined;
   private imageZoomModalRegistration: RenderedModalRegistration | undefined;
@@ -410,7 +387,15 @@ export class ChatView extends LitElement {
   private imageSession: SessionRef | undefined;
   private touchY: number | undefined;
   private loadMoreRequested = false;
-  private readonly onViewportResize = () => { this.dismissQuoteSelection(); this.scrollFlows.onViewportResize(); };
+  private updateCompactNotificationDefault(): void {
+    this.compactNotificationDefault = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(max-width: 760px)").matches;
+  }
+  private readonly onViewportResize = () => {
+    this.updateCompactNotificationDefault();
+    if (!this.compactNotificationDefault) this.timelineOpen = false;
+    this.dismissQuoteSelection();
+    this.scrollFlows.onViewportResize();
+  };
   private readonly handleScroll = () => {
     this.dismissQuoteSelection();
     if (this.behaviors.rememberPosition || this.behaviors.followTail || this.behaviors.automaticHistory) this.scrollFlows.onScroll();
@@ -427,6 +412,17 @@ export class ChatView extends LitElement {
     if (event.deltaY !== 0) this.scrollFlows.onInteraction();
     if (event.deltaY < 0) this.scrollFlows.onUpIntent();
   };
+  private readonly handleScrollKeyDown = (event: KeyboardEvent) => {
+    // Only the focused transcript owns these native scroll keys. Descendant
+    // controls (including shadow-root inputs) keep their keyboard behavior.
+    if (event.composedPath()[0] !== event.currentTarget || event.defaultPrevented || event.isComposing
+      || event.ctrlKey || event.metaKey || event.altKey || (event.shiftKey && event.key !== " ")) return;
+    const upward = event.key === "ArrowUp" || event.key === "PageUp" || event.key === "Home"
+      || (event.key === " " && event.shiftKey);
+    if (upward) this.scrollFlows.onUpIntent();
+    else if (event.key === "ArrowDown" || event.key === "PageDown" || event.key === "End" || event.key === " ") this.scrollFlows.onInteraction();
+    // Let the browser perform the scroll; this only cancels competing restores.
+  };
   private readonly handleTouchStart = (event: TouchEvent) => {
     this.touchY = event.touches[0]?.clientY;
     this.scrollFlows.onInteraction();
@@ -437,6 +433,22 @@ export class ChatView extends LitElement {
     this.touchY = y;
   };
   private readonly handleTouchEnd = () => { this.touchY = undefined; };
+  /** External mobile navigation returns focus to reading, never to the keyboard. */
+  jumpToBoundary(boundary: "top" | "end"): void {
+    this.chat?.focus({ preventScroll: true });
+    if (boundary === "top") this.scrollFlows.jumpToTop();
+    else this.scrollFlows.jumpToEnd();
+  }
+  openTimeline(): void { this.timelineOpen = true; }
+  private readonly closeTimeline = (): void => { this.timelineOpen = false; };
+  private readonly selectTimelineEntry = async (entry: ChatTimelineEntry, identity: string): Promise<void> => {
+    if (identity !== machineSessionKey(this.machineId, this.sessionId)) return;
+    this.timelineOpen = false;
+    await this.updateComplete;
+    if (identity !== machineSessionKey(this.machineId, this.sessionId)) return;
+    this.chat?.focus({ preventScroll: true });
+    this.handleTimelineNavigate(entry);
+  };
   private readonly handleJumpTop = () => { this.scrollFlows.jumpToTop(); };
   private readonly handleJumpEnd = () => { this.scrollFlows.jumpToEnd(); };
   private readonly handleTimelineNavigate = (entry: ChatTimelineEntry): void => {
@@ -466,6 +478,7 @@ export class ChatView extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.updateCompactNotificationDefault();
     this.ownerDocument.addEventListener("pointerdown", this.handleQuoteOutsidePointer, true);
     this.ownerDocument.addEventListener("keydown", this.handleQuoteEscape);
     window.addEventListener("resize", this.onViewportResize);
@@ -497,7 +510,8 @@ export class ChatView extends LitElement {
   }
 
   protected override willUpdate(changed: Map<string, unknown>): void {
-    if (changed.has("sessionId") || changed.has("machineId")) {
+    if (changed.has("sessionId") || changed.has("machineId") || changed.has("showWelcome")) {
+      this.timelineOpen = false;
       this.dismissQuoteSelection();
     }
     if (changed.has("messages")) {
@@ -624,6 +638,7 @@ export class ChatView extends LitElement {
           @scroll=${this.handleScroll}
           @toggle=${this.behaviors.followTail ? this.handleDisclosureToggle : undefined}
           @wheel=${this.handlesScrollIntent ? this.handleWheel : undefined}
+          @keydown=${this.handlesScrollIntent ? this.handleScrollKeyDown : undefined}
           @touchstart=${this.handlesScrollIntent ? this.handleTouchStart : undefined}
           @touchmove=${this.handlesScrollIntent ? this.handleTouchMove : undefined}
           @touchend=${this.handlesScrollIntent ? this.handleTouchEnd : undefined}
@@ -654,9 +669,11 @@ export class ChatView extends LitElement {
           <button type="button" class=${following ? "following" : ""}
             title=${!this.behaviors.followTail ? t("ChatView.jump_to_end.c37e7d58") : following ? t("ChatView.following_live_jump_to_end.9520bc45") : t("ChatView.jump_to_end_and_follow_live.db38db8e")}
             aria-label=${t("ui.chatTimeline.end")} aria-describedby="chat-follow-state" @click=${this.handleJumpEnd}>${renderUiIcon("arrowDown")}</button>
+          <button class="mobile-timeline-entry" type="button" aria-haspopup="dialog" @click=${() => { this.openTimeline(); }}>${t("ui.chatTimeline.navigation")}</button>
           <span id="chat-follow-state" class="visually-hidden">${!this.behaviors.followTail ? t("ChatView.automatic_following_disabled.0de38a22") : following ? t("ChatView.following_live.b062bdb4") : t("ChatView.live_following_paused.ecda395d")}</span>
         </nav>`}
       </div>
+      ${this.timelineOpen ? html`<chat-timeline-dialog .entries=${this.timelineEntriesCache} .currentKey=${this.timeline?.currentEntryKey} .onClose=${this.closeTimeline} .onSelect=${(entry: ChatTimelineEntry) => { void this.selectTimelineEntry(entry, transcriptIdentity); }}></chat-timeline-dialog>` : nothing}
       ${this.renderImageZoom()}
     `;
   }
@@ -676,7 +693,9 @@ export class ChatView extends LitElement {
     const retainsFocusTarget = this.retainedEmptyNotificationTrayTargetKey === chatKey;
     const totalCount = notificationInboxTotalCount(inbox);
     if (totalCount === 0 && !hasPendingOverlay && !retainsFocusTarget) return null;
-    const collapsed = notificationTrayIsCollapsed(this.collapsedNotificationTargetKeys, inbox);
+    const collapsed = notificationTrayIsCollapsed(this.collapsedNotificationTargetKeys, inbox)
+      || (this.compactNotificationDefault && !this.expandedNotificationTargetKeys.has(chatKey)
+        && inbox.highestSeverity === "info" && !retainsFocusTarget);
     const toggleLabel = collapsed ? t("ChatView.expand_notifications.6f42f8f6") : t("ChatView.collapse_notifications.48fb5653");
     return localizedTemplate("ChatView.clear.d121edb1", html)`
       <section class=${`notification-tray${collapsed ? " collapsed" : ""}`} role="region" aria-labelledby="session-notifications-heading" @focusout=${(event: FocusEvent) => { this.releaseEmptyNotificationTray(event); }}>
@@ -745,6 +764,9 @@ export class ChatView extends LitElement {
   }
 
   private toggleNotificationTray(inbox: SelectedSessionNotificationView, collapsed: boolean): void {
+    const chatKey = notificationTargetKey(inbox);
+    if (collapsed) this.expandedNotificationTargetKeys.add(chatKey);
+    else this.expandedNotificationTargetKeys.delete(chatKey);
     this.collapsedNotificationTargetKeys = setNotificationTrayCollapsed(this.collapsedNotificationTargetKeys, inbox, !collapsed);
   }
 

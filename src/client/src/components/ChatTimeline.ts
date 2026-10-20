@@ -83,6 +83,8 @@ export class ChatTimeline extends LitElement {
     `;
   }
 
+  get currentEntryKey(): string | undefined { return this.activeKey; }
+
   private sampledEntries(): readonly ChatTimelineEntry[] {
     const sampled = sampleChatTimelineEntries(this.entries, this.activeKey);
     const focused = this.entries.find((entry) => entry.key === this.focusedKey);

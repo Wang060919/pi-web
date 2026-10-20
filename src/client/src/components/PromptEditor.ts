@@ -95,6 +95,8 @@ export class PromptEditor extends LitElement {
   @state() private completions: CompletionItem[] = [];
   @state() private selectedIndex = 0;
   @state() private historyOpen = false;
+  @property({ type: Boolean }) mobileOptionsOpen = false;
+  @property({ attribute: false }) onOpenMobileOptions?: () => void;
   @state() private historyIndex = 0;
   @state() private attachments: readonly PendingAttachment[] = [];
   @state() private attachmentDelivery: PromptAttachmentDelivery = loadAttachmentDelivery();
@@ -199,7 +201,7 @@ export class PromptEditor extends LitElement {
     return html`
       <footer class=${shellMode ? "shell-mode" : ""} aria-busy=${submissionPending ? "true" : "false"} @paste=${(event: ClipboardEvent) => { void this.handlePaste(event); }} @dragover=${(event: DragEvent) => { this.handleDragOver(event); }} @drop=${(event: DragEvent) => { void this.handleDrop(event); }}>
         ${this.cwd === undefined ? null : html`
-          <div class="composer-context">
+          <div class="composer-context" id="composer-context">
             <button class="context-chip machine-chip" type="button" title=${this.machineLabel ?? this.machineId} aria-label=${t("ui.composer.machinePicker")} aria-haspopup="dialog" ?disabled=${this.onSelectMachine === undefined} @click=${() => this.onSelectMachine?.()}>
               <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2.5" width="10" height="8" rx="1"></rect><path d="M1.5 13h13l-1.5-2.5H3z"></path></svg>
               <span>${this.machineLabel ?? (this.machineId === "local" ? t("ui.composer.local") : this.machineId)}</span>
@@ -230,7 +232,8 @@ export class PromptEditor extends LitElement {
         </div>
         <div class="actions">
           <button class="editor-attach icon-button" ?disabled=${busy} title=${t("ui.composer.attach")} aria-label=${t("ui.composer.attach")} @click=${() => { this.attachmentInput?.click(); }}><span class="attach-mark" aria-hidden="true">${renderUiIcon("plus")}</span></button>
-          <div class="composer-controls">
+          <button class="mobile-options-toggle icon-button" type="button" title=${t("navigation.more")} aria-label=${t("navigation.more")} aria-expanded=${String(this.mobileOptionsOpen)} aria-haspopup="dialog" ?disabled=${this.onOpenMobileOptions === undefined} @click=${() => { this.onOpenMobileOptions?.(); }}>${renderUiIcon("more")}</button>
+          <div class="composer-controls" id="composer-status">
             ${this.renderCompactStatus()}
             <slot name="status"></slot>
           </div>
