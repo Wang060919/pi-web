@@ -149,13 +149,24 @@ describe("modal-surface close contract", () => {
       configure: (element) => { element.onClose = onClose; },
     });
 
-    backdrop(surface).dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, composed: true }));
+    const press = new MouseEvent("mousedown", { bubbles: true, cancelable: true, composed: true });
+    backdrop(surface).dispatchEvent(press);
+    expect(press.defaultPrevented).toBe(true);
     expect(onClose).toHaveBeenCalledOnce();
 
     surface.busy = true;
     await surface.updateComplete;
-    backdrop(surface).dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, composed: true }));
+    const busyPress = new MouseEvent("mousedown", { bubbles: true, cancelable: true, composed: true });
+    backdrop(surface).dispatchEvent(busyPress);
+    expect(busyPress.defaultPrevented).toBe(false);
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("preserves the press default when the backdrop has no dismissal callback", async () => {
+    const surface = await mountSurface({ content: `<button>Inside</button>` });
+    const press = new MouseEvent("mousedown", { bubbles: true, cancelable: true, composed: true });
+    backdrop(surface).dispatchEvent(press);
+    expect(press.defaultPrevented).toBe(false);
   });
 
   it("ignores presses that start on dialog content or the section frame", async () => {
@@ -165,8 +176,11 @@ describe("modal-surface close contract", () => {
       configure: (element) => { element.onClose = onClose; },
     });
 
-    contentButton(surface).dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, composed: true }));
-    dialogSection(surface).dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, composed: true }));
+    for (const target of [contentButton(surface), dialogSection(surface)]) {
+      const press = new MouseEvent("mousedown", { bubbles: true, cancelable: true, composed: true });
+      target.dispatchEvent(press);
+      expect(press.defaultPrevented).toBe(false);
+    }
 
     expect(onClose).not.toHaveBeenCalled();
   });

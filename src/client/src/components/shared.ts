@@ -743,7 +743,7 @@ export const promptEditorStyles = css`
     .composer-action.icon-button { min-width: 44px; padding-inline: 0; }
     .mobile-options-toggle.icon-button { display: inline-grid; width: 44px; height: 44px; border: 0; background: transparent; color: var(--pi-muted); }
     .mobile-options-toggle[aria-expanded="true"] { background: var(--pi-selection-bg); }
-    .composer-context, .select-thinking { display: none; }
+    .composer-context, .select-thinking.thinking-button { display: none; }
     .actions { gap: 2px; }
     .composer-controls { flex: 1 1 auto; max-width: none; }
     .compact-status { flex: 1 1 auto; justify-content: flex-end; }
