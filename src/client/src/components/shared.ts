@@ -506,12 +506,20 @@ export const chatStyles = css`
   .group-msg > .msg-header { position: sticky; top: -26px; z-index: 4; min-height: 16px; margin: 0 0 4px; padding: 0; border: 0; background: var(--pi-bg); }
   .group-msg .msg-action { width: 24px; height: 24px; }
   @media (max-width: 760px) {
+    .chat-wrap:has(> .chat-jumps) { container: mobile-chat / size; }
     .chat { padding-left: 8px; padding-right: 8px; }
     /* Reserve the existing navigation gutter so jump targets never cover
        transcript/code controls, including while reading in the middle. */
     .chat-wrap:has(> .chat-jumps) > .chat { padding-right: 52px; }
     .chat-jumps { right: 4px; flex-direction: column; }
     .chat-wrap:has(> .chat-jumps) > chat-timeline { bottom: 102px; }
+    /* A keyboard or expanded composer can leave less room than the vertical
+       pair needs. Widen only its gutter instead of clipping either target. */
+    @container mobile-chat (max-height: 102px) {
+      .chat-wrap:has(> .chat-jumps) > .chat { padding-right: 99px; }
+      .chat-jumps { flex-direction: row; bottom: 4px; }
+      .chat-wrap:has(> .chat-jumps) > chat-timeline { bottom: 54px; }
+    }
     .msg:not(.tool-execution-shell):not(.ask-user-record-shell):not(.event-group) { padding-inline: 8px; }
   }
   @media (max-width: 760px), (pointer: coarse) { .group-msg .msg-action { width: 44px; height: 44px; } .chat-jumps button, .image-zoom-close { width: 44px; height: 44px; } }
