@@ -2,6 +2,10 @@
 import type { messages as englishMessages } from './en.js';
 
 export const messages: Record<keyof typeof englishMessages, string> = {
+  "FilesPanel.mention": "提及",
+  "FilesPanel.mentionHint": "将路径插入聊天",
+  "FilesPanel.mentionNeedsSession": "请先选择可编辑的会话，再提及路径",
+
   "FilesPanel.resize_file_list_and_preview": "调整文件列表与预览高度",
   "FilesPanel.drag_or_double_click_to_reset": "上下拖动调整高度，双击恢复默认。",
   "FilesPanel.workspace_root.a28d8001": "工作区根目录",

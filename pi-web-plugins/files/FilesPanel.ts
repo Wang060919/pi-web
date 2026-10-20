@@ -42,6 +42,7 @@ export class WorkspaceFilesPanel extends LitElement {
   @state() private overwrite = false;
   @state() private createDirs = true;
   @state() private formError = "";
+  @state() private mentionError = "";
   @state() private dragActive = false;
   @state() private treePercent = DEFAULT_TREE_PERCENT;
   private activeFilesResize: ActiveFilesResize | undefined;
@@ -61,6 +62,7 @@ export class WorkspaceFilesPanel extends LitElement {
     if (this.boundScopeKey !== undefined && nextKey !== this.boundScopeKey) {
       this.finishFilesResize();
       this.resetPendingUpload();
+      this.mentionError = "";
     }
     this.bindRuntime(nextKey);
     const nextNavigationModeKey = workspaceNavigationModeKey(this.context);
@@ -137,7 +139,7 @@ export class WorkspaceFilesPanel extends LitElement {
           </div>
           <input id="workspace-upload-input" class="visually-hidden" type="file" multiple @change=${this.handleFileInputChange} />
         </section>
-        ${scope.error === undefined ? null : html`<p class="files-error" role="alert">${scope.error}</p>`}
+        ${html`${scope.error === undefined ? null : html`<p class="files-error" role="alert">${scope.error}</p>`}${this.mentionError === "" ? null : html`<p class="files-error" role="alert">${this.mentionError}</p>`}`}
         ${this.renderUploadProgress(context, runtime, scope)}
         <section class="split" style=${`--files-tree-size:${String(this.treePercent)}fr;--files-viewer-size:${String(100 - this.treePercent)}fr`}>
           <div class="list tree" id="files-tree">
@@ -282,7 +284,10 @@ export class WorkspaceFilesPanel extends LitElement {
     const children = scope.expandedDirs[entry.path];
     const hasChildren = children !== undefined;
     const selected = entry.type !== "directory" && scope.selectedFilePath === entry.path;
+    const session = context.state?.selectedSession;
+    const canMention = session !== undefined && !session.archived && !session.pending;
     return html`
+      <div class="tree-row">
       <button class=${selected ? "row selected" : "row"} style=${`--depth:${String(depth)}`} @click=${() => {
         if (entry.type === "directory") void runtime.expandDir(context, entry.path);
         else void runtime.selectFile(context, entry.path);
@@ -290,8 +295,31 @@ export class WorkspaceFilesPanel extends LitElement {
         <span>${entry.type === "directory" ? (renderUiIcon(hasChildren ? "chevronDown" : "chevronRight")) : "·"}</span>
         <span>${entry.name}</span>
       </button>
+      <button class="mention-button" type="button" ?disabled=${!canMention}
+        title=${t(canMention ? "FilesPanel.mentionHint" : "FilesPanel.mentionNeedsSession")}
+        aria-label=${`${t("FilesPanel.mention")} ${entry.path}`}
+        @click=${() => { void this.mentionPath(context, entry); }}><span aria-hidden="true">@</span> ${t("FilesPanel.mention")}</button>
+      </div>
       ${hasChildren ? children.map((child) => this.renderTreeEntry(context, runtime, scope, child, depth + 1)) : null}
     `;
+  }
+
+  private async mentionPath(context: WorkspacePanelContext, entry: FileTreeEntry): Promise<void> {
+    const session = context.state?.selectedSession;
+    if (session === undefined || session.archived || session.pending) return;
+    this.mentionError = "";
+    const path = entry.type === "directory" ? `${entry.path}/` : entry.path;
+    const mention = path.includes(" ") ? `@"${path}"` : `@${path}`;
+    try {
+      await context.navigate({ view: "chat" }, { mode: "patch" });
+      const current = this.context;
+      const currentSession = current?.state?.selectedSession;
+      if (current === undefined || workspaceContextKey(current) !== workspaceContextKey(context)
+        || currentSession?.id !== session.id || currentSession.archived || currentSession.pending) return;
+      current.prompt.insertText(`${current.prompt.getText() === "" ? "" : " "}${mention} `);
+    } catch (error) {
+      this.mentionError = errorMessage(error);
+    }
   }
 
   private renderUploadProgress(context: WorkspacePanelContext, runtime: FilesRuntime, scope: FilesScopeState): TemplateResult | null {
@@ -555,7 +583,12 @@ export class WorkspaceFilesPanel extends LitElement {
     .split-resizer:hover, .split-resizer:focus-visible, :host([resizing-files]) .split-resizer { background: var(--pi-text-secondary); }
     .split-resizer:focus-visible { outline: 1px solid var(--pi-text-secondary); }
     :host([resizing-files]) { cursor: row-resize; user-select: none; }
-    .row { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 4px; width: 100%; border: 0; border-radius: 5px; background: transparent; text-align: left; padding: 4px 6px 4px calc(6px + var(--depth, 0) * 14px); }
+    .tree-row { display: flex; align-items: center; gap: 4px; border-radius: 6px; }
+    .tree-row:hover, .tree-row:focus-within { background: var(--pi-surface-hover); }
+    .mention-button { flex: 0 0 auto; opacity: 0; pointer-events: none; color: var(--pi-accent); font-size: 12px; }
+    .tree-row:hover .mention-button, .tree-row:focus-within .mention-button { opacity: 1; pointer-events: auto; }
+    .mention-button:disabled { color: var(--pi-muted); cursor: not-allowed; }
+    .row { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 4px; border: 0; border-radius: 5px; background: transparent; text-align: left; padding: 4px 6px 4px calc(6px + var(--depth, 0) * 14px); }
     .row:not(:disabled):hover { background: var(--pi-surface-hover); }
     .row.selected, .row.selected:not(:disabled):hover { background: var(--pi-selection-bg); }
     .row span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -604,6 +637,7 @@ export class WorkspaceFilesPanel extends LitElement {
     footer { flex: 0 0 auto; display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
     @media (max-width: 640px), (pointer: coarse) {
       button { min-height: 44px; }
+      .mention-button { opacity: 1; pointer-events: auto; }
       .split { grid-template-rows: minmax(0, var(--files-tree-size, 34fr)) 24px minmax(0, var(--files-viewer-size, 66fr)); }
       .split-resizer { background: linear-gradient(var(--pi-border), var(--pi-border)) center / 100% 1px no-repeat; }
       .split-resizer::before { inset: 5px calc(50% - 20px); border-radius: 6px; background: var(--pi-border); }

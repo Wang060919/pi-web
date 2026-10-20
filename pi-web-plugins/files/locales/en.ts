@@ -1,5 +1,9 @@
 // English source messages. Keys are stable at the call site.
 export const messages = {
+  "FilesPanel.mention": "Mention",
+  "FilesPanel.mentionHint": "Insert path into chat",
+  "FilesPanel.mentionNeedsSession": "Select an editable conversation to mention paths",
+
   "FilesPanel.resize_file_list_and_preview": "Resize file list and preview",
   "FilesPanel.drag_or_double_click_to_reset": "Drag to resize. Double-click to reset.",
   "FilesPanel.workspace_root.a28d8001": "workspace root",

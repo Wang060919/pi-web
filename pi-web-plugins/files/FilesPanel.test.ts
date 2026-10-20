@@ -15,6 +15,53 @@ afterEach(() => {
 });
 
 describe("Files panel component boundary", () => {
+  it("mentions files and directories in the existing draft without selecting or sending them", async () => {
+    const listFiles = vi.fn<WorkspaceFilesCapabilityV1["listFiles"]>(() => Promise.resolve(treeResponse("", [
+      { name: "src", path: "src", type: "directory" },
+      { name: "plan notes.md", path: "plan notes.md", type: "file" },
+    ])));
+    const context = createContext({ files: createFiles({ listFiles }) });
+    context.state = { selectedSession: { id: "session-1", cwd: "/repo", archived: false, pending: false } };
+    let draft = "Please review";
+    context.prompt.getText = () => draft;
+    context.prompt.insertText = vi.fn((text: string) => { draft += text; });
+    context.navigate = vi.fn(() => Promise.resolve());
+    const panel = await mountPanel(context);
+    await vi.waitFor(() => { expect(panel.shadowRoot?.querySelectorAll('.mention-button')).toHaveLength(2); });
+    const buttons = [...panel.shadowRoot?.querySelectorAll<HTMLButtonElement>('.mention-button') ?? []];
+    buttons[0]?.click(); buttons[1]?.click();
+    await vi.waitFor(() => { expect(draft).toContain("Please review @src/"); });
+    expect(draft).toContain('@"plan notes.md" ');
+    expect(context.navigate).toHaveBeenCalledWith({ view: "chat" }, { mode: "patch" });
+    expect(listFiles).toHaveBeenCalledTimes(1);
+    expect(panel.shadowRoot?.querySelector('.row.selected')).toBeNull();
+  });
+
+  it("does not insert into another conversation when navigation finishes late", async () => {
+    const context = createContext({ files: createFiles({ listFiles: () => Promise.resolve(treeResponse("", [{ name: "src", path: "src", type: "directory" }])) }) });
+    context.state = { selectedSession: { id: "session-1", cwd: "/repo", archived: false, pending: false } };
+    let finishNavigation: () => void = () => undefined;
+    context.navigate = () => new Promise<void>((resolve) => { finishNavigation = resolve; });
+    const insertText = vi.fn(); context.prompt.insertText = insertText;
+    const panel = await mountPanel(context);
+    await vi.waitFor(() => { expect(panel.shadowRoot?.querySelector('.mention-button')).not.toBeNull(); });
+    panel.shadowRoot?.querySelector<HTMLButtonElement>('.mention-button')?.click();
+    panel.context = { ...context, state: { selectedSession: { id: "session-2", cwd: "/repo", archived: false, pending: false } } };
+    finishNavigation(); await panel.updateComplete;
+    expect(insertText).not.toHaveBeenCalled();
+  });
+
+  it.each([undefined, { id: "archived", cwd: "/repo", archived: true, pending: false }, { id: "pending", cwd: "/repo", archived: false, pending: true }])("disables mentions when there is no editable conversation (%j)", async (selectedSession) => {
+    const context = createContext({ files: createFiles({ listFiles: () => Promise.resolve(treeResponse("", [{ name: "src", path: "src", type: "directory" }])) }) });
+    context.state = selectedSession === undefined ? {} : { selectedSession };
+    const insertText = vi.fn(); context.prompt.insertText = insertText;
+    const panel = await mountPanel(context);
+    await vi.waitFor(() => { expect(panel.shadowRoot?.querySelector('.mention-button')).not.toBeNull(); });
+    const button = requiredElement(panel.shadowRoot?.querySelector<HTMLButtonElement>('.mention-button'), "mention");
+    expect(button.disabled).toBe(true); button.click();
+    expect(insertText).not.toHaveBeenCalled();
+  });
+
   it("loads and renders the tree, wires expansion/selection, and passes content to the viewer", async () => {
     const listFiles = vi.fn<WorkspaceFilesCapabilityV1["listFiles"]>((path) => Promise.resolve(path === ""
       ? treeResponse("", [{ name: "src", path: "src", type: "directory" }, { name: "README.md", path: "README.md", type: "file" }])
