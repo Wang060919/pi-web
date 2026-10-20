@@ -3,6 +3,11 @@ import { LitElement } from "lit";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { api, type Machine, type SessionInfo, type Workspace } from "../api";
 import { initialAppState, type AppState } from "../appState";
+import { AppShellController } from "../appShell/appShellController";
+import { ChatScrollFlows } from "../ChatScrollFlows";
+import { CommandPicker } from "./CommandPicker";
+import { ComposerOptionsDialog } from "./ComposerOptionsDialog";
+import { ModalSurface } from "./ModalSurface";
 import { AuthController } from "../controllers/authController";
 import { SessionController } from "../controllers/sessionController";
 import { PluginRegistry } from "../plugins/registry";
@@ -40,8 +45,11 @@ function deferred<T>() {
   return { promise, resolve: (value: T) => { if (resolve === undefined) throw new Error("Missing deferred resolver"); resolve(value); } };
 }
 
-async function mountedApp() {
+async function mountedApp(mobile = false) {
   const app = new ChatToolsApp();
+  const shell: unknown = Reflect.get(app, "appShell");
+  if (!(shell instanceof AppShellController)) throw new Error("Missing app shell");
+  shell.isMobileNavigationLayout = mobile;
   await Reflect.get(app, "builtInPluginsReady");
   const registry: unknown = Reflect.get(app, "plugins");
   const controller: unknown = Reflect.get(app, "sessions");
@@ -67,7 +75,12 @@ async function mountedApp() {
     Reflect.set(app, "state", state);
     return settle();
   };
-  return { app, controller, select, ...await settle() };
+  const patch = async (value: Partial<AppState>) => {
+    state = { ...state, ...value };
+    Reflect.set(app, "state", state);
+    return settle();
+  };
+  return { app, controller, select, patch, shell, ...await settle() };
 }
 
 describe("quoted selection → real app composer", () => {
@@ -163,5 +176,92 @@ describe("local authentication commands from the composer", () => {
     if (!(auth instanceof AuthController)) throw new Error("Expected authentication controller");
     auth.closeDialog();
     await host.app.updateComplete;
+  });
+});
+
+
+describe("mobile More sheet in the real app", () => {
+  async function open(host: Awaited<ReturnType<typeof mountedApp>>) {
+    const trigger = host.editor.renderRoot.querySelector<HTMLButtonElement>(".mobile-options-toggle");
+    if (trigger === null) throw new Error("Missing More trigger");
+    // This harness exercises focus routing, not responsive CSS. Expose the
+    // mobile opener to the modal registry's visibility guard at its desktop size.
+    trigger.style.display = "inline-grid";
+    trigger.focus();
+    trigger.click();
+    await host.app.updateComplete;
+    await host.editor.updateComplete;
+    const dialog = host.app.renderRoot.querySelector("composer-options-dialog");
+    if (!(dialog instanceof ComposerOptionsDialog)) throw new Error("Missing More sheet");
+    await dialog.updateComplete;
+    const surface = dialog.renderRoot.querySelector("modal-surface");
+    if (!(surface instanceof ModalSurface)) throw new Error("Missing sheet surface");
+    await surface.updateComplete;
+    return { trigger, dialog, surface };
+  }
+
+  it("cancels back to More without losing the draft and closes before jumping with transcript focus", async () => {
+    const host = await mountedApp(true);
+    const input = host.editor.view;
+    host.editor.replaceText("Unsent mobile draft");
+    expect(host.view.mobileNavigationExternal).toBe(true);
+    const { trigger, dialog } = await open(host);
+    dialog.renderRoot.querySelector<HTMLButtonElement>(".close")?.click();
+    await host.app.updateComplete;
+    expect(host.editor.shadowRoot?.activeElement).toBe(trigger);
+    expect(host.editor.view).toBe(input);
+    expect(host.editor.view?.state.doc.toString()).toBe("Unsent mobile draft");
+    for (const action of ["top", "end"] as const) {
+      const spy = vi.spyOn(ChatScrollFlows.prototype, action === "top" ? "jumpToTop" : "jumpToEnd").mockImplementation(() => undefined);
+      const reopened = await open(host);
+      reopened.dialog.renderRoot.querySelector<HTMLButtonElement>(`[data-action="${action}"]`)?.click();
+      await host.app.updateComplete;
+      await Promise.resolve();
+      expect(host.app.renderRoot.querySelector("composer-options-dialog")).toBeNull();
+      expect(spy).toHaveBeenCalledOnce();
+      expect(host.view.shadowRoot?.activeElement).toBe(host.view.renderRoot.querySelector(".chat"));
+      expect(host.editor.view?.state.doc.toString()).toBe("Unsent mobile draft");
+      spy.mockRestore();
+    }
+  });
+
+  it("hands focus to the existing workspace picker and restores the More opener on cancel", async () => {
+    const host = await mountedApp(true);
+    const { trigger, dialog } = await open(host);
+    dialog.renderRoot.querySelector<HTMLButtonElement>('[data-action="workspace"]')?.click();
+    await host.app.updateComplete;
+    await Promise.resolve();
+    await host.app.updateComplete;
+    expect(host.app.renderRoot.querySelector("composer-options-dialog")).toBeNull();
+    const command = host.app.renderRoot.querySelector("command-picker");
+    if (!(command instanceof CommandPicker)) throw new Error("Missing context picker");
+    await command.updateComplete;
+    const surface = command.shadowRoot?.querySelector("modal-surface");
+    if (!(surface instanceof ModalSurface)) throw new Error("Missing context picker surface");
+    await surface.updateComplete;
+    surface.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, composed: true, cancelable: true }));
+    await host.app.updateComplete;
+    expect(host.editor.shadowRoot?.activeElement).toBe(trigger);
+  });
+
+  it("closes on session/desktop transitions and retains standalone jumps while composer is inert", async () => {
+    const host = await mountedApp(true);
+    await open(host);
+    await host.select({ ...session, id: "other-mobile-session" });
+    expect(host.app.renderRoot.querySelector("composer-options-dialog")).toBeNull();
+    await open(host);
+    host.shell.isMobileNavigationLayout = false;
+    host.app.requestUpdate();
+    await host.app.updateComplete;
+    expect(host.app.renderRoot.querySelector("composer-options-dialog")).toBeNull();
+    host.shell.isMobileNavigationLayout = true;
+    const next = await host.patch({ status: {
+      sessionId: "other-mobile-session", recentlyActiveElsewhere: true,
+      isStreaming: false, isCompacting: false, isBashRunning: false, pendingMessageCount: 0, queuedMessages: [],
+      tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 }, cost: 0,
+    } });
+    expect(next.editor.hasAttribute("inert")).toBe(true);
+    expect(next.view.mobileNavigationExternal).toBe(false);
+    expect(next.view.renderRoot.querySelectorAll(".chat-jumps button")).toHaveLength(2);
   });
 });

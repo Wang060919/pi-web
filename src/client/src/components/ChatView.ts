@@ -331,6 +331,7 @@ export class ChatView extends LitElement {
   @property({ attribute: false }) onAnswerDialog?: ExtensionDialogAnswerCallback;
   @property({ attribute: false }) onCancelDialog?: ExtensionDialogCancelCallback;
   @property({ attribute: false }) onDismissClosedDialog?: ExtensionDialogDismissCallback;
+  @property({ type: Boolean, attribute: "mobile-navigation-external", reflect: true }) mobileNavigationExternal = false;
   @property({ attribute: false }) notificationInbox?: SelectedSessionNotificationView;
   @property({ attribute: false }) onClearServerQueue?: () => void;
   @property({ attribute: false }) onQueuedMessageAction?: (target: QueuedMessageActionTarget) => Promise<void>;
@@ -429,6 +430,12 @@ export class ChatView extends LitElement {
     this.touchY = y;
   };
   private readonly handleTouchEnd = () => { this.touchY = undefined; };
+  /** External mobile navigation returns focus to reading, never to the keyboard. */
+  jumpToBoundary(boundary: "top" | "end"): void {
+    this.chat?.focus({ preventScroll: true });
+    if (boundary === "top") this.scrollFlows.jumpToTop();
+    else this.scrollFlows.jumpToEnd();
+  }
   private readonly handleJumpTop = () => { this.scrollFlows.jumpToTop(); };
   private readonly handleJumpEnd = () => { this.scrollFlows.jumpToEnd(); };
   private readonly handleTimelineNavigate = (entry: ChatTimelineEntry): void => {

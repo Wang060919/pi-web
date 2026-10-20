@@ -520,6 +520,16 @@ export const chatStyles = css`
       .chat-jumps { flex-direction: row; bottom: 4px; }
       .chat-wrap:has(> .chat-jumps) > chat-timeline { bottom: 54px; }
     }
+    /* The app's More sheet owns mobile jumps when its composer is available.
+       Keep the standalone/inert-composer fallback above. */
+    :host([mobile-navigation-external]) .chat-jumps { display: none; }
+    :host([mobile-navigation-external]) .chat-wrap > .chat { padding-right: 8px; }
+    :host([mobile-navigation-external]) .chat-wrap > .chat.timeline-scroll { padding-right: 38px; }
+    :host([mobile-navigation-external]) .chat-wrap > chat-timeline { bottom: 0; }
+    @container mobile-chat (max-height: 180px) {
+      .chat-wrap > chat-timeline { display: none; }
+      :host([mobile-navigation-external]) .chat-wrap > .chat.timeline-scroll { padding-right: 8px; }
+    }
     .msg:not(.tool-execution-shell):not(.ask-user-record-shell):not(.event-group) { padding-inline: 8px; }
   }
   @media (max-width: 760px), (pointer: coarse) { .group-msg .msg-action { width: 44px; height: 44px; } .chat-jumps button, .image-zoom-close { width: 44px; height: 44px; } }
@@ -733,7 +743,7 @@ export const promptEditorStyles = css`
     .composer-action.icon-button { min-width: 44px; padding-inline: 0; }
     .mobile-options-toggle.icon-button { display: inline-grid; width: 44px; height: 44px; border: 0; background: transparent; color: var(--pi-muted); }
     .mobile-options-toggle[aria-expanded="true"] { background: var(--pi-selection-bg); }
-    footer:not(.options-open) .composer-context, footer:not(.options-open) .select-thinking { display: none; }
+    .composer-context, .select-thinking { display: none; }
     .actions { gap: 2px; }
     .composer-controls { flex: 1 1 auto; max-width: none; }
     .compact-status { flex: 1 1 auto; justify-content: flex-end; }
