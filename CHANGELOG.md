@@ -1,5 +1,23 @@
 # @wang060919/pi-web
 
+## 1.202610.7
+
+### Patch Changes
+
+- Show Mermaid diagrams as rendered previews by default while keeping source viewing and copying available.
+- Organize settings into daily preferences, customization and connection management with searchable navigation and clearer advanced model options. Clarify mobile project and menu controls, and add file-tree path mentions that preserve the current chat draft.
+- Preserve unsaved settings while switching categories and confirm before discarding them. Keep save feedback visible and identify invalid model JSON fields.
+
+  Add direct project creation and settings entries, and keep the current conversation switcher visible on small screens with a separate workspace context menu.
+- Simplify the conversation heading to smaller search and filter icons, with selection and cleanup actions in the menu. Keep search and filters available when the list is collapsed, and preserve the collapse control at the sidebar's minimum width.
+- Add Small, Medium, and Large conversation text sizes in General settings, with Medium as the default. Apply Cowork-style typography to messages, the composer, and conversation spacing, keep code blocks at an independent size, and remember the preference on this device.
+- Show a machine-wide usage heatmap on the welcome page before a project is selected. Keep workspace statistics when a workspace is selected, and deduplicate copied history across the machine's discovered session stores and archives.
+- Search and jump to individual settings with keyboard navigation and bilingual keywords. Unify settings controls and spacing, and use a scrollable category strip on narrow screens. Replace the session list's permanent search field with search and filter buttons, a recent-conversation picker, and status, activity, and sorting options while preserving message search and settings drafts. Align the session action icons and keep Settings anchored to the navigation footer when the session list is collapsed. Simplify session rows by removing message counts and empty secondary lines while preserving status and plugin labels.
+- Use Anthropic Serif for the Pi Web application brand and English welcome heading. Apply consistent Chinese serif fallbacks to the brand, welcome heading, and assistant replies. Show the project name beside workspace usage and label machine-wide usage as all projects. Remove the redundant prompt and action row from all welcome pages, including before a project is selected.
+- Protect unsaved settings when using browser back or forward. Add quick conversation-name filtering with workspace and update details.
+
+  Make project directory selection clearer with machine identity, folder status, parent navigation and hidden-folder controls. Require an explicit choice before creating a missing folder, and show directory loading errors.
+
 ## 1.202610.6
 
 ### Patch Changes
