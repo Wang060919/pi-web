@@ -74,6 +74,28 @@ describe("ChatView conversation timeline", () => {
     expect(view.renderRoot.querySelectorAll(".chat-jumps button")).toHaveLength(2);
   });
 
+  it("keeps both jump controls keyboard-focusable and wired alongside the timeline", async () => {
+    const top = vi.spyOn(ChatScrollFlows.prototype, "jumpToTop").mockImplementation(() => undefined);
+    const end = vi.spyOn(ChatScrollFlows.prototype, "jumpToEnd").mockImplementation(() => undefined);
+    const { view } = await mount();
+    const topButton = view.renderRoot.querySelector<HTMLButtonElement>('.chat-jumps button[aria-label="Jump to top"]');
+    const endButton = view.renderRoot.querySelector<HTMLButtonElement>('.chat-jumps button[aria-label="Jump to end"]');
+    if (topButton === null || endButton === null) throw new Error("Missing transcript jump controls");
+    topButton.focus();
+    expect(view.shadowRoot?.activeElement).toBe(topButton);
+    topButton.click();
+    expect(top).toHaveBeenCalledOnce();
+    endButton.focus();
+    expect(view.shadowRoot?.activeElement).toBe(endButton);
+    endButton.click();
+    expect(end).toHaveBeenCalledOnce();
+    expect(endButton.getAttribute("aria-describedby")).toBe("chat-follow-state");
+    expect(view.renderRoot.querySelector("#chat-follow-state")?.textContent).toBeTruthy();
+    view.showWelcome = true;
+    await view.updateComplete;
+    expect(view.renderRoot.querySelector(".chat-jumps")).toBeNull();
+  });
+
   it("keeps scroll updates inside the navigation component and drops stale entries on session change", async () => {
     const { view, timeline, viewport } = await mount();
     const render = vi.spyOn(view, "render");
