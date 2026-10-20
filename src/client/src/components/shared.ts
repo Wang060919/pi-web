@@ -422,7 +422,8 @@ export const chatStyles = css`
   .activity-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .45; flex: 0 0 auto; }
   .activity-dock.active .dot { width: 6px; height: 6px; animation: pulse 1s ease-in-out infinite; opacity: 1; }
-  .msg { max-width: 100%; min-width: 0; box-sizing: border-box; margin: 0 0 15px; padding: 12px 16px; border: 1px solid var(--pi-border-muted); border-radius: 12px; background: var(--pi-surface); overflow: visible; }
+  /* Keep the full-bleed header aligned with the bubble at every breakpoint. */
+  .msg { --message-padding-inline: 16px; max-width: 100%; min-width: 0; box-sizing: border-box; margin: 0 0 15px; padding: 12px var(--message-padding-inline); border: 1px solid var(--pi-border-muted); border-radius: 12px; background: var(--pi-surface); overflow: visible; }
   .chat > .msg:last-child, .chat > .session-activity:last-child { margin-bottom: 0; }
   .msg.assistant, .msg.tool-image-output { border-color: transparent; background: var(--pi-bg); }
   :is(.msg, .group-msg).assistant > formatted-text.part { --pi-prose-font-family: var(--pi-font-serif, var(--pi-font-family, system-ui, sans-serif)); }
@@ -498,7 +499,7 @@ export const chatStyles = css`
   .session-activity span, .session-activity small { color: var(--pi-muted); }
   .history-boundary small { color: var(--pi-dim); }
   .msg-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 18px; margin-bottom: 6px; }
-  .msg > .msg-header { position: sticky; top: -26px; z-index: 4; margin: -12px -16px 6px; padding: 6px 16px 0; border-radius: 11px 11px 0 0; border-bottom: 0; background: var(--pi-surface); }
+  .msg > .msg-header { position: sticky; top: -26px; z-index: 4; margin: -12px calc(-1 * var(--message-padding-inline)) 6px; padding: 6px var(--message-padding-inline) 0; border-radius: 11px 11px 0 0; border-bottom: 0; background: var(--pi-surface); }
   .msg.assistant > .msg-header, .msg.tool-image-output > .msg-header { border-bottom-color: transparent; background: var(--pi-bg); }
   .msg.user > .msg-header { border-bottom-color: transparent; background: var(--message-user-bg); }
   .msg.assistant > .msg-header .label, .msg.tool-image-output > .msg-header .label { color: var(--pi-text-secondary); }
@@ -516,7 +517,7 @@ export const chatStyles = css`
     .chat-jumps { position: static; flex: 0 0 auto; justify-content: flex-end; padding: 2px 8px; }
     .chat-jumps .mobile-timeline-entry { display: inline-flex; width: auto; padding-inline: 12px; align-items: center; }
     :host([mobile-navigation-external]) .chat-jumps { display: none; }
-    .msg:not(.tool-execution-shell):not(.ask-user-record-shell):not(.event-group) { padding-inline: 8px; }
+    .msg:not(.tool-execution-shell):not(.ask-user-record-shell):not(.event-group) { --message-padding-inline: 8px; }
   }
   @media (max-width: 760px), (pointer: coarse) { .group-msg .msg-action { width: 44px; height: 44px; } .chat-jumps button, .image-zoom-close { width: 44px; height: 44px; } }
   .group-msg > .msg-header.compact-event-header { position: static; min-height: 16px; margin: 0 0 4px; padding: 0; border: 0; background: transparent; box-shadow: none; }

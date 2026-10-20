@@ -1,5 +1,11 @@
 # @wang060919/pi-web
 
+## 1.202610.6
+
+### Patch Changes
+
+- Fix mobile message bubble headers extending beyond their borders while preserving sticky headers and aligned message content.
+
 ## 1.202610.5
 
 ### Patch Changes
