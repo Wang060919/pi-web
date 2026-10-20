@@ -1,6 +1,6 @@
-import { mkdtemp, readFile, rm, symlink, truncate, writeFile } from "node:fs/promises";
+import { mkdtemp, open, readFile, rm, symlink, truncate, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SessionInfo } from "../../shared/apiTypes.js";
 import { SessionHistoryService } from "./sessionHistoryService.js";
@@ -8,13 +8,18 @@ import { SessionHistoryService } from "./sessionHistoryService.js";
 // History browsing must never load or instantiate the agent SDK.
 vi.mock("@earendil-works/pi-coding-agent", () => { throw new Error("History must not load the agent SDK"); });
 
-const cwd = "/workspace/current";
-const otherCwd = "/workspace/other";
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return { ...actual, open: vi.fn(actual.open) };
+});
+
+const cwd = resolve("/workspace/current");
+const otherCwd = resolve("/workspace/other");
 const timestamp = "2026-10-17T08:00:00.000Z";
 let temp: string;
 
 beforeEach(async () => { temp = await mkdtemp(join(tmpdir(), "pi-web-history-")); });
-afterEach(async () => { await rm(temp, { recursive: true, force: true }); });
+afterEach(async () => { vi.mocked(open).mockReset(); await rm(temp, { recursive: true, force: true }); });
 
 function message(id: string, text: string, role = "assistant", parentId: string | null = null): Record<string, unknown> {
   return { type: "message", id, parentId, timestamp, message: { role, content: [{ type: "text", text }] } };
@@ -114,6 +119,23 @@ describe("read-only session history", () => {
     const controller = new AbortController();
     controller.abort();
     expect(await reader([target]).search("needle", cwd, controller.signal)).toEqual({ results: [], truncated: true, scannedSessions: 0 });
+  });
+
+  it("rejects a transcript swapped while opening before reading any bytes without native no-follow", async () => {
+    const session = await saved("original", [message("original-entry", "needle")]);
+    const outside = await saved("outside", [message("outside-entry", "private")]);
+    const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+    const read = vi.fn();
+    vi.mocked(open).mockImplementationOnce(async (path) => {
+      await unlink(session.path);
+      await symlink(outside.path, session.path, "file");
+      const handle = await actual.open(path, "r");
+      vi.spyOn(handle, "read").mockImplementation(() => { read(); return Promise.reject(new Error("Unexpected transcript read")); });
+      return handle;
+    });
+
+    await expect(reader([session]).exportHtml(session)).rejects.toThrow();
+    expect(read).not.toHaveBeenCalled();
   });
 
   it("exports every saved branch with escaped text and structured records as a self-contained artifact", async () => {
