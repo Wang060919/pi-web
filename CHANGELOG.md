@@ -1,5 +1,12 @@
 # @wang060919/pi-web
 
+## 1.202610.5
+
+### Patch Changes
+
+- Give mobile conversations balanced side margins and more reading space. Open conversation navigation and composer options on demand, collapse notifications by default on narrow screens, and preserve reading focus when navigating or dismissing dialogs. Keep keyboard scrolling from competing with restored reading positions.
+- Improve Windows file reliability when creating workspace files, reading saved transcripts and MCP configuration, and saving session-bridge reviews. Reject unsafe symbolic links and files that change while opening, and coordinate review reads with atomic saves.
+
 ## 1.202610.4
 
 ### Patch Changes
