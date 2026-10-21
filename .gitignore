@@ -21,5 +21,12 @@ dist/
 # Local runtime attachment uploads (created by the chat composer "save to folder" mode).
 .pi-web/
 
+# The Anthropic typefaces come from the local OS font library. Never commit their
+# webfont binaries; the app references only the installed family names from CSS.
+Anthropic*.woff
+Anthropic*.woff2
+Anthropic*.ttf
+Anthropic*.otf
+
 # Dev docs site staging output (scripts/build-docs-dev.mjs).
 /docs/.deploy/

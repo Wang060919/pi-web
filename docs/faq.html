@@ -91,6 +91,7 @@
             <strong>Questions</strong>
             <a href="#is-this-linux-only">What platforms are supported?</a>
             <a href="#is-pi-web-a-web-ui">Is PI WEB a Pi web UI?</a>
+            <a href="#fonts-look-different">Why do the fonts differ between devices?</a>
             <a href="#tools-are-not-found">Tools are failing / node not found</a>
             <a href="#doctor-fails">What does doctor check?</a>
             <a href="#nvm-fnm-asdf">nvm, fnm, or asdf issues</a>
@@ -131,6 +132,27 @@
                 Yes. PI WEB is a web UI for Pi Coding Agent that runs and supervises persistent sessions from a browser.
                 Unlike simple session viewers, PI WEB is built around real server-side workspaces, long-running session
                 daemons, git worktrees, remote machines, terminals, files, and multi-device supervision.
+              </p>
+            </article>
+
+            <article id="fonts-look-different" class="faq-item">
+              <h2>Why do the fonts differ between devices?</h2>
+              <p>
+                The interface asks for the Anthropic Sans, Serif, and Mono families from the operating system of the
+                device viewing PI WEB. Anthropic font files are not bundled or downloaded. When those families are
+                unavailable, each font stack uses its existing locally installed alternatives and system fallbacks.
+                The CSS layout rules, 360/460/540/560 weight settings, and Chinese fallback lists stay the same,
+                but different font metrics can change text width and line wrapping.
+              </p>
+              <p>
+                This is intentional. PI WEB does not distribute the proprietary Anthropic typefaces, so these
+                families must already exist locally. Install <code>Anthropic Sans Variable Text</code>,
+                <code>Anthropic Serif Variable Text</code>, and <code>Anthropic Mono Web</code> through the operating
+                system when you want the original typefaces on a particular device.
+              </p>
+              <p>
+                The terminal uses its own bundled JetBrains Mono Nerd Font under the SIL Open Font License;
+                its font loading is unchanged.
               </p>
             </article>
 

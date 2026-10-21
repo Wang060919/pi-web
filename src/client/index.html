@@ -8,14 +8,14 @@
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
     <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />
     <link rel="manifest" crossorigin="use-credentials" href="%BASE_URL%manifest.webmanifest" />
-    <link rel="stylesheet" href="%BASE_URL%fonts/fonts.css" />
     <style>
       :root {
         color-scheme: dark;
         --pi-control-font-size: 14px;
-        --pi-font-family: "Anthropic Sans", "anthropic-sans", "AnthropicSans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Adwaita Sans", Roboto, Helvetica, Arial, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", system-ui, sans-serif;
-        --pi-font-monospace: "Anthropic Mono", "anthropic-mono", "SF Mono", "JetBrains Mono", "Noto Sans Mono", "Noto Sans Mono CJK SC", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        --pi-font-serif: "Anthropic Serif", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", Georgia, "Times New Roman", serif;
+        /* The Anthropic faces come from the local OS font library; their webfont files are not bundled. */
+        --pi-font-family: "Anthropic Sans Variable Text", "Anthropic Sans Variable", "Anthropic Sans", "anthropic-sans", "AnthropicSans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Adwaita Sans", Roboto, Helvetica, Arial, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", system-ui, sans-serif;
+        --pi-font-monospace: "Anthropic Mono Web", "Anthropic Mono", "anthropic-mono", "SF Mono", "JetBrains Mono", "Noto Sans Mono", "Noto Sans Mono CJK SC", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        --pi-font-serif: "Anthropic Serif Variable Text", "Anthropic Serif Variable", "Anthropic Serif", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", Georgia, "Times New Roman", serif;
         --pi-font-weight-regular: 360;
         --pi-font-weight-medium: 460;
         --pi-font-weight-semibold: 540;

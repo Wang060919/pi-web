@@ -73,6 +73,7 @@ describe("plugin delivery artifacts", () => {
     const isTestArtifact = (path) => /\.(?:test|spec|testSupport|artifact)\./u.test(path);
     expect(distFiles.filter(isTestArtifact)).toEqual([]);
     expect(packagedFiles.filter(isTestArtifact)).toEqual([]);
+    expect(packagedFiles.filter((path) => /(?:^|\/)Anthropic[^/]*\.(?:woff2?|ttf|otf)$/iu.test(path))).toEqual([]);
     expect(packagedFiles).toEqual(expect.arrayContaining([
       "dist/cli.js", "dist/server/app.js", "dist/server/index.js", "dist/server/sessiond.js",
       "dist/plugin-api.d.ts", "dist/server-plugin-api.d.ts", "dist/server-plugin-api.js",
