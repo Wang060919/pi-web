@@ -1,5 +1,13 @@
 # @wang060919/pi-web
 
+## 1.202610.8
+
+### Patch Changes
+
+- b7c7847: Bundle Figtree for the interface, Source Serif 4 for Latin serif text, and Noto Serif SC for Chinese serif text. Serve the fonts and their licenses with PI WEB so devices use the selected typography without external font services or local installation. Load Chinese character partitions on demand and preserve the conversation text sizes and variable weight settings.
+- e086c95: Fix the theme selector to show the current preference when opening settings, so switching directly from light to dark works on the first attempt.
+- 78a2902: Stop bundling proprietary Anthropic font files with the web client. The terminal keeps its independently bundled JetBrains Mono Nerd Font.
+
 ## 1.202610.7
 
 ### Patch Changes
