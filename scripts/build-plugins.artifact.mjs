@@ -74,6 +74,9 @@ describe("plugin delivery artifacts", () => {
     expect(distFiles.filter(isTestArtifact)).toEqual([]);
     expect(packagedFiles.filter(isTestArtifact)).toEqual([]);
     expect(packagedFiles.filter((path) => /(?:^|\/)Anthropic[^/]*\.(?:woff2?|ttf|otf)$/iu.test(path))).toEqual([]);
+    const fontFiles = distFiles.filter((path) => path.startsWith("client/fonts/"));
+    expect(fontFiles).toContain("client/fonts/fonts.css");
+    expect(packagedFiles).toEqual(expect.arrayContaining(fontFiles.map((path) => `dist/${path}`)));
     expect(packagedFiles).toEqual(expect.arrayContaining([
       "dist/cli.js", "dist/server/app.js", "dist/server/index.js", "dist/server/sessiond.js",
       "dist/plugin-api.d.ts", "dist/server-plugin-api.d.ts", "dist/server-plugin-api.js",

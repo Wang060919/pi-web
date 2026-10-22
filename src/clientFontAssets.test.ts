@@ -7,16 +7,17 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const clientRoot = join(repoRoot, "src", "client");
 
 describe("client typography assets", () => {
-  it.each(["index.html", "usage-preview.html"])("uses locally installed Sans families in %s without loading webfont files", async (entry) => {
+  it.each(["index.html", "usage-preview.html"])("loads bundled interface fonts through the deployment base in %s", async (entry) => {
     const html = await readFile(join(clientRoot, entry), "utf8");
-    expect(html).toContain('"Anthropic Sans Variable Text"');
-    expect(html).not.toContain("fonts/fonts.css");
-    expect(html).not.toContain("@font-face");
+    expect(html).toContain('href="%BASE_URL%fonts/fonts.css"');
+    expect(html).toContain('--pi-font-family: "Figtree",');
+    expect(html).not.toContain("Anthropic Sans");
+    expect(html).not.toContain("fonts.googleapis.com");
   });
 
-  it("names the locally installed Serif and Mono families in the app", async () => {
+  it("uses the bundled Latin and Chinese serif families before system fallbacks", async () => {
     const html = await readFile(join(clientRoot, "index.html"), "utf8");
-    expect(html).toContain('"Anthropic Serif Variable Text"');
-    expect(html).toContain('"Anthropic Mono Web"');
+    expect(html).toContain('--pi-font-serif: "Source Serif 4", "Noto Serif SC",');
+    expect(html).not.toContain("Anthropic Serif");
   });
 });

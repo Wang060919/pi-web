@@ -6,17 +6,29 @@ import { describe, expect, it } from "vitest";
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 describe("production client build contents", () => {
-  it("keeps Anthropic typography local without shipping its webfont assets", async () => {
+  it("ships self-hosted variable fonts, Chinese partitions and their licenses", async () => {
     const outDir = join(repoRoot, "dist/client");
     const html = await readFile(join(outDir, "index.html"), "utf8");
-    expect(html).toContain('"Anthropic Sans Variable Text"');
-    expect(html).toContain('"Anthropic Serif Variable Text"');
-    expect(html).toContain('"Anthropic Mono Web"');
-    expect(html).not.toContain("fonts/fonts.css");
-    expect(html).not.toContain("@font-face");
+    expect(htmlAssetReferences(html)).toContain("./fonts/fonts.css");
+    const fontsDir = join(outDir, "fonts");
+    const css = await readFile(join(fontsDir, "fonts.css"), "utf8");
+    const references = [...css.matchAll(/url\(([^)]+)\)/gu)].map((match) => match[1]);
+    expect(references.length).toBeGreaterThan(0);
+    for (const reference of new Set(references)) {
+      expect(reference).toMatch(/^\.\/[A-Za-z0-9-]+\.woff2$/u);
+      expect((await readFile(join(fontsDir, reference))).subarray(0, 4).toString()).toBe("wOF2");
+    }
+    for (const family of ["Figtree", "Source Serif 4", "Noto Serif SC"]) {
+      expect(css).toContain(`font-family: '${family}'`);
+    }
+    expect(css).toContain("font-weight: 200 900");
+    expect(css).toContain("unicode-range:");
+    expect(css).not.toMatch(/https?:\/\//u);
+    for (const family of ["Figtree", "SourceSerif4", "NotoSerifSC"]) {
+      expect(await readFile(join(fontsDir, `${family}-OFL.txt`), "utf8")).toContain("SIL OPEN FONT LICENSE Version 1.1");
+    }
 
     const files = await readdir(outDir, { recursive: true });
-    expect(files).not.toContain(join("fonts", "fonts.css"));
     expect(files.filter((file) => /(?:^|[\\/])Anthropic[^\\/]*\.(?:woff2?|ttf|otf)$/iu.test(file))).toEqual([]);
   });
 

@@ -138,21 +138,20 @@
             <article id="fonts-look-different" class="faq-item">
               <h2>Why do the fonts differ between devices?</h2>
               <p>
-                The interface asks for the Anthropic Sans, Serif, and Mono families from the operating system of the
-                device viewing PI WEB. Anthropic font files are not bundled or downloaded. When those families are
-                unavailable, each font stack uses its existing locally installed alternatives and system fallbacks.
-                The CSS layout rules, 360/460/540/560 weight settings, and Chinese fallback lists stay the same,
-                but different font metrics can change text width and line wrapping.
+                PI WEB bundles Figtree for the interface, Source Serif 4 for Latin serif text, and Noto Serif SC
+                (the Source Han Serif family) for Chinese serif text. These fonts load from your PI WEB server;
+                viewing the app does not require access to a font CDN or installing the families on each device.
+                Chinese font resources are split by character range so the browser downloads the parts it needs.
               </p>
               <p>
-                This is intentional. PI WEB does not distribute the proprietary Anthropic typefaces, so these
-                families must already exist locally. Install <code>Anthropic Sans Variable Text</code>,
-                <code>Anthropic Serif Variable Text</code>, and <code>Anthropic Mono Web</code> through the operating
-                system when you want the original typefaces on a particular device.
+                All three bundled families use the SIL Open Font License, with their notices and sources included
+                in the font directory. The existing 360/460/540/560 weight settings are preserved. Browser rendering,
+                system fallbacks for other characters, and locally installed Chinese interface sans-serif fonts
+                can still produce small differences between devices.
               </p>
               <p>
-                The terminal uses its own bundled JetBrains Mono Nerd Font under the SIL Open Font License;
-                its font loading is unchanged.
+                Code uses the existing local monospace preferences. The terminal uses its bundled JetBrains Mono
+                Nerd Font under the SIL Open Font License.
               </p>
             </article>
 
