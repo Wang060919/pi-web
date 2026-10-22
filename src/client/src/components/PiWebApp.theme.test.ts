@@ -130,12 +130,13 @@ describe("conversation text size on this device", () => {
     await panel.updateComplete;
     expect(button(panel, "Medium").getAttribute("aria-pressed")).toBe("true");
     expect(localStorage.getItem(CHAT_TEXT_SIZE_STORAGE_KEY)).toBeNull();
-    for (const [label, size] of [["Small", "s"], ["Medium", "m"], ["Large", "l"]] as const) {
+    for (const [label, size, fontSize] of [["Small", "s", ".875rem"], ["Medium", "m", "1rem"], ["Large", "l", "1.125rem"]] as const) {
       button(panel, label).click();
       await app.updateComplete;
       await settings(app).updateComplete;
       await panel.updateComplete;
       expect(app.dataset["chatTextSize"]).toBe(size);
+      expect(app.style.getPropertyValue("--pi-chat-font-size")).toBe(fontSize);
       expect(localStorage.getItem(CHAT_TEXT_SIZE_STORAGE_KEY)).toBe(size);
       expect(button(panel, label).getAttribute("aria-pressed")).toBe("true");
       expect(panel.shadowRoot?.querySelector('[role="status"]')?.textContent).toBe("Saved on this device.");

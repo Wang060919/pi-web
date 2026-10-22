@@ -4,9 +4,9 @@ export const DEFAULT_CHAT_TEXT_SIZE: ChatTextSize = "m";
 export const CHAT_TEXT_SIZE_STORAGE_KEY = "pi-web-chat-text-size";
 
 const typography: Record<ChatTextSize, { size: string; leading: string }> = {
-  s: { size: ".8125rem", leading: "1.42857" },
-  m: { size: ".875rem", leading: "1.42857" },
-  l: { size: ".9375rem", leading: "1.46667" },
+  s: { size: ".875rem", leading: "1.5" },
+  m: { size: "1rem", leading: "1.5" },
+  l: { size: "1.125rem", leading: "1.44444" },
 };
 
 export function readChatTextSize(): ChatTextSize {
