@@ -34,7 +34,7 @@ export class SettingsThemePanel extends LitElement {
             if (event.target instanceof HTMLSelectElement) this.draft = { ...this.draft, themeId: event.target.value };
           }}>
             ${!selectedAvailable ? localizedTemplate("SettingsThemePanel.unavailable.58a76ce3", html)`<option value=${this.draft.themeId}>${this.draft.themeId} (unavailable)</option>` : null}
-            ${this.themes.map((theme) => html`<option value=${theme.id}>${theme.name}</option>`)}
+            ${this.themes.map((theme) => html`<option value=${theme.id} .selected=${theme.id === this.draft.themeId}>${theme.name}</option>`)}
           </select>
         </label>
         <div class="mode-row">

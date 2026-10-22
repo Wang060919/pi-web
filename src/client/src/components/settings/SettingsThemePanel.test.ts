@@ -11,6 +11,19 @@ afterEach(() => {
 });
 
 describe("theme settings controls", () => {
+  it("selects the saved light theme on first render, then applies dark directly", async () => {
+    const panel = await mountPanel({ themeId: "themes:pi-web-light", auto: false });
+    const useLocal = vi.fn();
+    panel.onUseLocal = useLocal;
+    const select = required(panel.shadowRoot?.querySelector<HTMLSelectElement>("select"));
+    expect(select.value).toBe("themes:pi-web-light");
+
+    selectTheme(panel, "themes:pi-web-dark");
+    await panel.updateComplete;
+    button(panel, "Use on this device").click();
+    expect(useLocal).toHaveBeenCalledWith({ themeId: "themes:pi-web-dark", auto: false });
+  });
+
   it("stages theme and Auto choices, then offers distinct device/default actions", async () => {
     const panel = await mountPanel();
     const useLocal = vi.fn();
@@ -73,11 +86,12 @@ describe("theme settings controls", () => {
   });
 });
 
-async function mountPanel(): Promise<SettingsThemePanel> {
+async function mountPanel(preference?: SettingsThemePanel["preference"]): Promise<SettingsThemePanel> {
   const registry = new PluginRegistry();
   await registry.registerBatch([{ id: "themes", plugin: themePackPlugin }]);
   const panel = new SettingsThemePanel();
   panel.themes = registry.getThemes();
+  if (preference !== undefined) panel.preference = preference;
   document.body.append(panel);
   await panel.updateComplete;
   await registry.dispose();
