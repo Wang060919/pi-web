@@ -1,6 +1,6 @@
 import type { PiWebStatusResponse } from "../shared/apiTypes.js";
 
-const DEFAULT_PI_WEB_STATUS_CACHE_TTL_MS = 60_000;
+const DEFAULT_PI_WEB_STATUS_CACHE_TTL_MS = 15_000;
 
 export interface PiWebStatusCacheOptions {
   ttlMs?: number;

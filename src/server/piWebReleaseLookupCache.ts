@@ -1,4 +1,5 @@
-const DEFAULT_PI_WEB_RELEASE_LOOKUP_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const DEFAULT_PI_WEB_RELEASE_LOOKUP_CACHE_TTL_MS = 5 * 60 * 1000;
+const DEFAULT_PI_WEB_RELEASE_LOOKUP_ERROR_TTL_MS = 30_000;
 
 export interface PiWebReleaseLookup {
   checkedAtMs: number;
@@ -8,6 +9,7 @@ export interface PiWebReleaseLookup {
 
 export interface PiWebReleaseLookupCacheOptions {
   ttlMs?: number;
+  errorTtlMs?: number;
   now?: () => number;
 }
 
@@ -24,6 +26,7 @@ export function createPiWebReleaseLookupCache(
   options: PiWebReleaseLookupCacheOptions = {},
 ): PiWebReleaseLookupCache {
   const ttlMs = options.ttlMs ?? DEFAULT_PI_WEB_RELEASE_LOOKUP_CACHE_TTL_MS;
+  const errorTtlMs = options.errorTtlMs ?? DEFAULT_PI_WEB_RELEASE_LOOKUP_ERROR_TTL_MS;
   const now = options.now ?? Date.now;
   let cached: PiWebReleaseLookup | undefined;
   let pending: { promise: Promise<PiWebReleaseLookup>; force: boolean; sequence: number } | undefined;
@@ -35,7 +38,8 @@ export function createPiWebReleaseLookupCache(
       if (pending?.force === true) return pending.promise;
 
       const checkedAtMs = now();
-      if (!force && cached !== undefined && checkedAtMs - cached.checkedAtMs < ttlMs) return Promise.resolve(cached);
+      const cachedTtlMs = cached?.error === undefined ? ttlMs : errorTtlMs;
+      if (!force && cached !== undefined && checkedAtMs - cached.checkedAtMs < cachedTtlMs) return Promise.resolve(cached);
       if (!force && pending !== undefined) return pending.promise;
 
       const sequence = ++loadSequence;

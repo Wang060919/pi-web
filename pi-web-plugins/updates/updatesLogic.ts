@@ -58,6 +58,7 @@ export function shouldShowUpdatesPanel(state: PluginRuntimeState | undefined, hi
   if (hint.dockerMode !== undefined) return true;
   if (messageCount(state) > 0) return true;
   if (status === undefined) return false;
+  if (status.release.error !== undefined && status.release.error !== "") return true;
   return isSelfManagedInstallation(status.components.web.installation)
     || isSelfManagedInstallation(status.components.sessiond.installation);
 }

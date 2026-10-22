@@ -237,6 +237,24 @@ describe("shouldShowUpdatesPanel", () => {
     });
     expect(shouldShowUpdatesPanel(stateWith(value))).toBe(false);
   });
+
+  it.each(["npm-global", "pi-package"] as const)("keeps a failed release check visible for %s until the error clears", (kind) => {
+    const value = status({
+      components: {
+        web: component({ installation: { kind } }),
+        sessiond: component({ component: "sessiond", label: "Session daemon", installation: { kind } }),
+      },
+      release: { packageName: "@wang060919/pi-web", updateAvailable: false, error: "registry unreachable" },
+    });
+
+    expect(shouldShowUpdatesPanel(stateWith(value))).toBe(true);
+
+    value.release = { packageName: "@wang060919/pi-web", updateAvailable: false };
+    expect(shouldShowUpdatesPanel(stateWith(value))).toBe(false);
+
+    value.release.error = "";
+    expect(shouldShowUpdatesPanel(stateWith(value))).toBe(false);
+  });
 });
 
 describe("fallbackDockerStatus", () => {

@@ -13,10 +13,10 @@ import { parsePiWebRuntimeComponent } from "../shared/piWebStatusParsing.js";
 import { SessionDaemonClient } from "../sessiond/sessionDaemonClient.js";
 import { isHostAbsoluteAgentDir, loadPiWebConfig, PI_CODING_AGENT_DIR_ENV, type LoadedPiWebConfig } from "../config.js";
 import { createPiWebReleaseLookupCache, type PiWebReleaseLookup } from "./piWebReleaseLookupCache.js";
+import { fetchLatestNpmVersion } from "./npmReleaseLookup.js";
 
 const PI_WEB_PACKAGE_NAME = "@wang060919/pi-web";
 const DEFAULT_VERSION = "0.0.0-dev";
-const VERSION_CHECK_TIMEOUT_MS = 5000;
 
 type ServiceId = "sessiond" | "web" | "uiDev";
 type NativeServiceBackendKind = "systemd" | "launchd";
@@ -80,7 +80,7 @@ export interface PiWebStatusOptions {
   hasCommand?: (command: string) => Promise<boolean>;
 }
 
-const latestReleaseLookupCache = createPiWebReleaseLookupCache(fetchLatestNpmVersion);
+const latestReleaseLookupCache = createPiWebReleaseLookupCache((version) => fetchLatestNpmVersion(PI_WEB_PACKAGE_NAME, version));
 const runtimePackageInfo = readPackageInfoSync();
 
 export function getPiWebRuntimeComponent(component: PiWebServiceComponent, capabilities: readonly PiWebCapability[] = [], deprecatedAgentInputs: readonly PiWebDeprecatedAgentInput[] = []): PiWebRuntimeComponent {
@@ -417,21 +417,6 @@ function releaseStatusFromCache(cache: PiWebReleaseLookup, currentVersion: strin
     checkedAt: new Date(cache.checkedAtMs).toISOString(),
     ...(cache.error === undefined ? {} : { error: cache.error }),
   };
-}
-
-async function fetchLatestNpmVersion(currentVersion: string): Promise<string> {
-  const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(PI_WEB_PACKAGE_NAME)}/latest`, {
-    headers: {
-      accept: "application/json",
-      "user-agent": `${PI_WEB_PACKAGE_NAME}/${currentVersion}`,
-    },
-    signal: AbortSignal.timeout(VERSION_CHECK_TIMEOUT_MS),
-  });
-  if (!response.ok) throw new Error(`npm registry returned HTTP ${String(response.status)}`);
-  const data: unknown = await response.json();
-  const version = isRecord(data) ? data["version"] : undefined;
-  if (typeof version !== "string" || version === "") throw new Error("npm registry response did not include a version");
-  return version;
 }
 
 async function commandsFor(components: PiWebStatusResponse["components"], options: {

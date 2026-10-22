@@ -7,6 +7,7 @@ import { VERSION as PI_CODING_AGENT_VERSION } from "@earendil-works/pi-coding-ag
 import { comparePackageVersions, getPiWebRuntime, getPiWebStatus, getPiWebVersionStatus, updateCommandFor } from "./piWebStatus.js";
 import { SessionDaemonClient } from "../sessiond/sessionDaemonClient.js";
 import type { PiWebRuntimeComponent } from "../shared/apiTypes.js";
+import * as npmReleaseLookup from "./npmReleaseLookup.js";
 
 const originalSkipVersionCheck = process.env["PI_WEB_SKIP_VERSION_CHECK"];
 const originalHome = process.env["HOME"];
@@ -230,9 +231,9 @@ describe("PI WEB status", () => {
     Reflect.deleteProperty(process.env, "PI_WEB_SKIP_VERSION_CHECK");
     process.env["PI_WEB_DOCKER_RUNTIME"] = "1";
     process.env["PI_WEB_DOCKER_MODE"] = "runtime";
-    const fetchMock = vi.spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(npmVersionResponse("1.202607.1"))
-      .mockResolvedValueOnce(npmVersionResponse("1.202607.2"));
+    const fetchMock = vi.spyOn(npmReleaseLookup, "fetchLatestNpmVersion")
+      .mockResolvedValueOnce("1.202607.1")
+      .mockResolvedValueOnce("1.202607.2");
     const daemon = daemonWithRuntime(runningSessiondRuntime("1.202607.0"));
 
     const first = await getPiWebStatus(daemon, { forceReleaseCheck: true });
@@ -530,10 +531,6 @@ function activeProfile(dir: string) {
     schemaVersion: 2 as const,
     dir,
   };
-}
-
-function npmVersionResponse(version: string): Response {
-  return new Response(JSON.stringify({ version }), { status: 200, headers: { "content-type": "application/json" } });
 }
 
 function runningSessiondRuntime(runtimeVersion = "1.202605.7"): PiWebRuntimeComponent {

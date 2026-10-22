@@ -3,6 +3,25 @@ import type { PiWebStatusResponse } from "../shared/apiTypes.js";
 import { createPiWebStatusCache, type PiWebStatusCacheLoadOptions } from "./piWebStatusCache.js";
 
 describe("createPiWebStatusCache", () => {
+  it("refreshes status in the background after fifteen seconds by default", async () => {
+    let now = 0;
+    const load = vi.fn()
+      .mockResolvedValueOnce(status("first"))
+      .mockResolvedValueOnce(status("second"));
+    const cache = createPiWebStatusCache(load, { now: () => now });
+
+    await cache.get();
+    now = 14_999;
+    await expect(cache.get()).resolves.toMatchObject({ generatedAt: "first" });
+    expect(load).toHaveBeenCalledOnce();
+
+    now = 15_000;
+    await expect(cache.get()).resolves.toMatchObject({ generatedAt: "first" });
+    await waitForMicrotasks();
+    await expect(cache.get()).resolves.toMatchObject({ generatedAt: "second" });
+    expect(load).toHaveBeenCalledTimes(2);
+  });
+
   it("serves cached status while it is fresh", async () => {
     const now = 1_000;
     const load = vi.fn(() => Promise.resolve(status("first")));

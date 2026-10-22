@@ -112,7 +112,7 @@ import { deprecatedAgentInputsBanner, deprecatedAgentInputsWarnings } from "./de
 import { appStyles } from "./shared";
 
 
-const PI_WEB_STATUS_REFRESH_MS = 15 * 60 * 1000;
+const PI_WEB_STATUS_REFRESH_MS = 30_000;
 const SELECTED_SESSION_REFRESH_MS = 5_000;
 const PI_WEB_STATUS_DEFER_MS = 750;
 const REMOTE_ROUTE_RESTORE_RETRY_DELAYS_MS = [1_000, 3_000, 8_000, 15_000, 30_000] as const;
