@@ -1,5 +1,12 @@
 # @wang060919/pi-web
 
+## 1.202610.9
+
+### Patch Changes
+
+- d015cd8: Prefer locally installed Anthropic fonts before the bundled open-source fallbacks. Increase chat text sizes to 14/16/18px with stronger body text and proportional code sizing for easier reading.
+- be2b6af: Show new PI WEB releases sooner with a five-minute release cache, thirty-second retries after failed checks, and more frequent status refreshes. Respect HTTP(S) proxy settings for npm lookups and keep update-check failures visible in Updates.
+
 ## 1.202610.8
 
 ### Patch Changes
